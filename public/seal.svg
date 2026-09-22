@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <path id="textArcTop" d="M 30,100 A 70,70 0 1,1 170,100" />
+    <path id="textArcBottom" d="M 170,100 A 70,70 0 0,1 30,100" />
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#bae6fd" />
+    </linearGradient>
+    <linearGradient id="volcanoGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#15803d" />
+      <stop offset="100%" stop-color="#166534" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Blue Seal Ring -->
+  <circle cx="100" cy="100" r="96" fill="#1e3a8a" stroke="#f59e0b" stroke-width="4" />
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="4,3" />
+
+  <!-- Outer Ring Text -->
+  <text font-family="'Outfit', 'Inter', sans-serif" font-weight="900" font-size="15" fill="#fef08a" letter-spacing="2">
+    <textPath href="#textArcTop" startOffset="50%" text-anchor="middle">CITY OF TABACO</textPath>
+  </text>
+  <text font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="13" fill="#ffffff" letter-spacing="3">
+    <textPath href="#textArcBottom" startOffset="50%" text-anchor="middle">★ PHILIPPINES ★</textPath>
+  </text>
+
+  <!-- Inner Center Circle -->
+  <circle cx="100" cy="100" r="66" fill="url(#skyGrad)" stroke="#f59e0b" stroke-width="3" />
+
+  <!-- Sun -->
+  <circle cx="100" cy="62" r="14" fill="#facc15" />
+
+  <!-- Mayon Volcano Silhouette -->
+  <path d="M 38 134 L 100 68 L 162 134 Z" fill="url(#volcanoGrad)" />
+  <path d="M 92 76 L 100 68 L 108 76 L 100 84 Z" fill="#f8fafc" opacity="0.8" />
+
+  <!-- Green Grass / Foreground -->
+  <ellipse cx="100" cy="140" rx="64" ry="24" fill="#16a34a" />
+
+  <!-- Water Bay / Shoreline -->
+  <path d="M 40 142 Q 100 156 160 142 Q 155 158 100 162 Q 45 158 40 142 Z" fill="#0284c7" />
+
+  <!-- Golden Stars on Outer Ring -->
+  <polygon points="26,100 29,93 36,93 30,88 32,81 26,86 20,81 22,88 16,93 23,93" fill="#facc15" />
+  <polygon points="174,100 177,93 184,93 178,88 180,81 174,86 168,81 170,88 164,93 171,93" fill="#facc15" />
+</svg>

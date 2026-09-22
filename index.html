@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Franchise Management Verifier - Tabaco City TRD</title>
+  <meta name="description" content="Tabaco City TRD Official Franchise Management Verifier Mobile Application" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       Tabaco City TRD - 100% Figma Pixel-Aligned CSS Stylesheet
+       ========================================================================== */
+    :root {
+      --emerald-primary: #059669;
+      --emerald-hover: #047857;
+      --emerald-glow: rgba(5, 150, 105, 0.25);
+      --danger-red: #dc2626;
+      --btn-grey: #94a3b8;
+      --bg-mint-box: #e8f5e9;
+      --border-mint: #c8e6c9;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --radius-md: 14px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --font-main: 'Inter', -apple-system, sans-serif;
+      --font-brand: 'Outfit', sans-serif;
+
+      /* Independent Image Alignment & Movement Controls for Pedicab & Tricycle PNGs */
+      --pedicab-pos-x: center;
+      --pedicab-pos-y: bottom 0px;
+      --pedicab-scale: 1;
+      --pedicab-offset-y: 0px;
+
+      --tricycle-pos-x: center;
+      --tricycle-pos-y: bottom 0px;
+      --tricycle-scale: 1;
+      --tricycle-offset-y: 0px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      touch-action: manipulation;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #cbd5e1;
+      color: var(--text-dark);
+      font-family: var(--font-main);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      max-width: 440px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background: #f1f5f9;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Top Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lock-seal {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--emerald-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 12px var(--emerald-glow);
+    }
+
+    .lock-seal svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-brand);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.1;
+    }
+
+    .sub-badge {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--emerald-primary);
+      font-weight: 700;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .icon-btn.active {
+      background: rgba(5, 150, 105, 0.1);
+      color: var(--emerald-primary);
+      border-color: var(--emerald-primary);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Main Container with bottom padding for fixed navigation */
+    .main-content {
+      flex: 1;
+      position: static;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px 14px 95px 14px;
+    }
+
+    .view-panel {
+      display: none;
+      width: 100%;
+    }
+
+    .view-panel.active {
+      display: block;
+    }
+
+    .figma-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1px solid #e2e8f0;
+      padding: 24px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Giant Lock Icon */
+    .giant-lock-icon {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--emerald-primary);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px auto 18px;
+      box-shadow: 0 10px 25px var(--emerald-glow);
+    }
+
+    .giant-lock-icon svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .giant-lock-icon.small {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 10px;
+    }
+
+    .giant-lock-icon.small svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .giant-lock-icon.mini {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 8px;
+    }
+
+    .giant-lock-icon.mini svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* VIEW 1: Login */
+    .login-card {
+      text-align: center;
+    }
+
+    .login-card h2 {
+      font-family: var(--font-brand);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .login-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .login-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: left;
+      margin-bottom: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Record Page - User Account & Logout Bar */
+    .record-user-profile-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+      animation: fadeInProfile 0.3s ease;
+    }
+
+    @keyframes fadeInProfile {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-role-enforcer .record-user-profile-bar {
+      background: #f8fafc;
+      border: 1.5px solid #bfdbfe;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.08);
+    }
+
+    .user-profile-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .user-avatar-circle {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      border-radius: 50%;
+      background: #e8f5e9;
+      border: 1.5px solid #a7f3d0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .user-role-enforcer .user-avatar-circle {
+      background: #eff6ff;
+      border-color: #93c5fd;
+    }
+
+    .user-profile-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .user-profile-name {
+      font-family: var(--font-brand);
+      font-weight: 800;
+      font-size: 0.92rem;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .user-profile-role-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--emerald-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .user-role-enforcer .user-profile-role-badge {
+      color: #1e3a8a;
+    }
+
+    .btn-record-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid #fecaca;
+      background: #fef2f2;
+      color: #dc2626;
+      font-family: var(--font-brand);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(220, 38, 38, 0.08);
+    }
+
+    .btn-record-logout:hover {
+      background: #fee2e2;
+      border-color: #f87171;
+      color: #b91c1c;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(220, 38, 38, 0.16);
+    }
+
+    .btn-record-logout:active {
+      transform: scale(0.96);
+    }
+
+    .btn-record-logout svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .nav-disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .input-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius-full);
+      padding: 12px 16px;
+    }
+
+    .input-pill svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .input-pill input,
+    .input-pill select {
+      width: 100%;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 0.88rem;
+      color: var(--text-dark);
+    }
+
+    .forgot-wrap {
+      text-align: right;
+    }
+
+    .forgot-link {
+      font-size: 0.78rem;
+      color: var(--emerald-primary);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .register-footer {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .register-footer a {
+      color: var(--emerald-primary);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    /* Buttons */
+    .figma-emerald-btn {
+      width: 100%;
+      background: var(--emerald-primary);
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-brand);
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--emerald-glow);
+    }
+
+    .figma-emerald-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* VIEW 2: Instructions */
+    .instructions-card {
+      padding: 22px 18px 24px;
+      margin-bottom: 24px;
+    }
+
+    .top-icon-header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .top-icon-header h2 {
+      font-family: var(--font-brand);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .top-icon-header p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .step-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 2px solid var(--emerald-primary);
+      color: var(--emerald-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.12);
+    }
+
+    .step-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .step-num {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--emerald-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .step-optional-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #64748b;
+      background: #e2e8f0;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .step-content h3 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: 1px;
+    }
+
+    .step-content p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .guide-action-wrap {
+      margin-top: 20px;
+      padding-top: 6px;
+      text-align: center;
+    }
+
+    .guide-start-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      font-size: 0.98rem;
+      box-shadow: 0 6px 20px var(--emerald-glow);
+    }
+
+    /* VIEW 3: Scanner — Figma Layout */
+    #view-scan {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      overflow: hidden;
+      background: #eef2f7;
+      z-index: 50;
+    }
+
+    #view-scan.active {
+      display: flex;
+    }
+
+    /* Separate Vehicle Background Layers for Pedicab & Tricycle PNGs */
+    .scan-vehicle-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.3s ease;
+      filter: drop-shadow(0 -4px 16px rgba(0, 0, 0, 0.06));
+    }
+
+    .scan-vehicle-layer.active {
+      opacity: 0.95;
+      visibility: visible;
+    }
+
+    /* SEPARATE ALIGNMENT & MOVEMENT FOR PEDICAB PNG */
+    #scan-pedicab-bg,
+    .scan-pedicab-bg,
+    .pedicab-bg {
+      background-image: url('/pedicab.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: var(--pedicab-pos-x) var(--pedicab-pos-y);
+      transform: translateY(var(--pedicab-offset-y)) scale(var(--pedicab-scale));
+    }
+
+    /* SEPARATE ALIGNMENT & MOVEMENT FOR TRICYCLE PNG */
+    #scan-tricycle-bg,
+    .scan-tricycle-bg,
+    .tricycle-bg {
+      background-image: url('/tricycle.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: var(--tricycle-pos-x) var(--tricycle-pos-y);
+      transform: translateY(var(--tricycle-offset-y)) scale(var(--tricycle-scale));
+    }
+
+
+
+    /* Scanner top header */
+    .scan-top-header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 8px;
+    }
+
+    .scan-circle-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--emerald-primary);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--emerald-glow);
+      flex-shrink: 0;
+    }
+
+    .scan-circle-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .scan-hamburger-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .scan-hamburger-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Scanner center lock icon */
+    .scan-lock-icon {
+      position: relative;
+      z-index: 10;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: var(--emerald-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px auto 12px;
+      box-shadow: 0 8px 24px var(--emerald-glow);
+    }
+
+    .scan-lock-icon svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    /* White scanner card */
+    .scan-card {
+      position: relative;
+      z-index: 10;
+      background: #fff;
+      border-radius: 20px;
+      margin: 0 14px;
+      padding: 22px 16px 22px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+      text-align: center;
+    }
+
+    .scan-card h2 {
+      font-family: var(--font-brand);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: 0.5px;
+    }
+
+    .scan-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      margin-bottom: 14px;
+    }
+
+    /* Preview links (small, below card) */
+    .preview-links-wrap {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 0 16px;
+    }
+
+    .preview-link {
+      background: none;
+      border: none;
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 4px 6px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .preview-link:hover {
+      color: #fff;
+    }
+
+    .preview-divider {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.72rem;
+    }
+
+    /* QR viewport inside white card */
+    .camera-viewport-wrap {
+      position: relative;
+      background: #0f172a;
+      border-radius: 16px;
+      border: 1px solid #cbd5e1;
+      min-height: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #reader {
+      width: 100% !important;
+      height: 100% !important;
+      background: #0f172a;
+    }
+
+    #reader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 14px;
+    }
+
+    #reader__scan_region,
+    #reader__dashboard {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .camera-fallback-ui {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.88);
+      z-index: 15;
+    }
+
+    #scanner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .figma-reticle {
+      width: 180px;
+      height: 180px;
+      position: relative;
+    }
+
+    .figma-corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: #0f172a;
+      border-style: solid;
+      border-width: 0;
+    }
+
+    .figma-corner.top-left {
+      top: 0;
+      left: 0;
+      border-top-width: 4px;
+      border-left-width: 4px;
+    }
+
+    .figma-corner.top-right {
+      top: 0;
+      right: 0;
+      border-top-width: 4px;
+      border-right-width: 4px;
+    }
+
+    .figma-corner.bottom-left {
+      bottom: 0;
+      left: 0;
+      border-bottom-width: 4px;
+      border-left-width: 4px;
+    }
+
+    .figma-corner.bottom-right {
+      bottom: 0;
+      right: 0;
+      border-bottom-width: 4px;
+      border-right-width: 4px;
+    }
+
+    .laser-beam {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 3px;
+      background: var(--emerald-primary);
+      box-shadow: 0 0 12px var(--emerald-primary);
+      animation: scanLaser 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes scanLaser {
+      0% {
+        top: 8%;
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        top: 88%;
+        opacity: 0.4;
+      }
+    }
+
+    .camera-toolbar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .cam-tool-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.75);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cam-tool-btn:active {
+      transform: scale(0.92);
+    }
+
+    .cam-tool-btn.active {
+      background: var(--emerald-primary);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 12px var(--emerald-glow);
+    }
+
+    .scanner-secondary-actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-gallery-scan {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius-full);
+      padding: 7px 14px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-gallery-scan:active {
+      background: #e2e8f0;
+      transform: scale(0.96);
+    }
+
+
+
+    /* Footer text inside scanner */
+    .scan-footer {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      z-index: 10;
+      padding-bottom: 2px;
+    }
+
+    .figma-demo-pill {
+      width: 100%;
+      background: #f1f5f9;
+      color: var(--text-dark);
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-brand);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* QR Placeholder (preview mode) */
+    .qr-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .qr-placeholder-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Preview Continue Buttons */
+    .preview-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .preview-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .preview-btn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-brand);
+      font-size: 0.88rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.5px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .preview-btn:active {
+      transform: scale(0.97);
+    }
+
+    .preview-pedicab {
+      background: var(--emerald-primary);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--emerald-glow);
+    }
+
+    .preview-tricycle {
+      background: #1d4ed8;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(29, 78, 216, 0.3);
+    }
+
+    /* VIEW 4: Verification Result Profile */
+    #view-verification {
+      overflow-y: auto;
+    }
+
+    .verification-empty-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1.5px dashed #cbd5e1;
+      padding: 30px 18px 24px;
+      text-align: center;
+      margin: 12px auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .empty-warning-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .empty-icon-wrap {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px dashed #94a3b8;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .empty-icon-wrap svg {
+      width: 38px;
+      height: 38px;
+    }
+
+    .verification-empty-card h2 {
+      font-family: var(--font-brand);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+
+    .empty-instruction-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 18px;
+      max-width: 320px;
+    }
+
+    .empty-tips-box {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      text-align: left;
+      margin-bottom: 18px;
+      font-size: 0.78rem;
+      color: #475569;
+    }
+
+    .empty-tips-box ul {
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+
+    .empty-tips-box li {
+      margin-bottom: 4px;
+    }
+
+    .verification-card {
+      background: #ffffff;
+      border-radius: 0;
+      padding: 0 16px 24px;
+      min-height: 100%;
+    }
+
+    .verified-header {
+      text-align: center;
+      padding: 20px 0 16px;
+      margin-bottom: 4px;
+    }
+
+    .verified-seal-wrap {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 12px;
+    }
+
+    .verified-seal-wrap img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .seal-fallback {
+      display: none;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .seal-fallback svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .verified-header h2 {
+      font-family: var(--font-brand);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .verified-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .verified-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .active-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      background: var(--emerald-primary);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .active-status-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-brand);
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .section-heading svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .details-grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .mint-box {
+      background: var(--bg-mint-box);
+      border: 1px solid var(--border-mint);
+      border-radius: var(--radius-md);
+      padding: 10px;
+    }
+
+    .box-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .box-header svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .box-value {
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .mint-list-card {
+      background: var(--bg-mint-box);
+      border: 1px solid var(--border-mint);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .mint-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-mint);
+    }
+
+    .mint-row:last-child {
+      border-bottom: none;
+    }
+
+    .row-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .row-val {
+      font-size: 0.85rem;
+    }
+
+    .font-bold {
+      font-weight: 800;
+    }
+
+    .green-text {
+      color: var(--emerald-primary);
+      font-weight: 800;
+    }
+
+    /* Figma 3 Action Buttons Stack */
+    .figma-buttons-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stack-btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-brand);
+      font-size: 0.92rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .stack-btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-grey {
+      background: var(--btn-grey);
+      color: #0f172a;
+    }
+
+    .btn-red {
+      background: var(--danger-red);
+      color: #ffffff;
+    }
+
+    .btn-emerald {
+      background: var(--emerald-primary);
+      color: #ffffff;
+    }
+
+    .official-footer {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-top: 16px;
+    }
+
+    /* View Fare button — light blue-grey style from Figma */
+    .btn-fare {
+      background: #dce8f5;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    .btn-fare:hover {
+      background: #bfdbfe;
+    }
+
+    /* Bottom Navigation Bar — used on non-scanner views */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: #ffffff;
+      border-top: 1px solid #cbd5e1;
+      padding: 4px 8px;
+    }
+
+    /* Hide bottom nav when scanner is active */
+    #view-scan.active~.bottom-nav,
+    body.scan-active .bottom-nav {
+      display: none;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.68rem;
+      font-weight: 700;
+      height: 100%;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .nav-btn.active {
+      color: var(--emerald-primary);
+    }
+
+    .nav-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay:not(.hidden) {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bottom-sheet {
+      background: #ffffff;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 16px 18px 24px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .sheet-drag-handle {
+      width: 36px;
+      height: 4px;
+      background: #cbd5e1;
+      border-radius: 2px;
+      margin: 0 auto 10px;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .sheet-header h3 {
+      font-family: var(--font-brand);
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .fare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.75rem;
+    }
+
+    .fare-table th,
+    .fare-table td {
+      border: 1px solid #e2e8f0;
+      padding: 7px 8px;
+      text-align: left;
+    }
+
+    .fare-table th {
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .success-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #d1fae5;
+      color: var(--emerald-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px auto;
+    }
+
+    .success-icon-wrap svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* ==========================================================================
+       TRAFFIC ENFORCER THEME (Dark Navy Blue & Crisp White)
+       ========================================================================== */
+    :root {
+      --enforcer-navy: #0f2347;
+      --enforcer-dark: #1e3a8a;
+      --enforcer-hover: #172554;
+      --enforcer-accent: #2563eb;
+      --enforcer-light: #eff6ff;
+      --enforcer-border: #3b82f6;
+      --enforcer-glow: rgba(30, 58, 138, 0.45);
+    }
+
+    /* Dynamic Enforcer Mode for Login / Signup Cards */
+    .login-card.theme-enforcer,
+    .signup-card.theme-enforcer {
+      border-top: 4px solid #1e3a8a !important;
+      box-shadow: 0 12px 35px rgba(15, 35, 71, 0.18) !important;
+    }
+
+    .login-card.theme-enforcer .giant-lock-icon,
+    .signup-card.theme-enforcer .giant-lock-icon {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 10px 25px rgba(30, 58, 138, 0.45) !important;
+      border: 2px solid rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .login-card.theme-enforcer .figma-emerald-btn,
+    .signup-card.theme-enforcer .figma-emerald-btn {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(59, 130, 246, 0.6) !important;
+      box-shadow: 0 8px 22px rgba(30, 58, 138, 0.45) !important;
+    }
+
+    .login-card.theme-enforcer .figma-emerald-btn:hover,
+    .signup-card.theme-enforcer .figma-emerald-btn:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+    }
+
+    .login-card.theme-enforcer .input-pill:focus-within,
+    .signup-card.theme-enforcer .input-pill:focus-within {
+      border-color: #1d4ed8 !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    .login-card.theme-enforcer .input-pill:focus-within svg,
+    .signup-card.theme-enforcer .input-pill:focus-within svg {
+      color: #1d4ed8 !important;
+    }
+
+    .login-card.theme-enforcer .forgot-link,
+    .login-card.theme-enforcer .register-footer a,
+    .signup-card.theme-enforcer .register-footer a {
+      color: #1d4ed8 !important;
+    }
+
+    /* Distinct Role Tab Highlighting */
+    .role-tab.active[data-role="Traffic Enforcer"] {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.45) !important;
+      border: 1px solid rgba(59, 130, 246, 0.6) !important;
+    }
+
+    .role-tab.active[data-role="Traffic Enforcer"] svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+
+    .role-tab.active[data-role="Passenger"] {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+      border: 1px solid rgba(5, 150, 105, 0.5) !important;
+    }
+
+    .role-tab.active[data-role="Passenger"] svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+
+    /* Enforcer Official Badge Pill on Login/Signup */
+    .enforcer-portal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e3a8a;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      border: 1px solid #3b82f6;
+      box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+    }
+
+    .passenger-portal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #059669;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+    }
+
+    /* GLOBAL ENFORCER THEME (When Logged In as Traffic Enforcer) */
+    .user-role-enforcer .app-header {
+      border-bottom: 2px solid #1e3a8a !important;
+      background: #ffffff;
+    }
+
+    .user-role-enforcer .lock-seal {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.45) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-role-enforcer .sub-badge {
+      color: #1e3a8a !important;
+      font-weight: 800;
+      letter-spacing: 0.9px;
+    }
+
+    .user-badge.enforcer {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #3b82f6 !important;
+      box-shadow: 0 3px 10px rgba(30, 58, 138, 0.35) !important;
+    }
+
+    .user-role-enforcer .nav-btn.active {
+      color: #1e3a8a !important;
+    }
+
+    /* Verified View - Enforcer Officer Banner & Action */
+    .enforcer-officer-banner {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+      color: #ffffff;
+      border: 1px solid #3b82f6;
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+    }
+
+    .enforcer-officer-banner .badge-text {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .enforcer-officer-banner .badge-sub {
+      font-size: 0.7rem;
+      opacity: 0.85;
+    }
+
+    .btn-enforcer-action {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #3b82f6 !important;
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.35) !important;
+    }
+
+    /* Report Modal Enforcer Theme */
+    .report-role-badge.enforcer {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #3b82f6 !important;
+      box-shadow: 0 2px 8px rgba(30, 58, 138, 0.25);
+    }
+
+    .report-role-badge.enforcer strong {
+      color: #ffffff !important;
+      text-decoration: underline;
+    }
+
+    .modal-enforcer-btn {
+      background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%) !important;
+      color: #ffffff !important;
+      border: 1px solid #3b82f6 !important;
+      box-shadow: 0 4px 16px rgba(30, 58, 138, 0.4) !important;
+    }
+
+    .toast {
+      position: absolute;
+      top: 65px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      z-index: 2000;
+      transition: opacity 0.2s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .mt-2 {
+      margin-top: 10px;
+    }
+
+    .mt-3 {
+      margin-top: 16px;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="app-container">
+
+    <!-- Header — hidden when scanner is active (scanner has its own header) -->
+    <header id="app-header" class="app-header">
+      <div class="brand">
+        <div class="lock-seal">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>TABACO CITY TRD</h1>
+          <span class="sub-badge">Franchise Verifier</span>
+        </div>
+      </div>
+      <div class="header-actions">
+      </div>
+    </header>
+
+    <!-- Main Content Panel Router -->
+    <main class="main-content">
+
+      <!-- VIEW 1: Login Screen -->
+      <section id="view-login" class="view-panel">
+        <div id="login-card" class="figma-card login-card">
+          <div id="login-giant-icon" class="giant-lock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+            </svg>
+          </div>
+          <div id="login-portal-badge" class="passenger-portal-badge">Passenger Verifier Portal</div>
+          <h2 id="login-title">Franchise Management Verifier</h2>
+          <p id="login-sub" class="login-sub">Sign in with your TRD verifier account</p>
+
+          <div id="login-error-msg" class="login-error hidden">Invalid username or password.</div>
+
+          <form id="login-form" class="login-form" onsubmit="return false;">
+            <!-- Role Selection Segmented Control -->
+            <div class="role-selector-wrap">
+              <label class="role-group-label">Select Account Role:</label>
+              <div class="role-pill-tabs">
+                <button type="button" id="role-login-passenger" class="role-tab active" data-role="Passenger">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="16" height="16">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  Passenger
+                </button>
+                <button type="button" id="role-login-enforcer" class="role-tab" data-role="Traffic Enforcer">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="16" height="16">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  Traffic Enforcer
+                </button>
+              </div>
+            </div>
+
+            <div class="input-pill">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input id="input-username" type="text" placeholder="Username" autocomplete="username"
+                autocapitalize="words" />
+            </div>
+
+            <div class="input-pill input-password-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input id="input-password" type="password" placeholder="Password" autocomplete="current-password" />
+              <button type="button" class="btn-toggle-pwd" data-target="input-password"
+                title="Toggle password visibility">
+                <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                  </path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+
+            <button id="btn-login-submit" type="submit" class="figma-emerald-btn">
+              LOG IN AS PASSENGER
+            </button>
+
+            <button id="btn-goto-signup" type="button" class="figma-secondary-btn mt-2">
+              Create New Account
+            </button>
+          </form>
+
+          <div class="register-footer">
+            <p>Don't have an account? <a id="link-go-signup" href="#" onclick="return false;">Register here!</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 1b: Sign Up Screen -->
+      <section id="view-signup" class="view-panel">
+        <div id="signup-card" class="figma-card login-card">
+          <div id="signup-giant-icon" class="giant-lock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+          <div id="signup-portal-badge" class="passenger-portal-badge">Passenger Account Registration</div>
+          <h2 id="signup-title">Create Verifier Account</h2>
+          <p id="signup-sub" class="login-sub">Register to access the TRD franchise system</p>
+
+          <div id="signup-error-msg" class="login-error hidden"></div>
+          <div id="signup-success-msg" class="login-error hidden"
+            style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"></div>
+
+          <form id="signup-form" class="login-form" onsubmit="return false;">
+            <!-- Role Selection Segmented Control -->
+            <div class="role-selector-wrap">
+              <label class="role-group-label">Select Account Role:</label>
+              <div class="role-pill-tabs">
+                <button type="button" id="role-signup-passenger" class="role-tab active" data-role="Passenger">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="16" height="16">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  Passenger
+                </button>
+                <button type="button" id="role-signup-enforcer" class="role-tab" data-role="Traffic Enforcer">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="16" height="16">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  Traffic Enforcer
+                </button>
+              </div>
+            </div>
+
+            <div class="input-pill">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input id="signup-fullname" type="text" placeholder="Full Name" autocomplete="name"
+                autocapitalize="words" />
+            </div>
+
+            <div class="input-pill">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input id="signup-username" type="text" placeholder="Username" autocomplete="username"
+                autocapitalize="words" />
+            </div>
+
+            <div class="input-pill input-password-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input id="signup-password" type="password" placeholder="Password" autocomplete="new-password" />
+              <button type="button" class="btn-toggle-pwd" data-target="signup-password"
+                title="Toggle password visibility">
+                <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                  </path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div class="input-pill input-password-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input id="signup-confirm" type="password" placeholder="Confirm Password" autocomplete="new-password" />
+              <button type="button" class="btn-toggle-pwd" data-target="signup-confirm"
+                title="Toggle password visibility">
+                <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                  </path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+
+            <button id="btn-signup-submit" type="submit" class="figma-emerald-btn">
+              CREATE PASSENGER ACCOUNT
+            </button>
+
+            <button id="btn-goto-login" type="button" class="figma-secondary-btn mt-2">
+              Already have an account? Log In
+            </button>
+          </form>
+
+          <div class="register-footer">
+            <p>Already have an account? <a id="link-go-login" href="#" onclick="return false;">Sign in here!</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Instructions ("How It Works") -->
+      <section id="view-instructions" class="view-panel">
+        <div class="figma-card instructions-card">
+          <div class="top-icon-header">
+            <div class="giant-lock-icon small">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+              </svg>
+            </div>
+            <h2>How It Works</h2>
+            <p>Official 6-Step Verification Guide</p>
+          </div>
+
+          <div class="steps-list">
+            <!-- Step 1 -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div class="step-content">
+                <span class="step-num">Step 1</span>
+                <h3>Open App & Sign In</h3>
+                <p>Launch the app and log in with your Passenger or TRD Traffic Enforcer account.</p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </div>
+              <div class="step-content">
+                <span class="step-num">Step 2</span>
+                <h3>Allow Camera Access</h3>
+                <p>Grant camera permission when prompted to enable real-time QR code scanning.</p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+              </div>
+              <div class="step-content">
+                <span class="step-num">Step 3</span>
+                <h3>Select Vehicle Type</h3>
+                <p>Toggle between Pedicab or Tricycle mode using the switch button to match the vehicle.</p>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                  <path d="M14 14h3v3h-3z"></path>
+                  <path d="M17 17h4v4h-4z"></path>
+                  <path d="M14 20h3v1h-3z"></path>
+                </svg>
+              </div>
+              <div class="step-content">
+                <span class="step-num">Step 4</span>
+                <h3>Scan Official QR Code</h3>
+                <p>Align the camera reticle steadily with the official TRD QR code on the vehicle.</p>
+              </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+              </div>
+              <div class="step-content">
+                <span class="step-num">Step 5</span>
+                <h3>Verify Franchise Record</h3>
+                <p>Check operator, driver name, City Plate no., Parada / Route, and franchise validity.</p>
+              </div>
+            </div>
+
+            <!-- Step 6 (Optional) -->
+            <div class="step-card">
+              <div class="step-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"></path>
+                </svg>
+              </div>
+              <div class="step-content">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span class="step-num">Step 6</span>
+                  <span class="step-optional-badge">Optional</span>
+                </div>
+                <h3>Submit Report / Issue Citation</h3>
+                <p>Report overcharging directly to TRD, or issue citations if logged in as an Enforcer.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="guide-action-wrap">
+            <button id="btn-guide-start-scan" type="button" class="figma-emerald-btn guide-start-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span>START SCANNING NOW</span>
+            </button>
+            <div class="official-footer" style="margin-top: 14px; margin-bottom: 0;">
+              <p>© 2026 Tabaco City TRD • Transportation Regulation Division</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: Scanner — Figma Layout -->
+      <section id="view-scan" class="view-panel active">
+        <!-- Vehicle background images (separate independent elements) -->
+        <div id="scan-pedicab-bg" class="scan-vehicle-layer scan-pedicab-bg"></div>
+        <div id="scan-tricycle-bg" class="scan-vehicle-layer scan-tricycle-bg active"></div>
+
+        <!-- Top header: back button + hamburger -->
+        <div class="scan-top-header">
+          <button id="btn-scan-back" class="scan-circle-btn" title="Back">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button id="btn-scan-menu" class="scan-hamburger-btn" title="Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Green lock icon -->
+        <div id="btn-scan-lock" class="scan-lock-icon" style="cursor: pointer;" title="Go to Dashboard / Login">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+          </svg>
+        </div>
+
+        <!-- White scanner card -->
+        <div class="scan-card">
+          <h2>LIVE QR SCANNER</h2>
+          <p>Align driver QR code inside the frame (Pedicab or Tricycle)</p>
+
+          <!-- QR Viewport -->
+          <div class="camera-viewport-wrap">
+            <div id="reader"></div>
+
+            <!-- In-camera floating toolbar -->
+            <div class="camera-toolbar">
+              <button id="btn-torch" type="button" class="cam-tool-btn hidden" title="Toggle Flashlight">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </button>
+              <button id="btn-switch-cam" type="button" class="cam-tool-btn hidden" title="Switch Camera Lens">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M1 20v-6h6"></path>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div id="camera-prompt-wrap" class="camera-fallback-ui hidden">
+              <span style="font-size:2rem; margin-bottom:8px;">📷</span>
+              <p id="camera-status-msg" style="color:#f8fafc; font-size:0.85rem; font-weight:600; margin-bottom:12px;">
+                Connecting to camera...</p>
+              <button id="btn-allow-camera" type="button" class="figma-emerald-btn compact"
+                style="width:auto; padding:10px 22px; cursor:pointer;">
+                TAP TO OPEN CAMERA
+              </button>
+            </div>
+
+            <div id="scanner-overlay">
+              <div class="figma-reticle">
+                <span class="figma-corner top-left"></span>
+                <span class="figma-corner top-right"></span>
+                <span class="figma-corner bottom-left"></span>
+                <span class="figma-corner bottom-right"></span>
+                <div class="laser-beam"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="scanner-secondary-actions">
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none;" />
+            <button id="btn-upload-qr" type="button" class="btn-gallery-scan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span>Scan QR from Photo / Gallery</span>
+            </button>
+          </div>
+        </div>
+
+
+
+        <!-- Footer -->
+        <div class="scan-footer">
+          © 2026 Tabaco City TRD • Transportation Regulation Division. All Rights Reserved.
+        </div>
+      </section>
+
+      <!-- VIEW 4: Verification Result Profile -->
+      <section id="view-verification" class="view-panel">
+
+        <!-- User Account Bar on Record Page -->
+        <div id="record-user-profile-bar" class="record-user-profile-bar hidden">
+          <div class="user-profile-info">
+            <div class="user-avatar-circle" id="record-user-avatar">👤</div>
+            <div class="user-profile-text">
+              <span class="user-profile-name" id="record-user-name">User Account</span>
+              <span class="user-profile-role-badge" id="record-user-role-badge">👤 Passenger</span>
+            </div>
+          </div>
+          <button id="btn-logout" class="btn-record-logout" type="button" title="Log Out of Account">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Log Out</span>
+          </button>
+        </div>
+
+        <!-- 1. EMPTY STATE / WARNING (Shown when no QR has been scanned yet) -->
+        <div id="verification-empty-state" class="verification-empty-card">
+          <div class="empty-warning-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+              <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+            </svg>
+            <span>Scan Required</span>
+          </div>
+
+          <div class="empty-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              <path d="M14 14h3v3h-3z"></path>
+              <path d="M17 17h4v4h-4z"></path>
+              <path d="M14 20h3v1h-3z"></path>
+            </svg>
+          </div>
+
+          <h2>No QR Code Scanned Yet</h2>
+          <p class="empty-instruction-text">
+            No vehicle record is available. Please scan an official Tabaco City QR code on a Pedicab or Tricycle first to display and verify its franchise details.
+          </p>
+
+          <div class="empty-tips-box">
+            <strong>📋 How to verify:</strong>
+            <ul>
+              <li>Tap <strong>Scan QR Code Now</strong> below</li>
+              <li>Aim camera at the official TRD QR code on the vehicle</li>
+              <li>Operator, driver, plate & route will be verified instantly</li>
+            </ul>
+          </div>
+
+          <button id="btn-empty-start-scan" type="button" class="stack-btn btn-emerald">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>Scan QR Code Now</span>
+          </button>
+
+          <div class="official-footer">
+            <p>© 2026 Tabaco City TRD • Transportation Regulation Division. All Rights Reserved.</p>
+          </div>
+        </div>
+
+        <!-- 2. POPULATED RECORD DETAILS (Hidden initially until QR is scanned) -->
+        <div id="verification-card-content" class="verification-card hidden">
+
+          <!-- Enforcer Active Officer Banner (shown when logged in as Traffic Enforcer) -->
+          <div id="enforcer-verify-banner" class="enforcer-officer-banner hidden">
+            <div>
+              <div class="badge-text">🛡️ TRD TRAFFIC ENFORCEMENT ACTIVE</div>
+              <div class="badge-sub">Official Officer Law Enforcement Verification Mode</div>
+            </div>
+            <span style="font-size:1.3rem;">👮</span>
+          </div>
+
+          <!-- Seal + Title Header -->
+          <div class="verified-header">
+            <div class="verified-seal-wrap">
+              <img id="verified-seal" src="/seal.svg" alt="Tabaco City TRD Seal" />
+            </div>
+            <h2 id="verified-vehicle-title">Franchise Verified Unit</h2>
+            <p class="verified-sub">Tabaco City TRD - Official Record</p>
+            <div class="active-status-pill">
+              <span class="dot"></span>
+              <span>Active</span>
+            </div>
+          </div>
+
+          <!-- Section 1: Franchise Details (QR icon) -->
+          <div class="section-heading">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span>Franchise Details</span>
+          </div>
+
+          <div class="details-grid-2x2">
+            <div class="mint-box">
+              <div class="box-header">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Operator</span>
+              </div>
+              <div id="val-operator" class="box-value">—</div>
+            </div>
+
+            <div class="mint-box">
+              <div class="box-header">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Driver Name</span>
+              </div>
+              <div id="val-driver" class="box-value">—</div>
+            </div>
+
+            <div class="mint-box">
+              <div class="box-header">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>City Plate no.</span>
+              </div>
+              <div id="val-plate" class="box-value">—</div>
+            </div>
+
+            <div class="mint-box">
+              <div class="box-header">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                </svg>
+                <span>Parada/Route</span>
+              </div>
+              <div id="val-route" class="box-value">—</div>
+            </div>
+          </div>
+
+          <!-- Section 2: Vehicle-specific Franchise Details -->
+          <div class="section-heading mt-3" id="vehicle-section-heading">
+            <span id="vehicle-type-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" width="18" height="18">
+                <circle cx="5.5" cy="17.5" r="3.5" />
+                <circle cx="18.5" cy="17.5" r="3.5" />
+                <path d="M15 6h-5l-3 8h11l-3-8z" />
+                <path d="M15 6l3 5" />
+              </svg>
+            </span>
+            <span id="vehicle-section-label">Franchise Details</span>
+          </div>
+
+          <div class="mint-list-card">
+            <div class="mint-row">
+              <span class="row-label">Expiry Date</span>
+              <span id="val-expiry" class="row-val font-bold">—</span>
+            </div>
+            <div class="mint-row">
+              <span class="row-label">Tourist guide</span>
+              <span id="val-tourist" class="row-val green-text">—</span>
+            </div>
+            <div class="mint-row">
+              <span class="row-label">Availability</span>
+              <span id="val-availability" class="row-val font-bold">—</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="figma-buttons-stack">
+            <button id="btn-view-fare" type="button" class="stack-btn btn-fare">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" width="18" height="18">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v2m0 8v2m-4-6h8m-8 0a4 4 0 0 1 4-4m0 0a4 4 0 0 1 4 4" />
+              </svg>
+              View Standard Fare
+            </button>
+            <button id="btn-send-report" type="button" class="stack-btn btn-red">
+              Send Report
+            </button>
+            <button id="btn-rescan-code" type="button" class="stack-btn btn-emerald">
+              Scan Another QR Code
+            </button>
+          </div>
+
+          <div class="official-footer">
+            <p>© 2026 Tabaco City TRD • Transportation Regulation Division. All Rights Reserved.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: View Standard Fare Page (Figma 1:1 Design) -->
+      <section id="view-fare" class="view-panel">
+        <div class="fare-page-container">
+
+          <!-- Top Back to Dashboard Navigation -->
+          <div class="fare-top-bar">
+            <button id="btn-fare-back-dashboard" type="button" class="back-dashboard-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" width="20" height="20">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Back to Dashboard</span>
+            </button>
+          </div>
+
+          <!-- Seal + Titles -->
+          <div class="verified-header">
+            <div class="verified-seal-wrap">
+              <img src="/seal.svg" alt="Tabaco City TRD Seal" />
+            </div>
+            <h2 class="fare-main-title">Official Fare Matrix</h2>
+            <p id="fare-subtitle" class="verified-sub">Barangay / Local Area Rates (Tabaco City)</p>
+          </div>
+
+          <!-- Mode Pill Box -->
+          <div id="fare-matrix-pill" class="fare-matrix-pill">
+            Pedicab Standard Fare Matrix
+          </div>
+
+          <!-- Mint Green Outer Container -->
+          <div class="fare-mint-container">
+
+            <!-- Search Bar Input -->
+            <div class="fare-search-pill">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" width="18" height="18">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input id="fare-search-input" type="text" placeholder="Search  Destination..........." />
+            </div>
+
+            <!-- Table -->
+            <div class="fare-table-wrap">
+              <table id="figma-fare-table" class="figma-fare-table">
+                <thead>
+                  <tr id="fare-table-header-row">
+                    <!-- Populated dynamically -->
+                  </tr>
+                </thead>
+                <tbody id="fare-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Tricycle Specific Note -->
+            <div id="tricycle-fare-note" class="tricycle-fare-note hidden">
+              <strong>NOTE:</strong><br>
+              1. Only 5 passengers per Tricycle per trip are allowed
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="fare-buttons-row">
+              <button id="btn-fare-driver-info" type="button" class="fare-action-btn fare-btn-green">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.5" width="18" height="18">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                View Driver Info
+              </button>
+
+              <button id="btn-fare-violation" type="button" class="fare-action-btn fare-btn-blue">
+                Violation
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.5" width="18" height="18">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Red Overcharging Button -->
+            <button id="btn-fare-overcharging" type="button" class="fare-action-btn fare-btn-red">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z" />
+              </svg>
+              Report Overcharging
+            </button>
+
+            <!-- Footer -->
+            <div class="official-footer">
+              <p>© 2026 Tabaco City TRD • Transportation Regulation Division. All Rights Reserved.</p>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Fixed Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button id="nav-btn-login" class="nav-btn" data-target="view-login">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+          <polyline points="10 17 15 12 10 7"></polyline>
+        </svg>
+        <span>Account</span>
+      </button>
+      <button id="nav-btn-instructions" class="nav-btn" data-target="view-instructions">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+        </svg>
+        <span>Guide</span>
+      </button>
+      <button id="nav-btn-scan" class="nav-btn active" data-target="view-scan">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+        <span>Scanner</span>
+      </button>
+      <button id="nav-btn-verification" class="nav-btn" data-target="view-verification">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>Record</span>
+      </button>
+    </nav>
+
+    <!-- Modal 1: Standard Fare Matrix -->
+    <div id="fare-modal" class="modal-overlay hidden">
+      <div class="bottom-sheet">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3>Tabaco City Official Fare Matrix</h3>
+          <button id="btn-close-fare" type="button" class="close-btn">&times;</button>
+        </div>
+        <div class="sheet-body">
+          <p class="matrix-sub">Authorized rates set by Transportation Regulation Division</p>
+          <table class="fare-table">
+            <thead>
+              <tr>
+                <th>Distance / Zone</th>
+                <th>Regular</th>
+                <th>Student (20%)</th>
+                <th>Senior/PWD (20%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>First 1.0 km (Base Fare)</td>
+                <td>15.00 php</td>
+                <td>12.00 php</td>
+                <td>12.00 php</td>
+              </tr>
+              <tr>
+                <td>1.1 km – 3.0 km</td>
+                <td>20.00 php</td>
+                <td>16.00 php</td>
+                <td>16.00 php</td>
+              </tr>
+              <tr>
+                <td>3.1 km – 5.0 km</td>
+                <td>30.00 php</td>
+                <td>24.00 php</td>
+                <td>24.00 php</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Role-Based Violation Report -->
+    <div id="report-modal" class="modal-overlay hidden">
+      <div class="bottom-sheet">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header">
+          <h3 id="report-modal-title">Submit TRD Violation Report</h3>
+          <button id="btn-close-report" type="button" class="close-btn">&times;</button>
+        </div>
+        <div class="sheet-body">
+          <div id="report-role-badge" class="report-role-badge">
+            Logged in as: <strong id="report-user-role">Passenger</strong>
+          </div>
+
+          <form id="report-form">
+            <div class="input-pill mt-2">
+              <select id="report-type">
+                <!-- Dynamically populated by JS based on Passenger vs Traffic Enforcer role -->
+              </select>
+            </div>
+
+            <!-- Dynamic Fields -->
+            <div id="field-fare-wrap" class="input-pill mt-2">
+              <input id="report-actual-fare" type="number" placeholder="Actual Fare Charged (PHP e.g. 50)" required />
+            </div>
+
+            <div id="field-enforcer-badge-wrap" class="input-pill mt-2 hidden">
+              <input id="report-enforcer-id" type="text" placeholder="Enforcer Badge / Control No. (e.g. TRD-409)" />
+            </div>
+
+            <div id="field-citation-wrap" class="input-pill mt-2 hidden">
+              <input id="report-citation-no" type="text" placeholder="Ticket / Citation No. (e.g. CIT-2026-88)" />
+            </div>
+
+            <div class="input-pill mt-2">
+              <input id="report-remarks" type="text" placeholder="Additional Details / Location Remarks (Optional)" />
+            </div>
+
+            <button id="btn-report-submit" type="submit" class="figma-emerald-btn mt-3">
+              Submit Report to TRD Office
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 3: Success Dialog -->
+    <div id="success-modal" class="modal-overlay hidden">
+      <div class="bottom-sheet text-center">
+        <div class="success-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3>Submitted Success</h3>
+        <p class="text-muted">Your complaint has been registered with Tabaco City TRD Office.</p>
+        <button id="btn-close-success" type="button" class="figma-emerald-btn mt-3">OK, Got It</button>
+      </div>
+    </div>
+
+
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+      <span id="toast-message">Notification</span>
+    </div>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
