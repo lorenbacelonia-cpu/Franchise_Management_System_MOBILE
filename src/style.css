@@ -912,6 +912,12 @@ html, body {
   font-size: 0.8rem;
   font-weight: 700;
   margin-top: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.active-status-pill.unregistered {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 .active-status-pill .dot {

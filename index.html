@@ -1191,6 +1191,12 @@
       font-size: 0.78rem;
       font-weight: 700;
       margin-top: 6px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .active-status-pill.unregistered {
+      background: #ef4444;
+      color: #ffffff;
     }
 
     .active-status-pill .dot {
@@ -2513,9 +2519,9 @@
             </div>
             <h2 id="verified-vehicle-title">Franchise Verified Unit</h2>
             <p class="verified-sub">Tabaco City TRD - Official Record</p>
-            <div class="active-status-pill">
-              <span class="dot"></span>
-              <span>Active</span>
+            <div class="active-status-pill" id="verified-status-pill">
+              <span class="dot" id="verified-status-dot"></span>
+              <span id="verified-status-text">Active</span>
             </div>
           </div>
 

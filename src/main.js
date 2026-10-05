@@ -666,7 +666,7 @@ async function handleScannedCode(rawText) {
   if (!rawText) return;
 
   console.log('SCANNED RAW CODE:', rawText);
-  showToast('🔍 Verifying QR Code with Database...');
+  showToast('🔍 Verifying QR Code...');
 
   // 1. Universal Dynamic QR Code Parsing (detects Pedicab or Tricycle automatically)
   let record = parseQRCode(rawText);
@@ -680,8 +680,9 @@ async function handleScannedCode(rawText) {
       isFoundInDb = true;
     } else {
       record.fromDatabase = false;
-      record.status = 'Not Registered';
-      record.availability = 'Not in TRD Database';
+      record.status = 'Unregistered';
+      record.availability = 'Unregistered';
+      record.vehicleTitle = `${record.vehicleType || 'Pedicab'} Unregistered Unit`;
     }
   } catch (err) {
     console.warn('Database lookup notice:', err);
@@ -694,7 +695,7 @@ async function handleScannedCode(rawText) {
   if (isFoundInDb) {
     showToast(`✅ Verified Active ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
   } else {
-    showToast(`⚠️ Unit ${record.plateNo || 'QR'} not in TRD Database (Unregistered or Removed)`);
+    showToast(`⚠️ ${record.vehicleType || 'Pedicab'} Unregistered Unit (${record.plateNo || 'QR'})`);
   }
   switchView('view-verification');
 }
@@ -722,8 +723,21 @@ function renderVerificationDashboard(record) {
   const titleEl = document.getElementById('verified-vehicle-title');
   if (titleEl) {
     titleEl.textContent = isLiveInDb 
-      ? `${vehicleType} Verified Unit (TRD Database)`
-      : `${vehicleType} Unregistered Unit (Not in Database)`;
+      ? `${vehicleType} Verified Unit`
+      : `${vehicleType} Unregistered Unit`;
+  }
+
+  const pillEl = document.getElementById('verified-status-pill');
+  const pillTextEl = document.getElementById('verified-status-text');
+  if (pillTextEl) {
+    pillTextEl.textContent = isLiveInDb ? (record.status || 'Active') : 'Unregistered';
+  }
+  if (pillEl) {
+    if (isLiveInDb) {
+      pillEl.classList.remove('unregistered');
+    } else {
+      pillEl.classList.add('unregistered');
+    }
   }
 
   const opEl = document.getElementById('val-operator');
@@ -746,7 +760,7 @@ function renderVerificationDashboard(record) {
 
   const availEl = document.getElementById('val-availability');
   if (availEl) {
-    availEl.textContent = isLiveInDb ? (record.availability || 'Available') : '⚠️ Not in TRD Database';
+    availEl.textContent = isLiveInDb ? (record.availability || 'Available') : (record.availability || 'Unregistered');
     availEl.style.color = isLiveInDb ? '#059669' : '#dc2626';
   }
 
