@@ -1,17 +1,13 @@
 -- ==============================================================================
--- TABACO CITY TRD FRANCHISE MANAGEMENT SYSTEM - MOBILE DATABASE SCHEMA
--- Handles Mobile Accounts (Enforcers & Passengers) and Reports/Complaints
--- (Franchise Records are managed directly by the TRD Admin System)
+-- TABACO CITY TRD FRANCHISE MANAGEMENT SYSTEM - MOBILE & REPORTS DATABASE SCHEMA
+-- Handles Mobile Accounts (Enforcers & Passengers),
+-- SEPARATED Storage for:
+-- 1. Traffic Enforcer Violations & Citations (enforcer_violations + violation_attachments)
+-- 2. Passenger Overcharging & Reports (passenger_complaints + complaint_attachments)
 -- ==============================================================================
 
--- 1. DROP PREVIOUS MOBILE TABLES IF NEEDED
-DROP TABLE IF EXISTS passenger_complaints CASCADE;
-DROP TABLE IF EXISTS account_enforcer_mobile CASCADE;
-DROP TABLE IF EXISTS account_passenger_mobile CASCADE;
-
--- 2. CREATE TABLE: account_enforcer_mobile
--- Stores strictly: username, fullname, password
-CREATE TABLE public.account_enforcer_mobile (
+-- 1. TABLE: account_enforcer_mobile (Enforcer Authentication)
+CREATE TABLE IF NOT EXISTS public.account_enforcer_mobile (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
@@ -19,9 +15,8 @@ CREATE TABLE public.account_enforcer_mobile (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. CREATE TABLE: account_passenger_mobile
--- Stores strictly: username, fullname, password
-CREATE TABLE public.account_passenger_mobile (
+-- 2. TABLE: account_passenger_mobile (Passenger Authentication)
+CREATE TABLE IF NOT EXISTS public.account_passenger_mobile (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
@@ -29,42 +24,100 @@ CREATE TABLE public.account_passenger_mobile (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. CREATE TABLE: passenger_complaints
--- Records passenger overcharging reports and enforcer traffic citations
-CREATE TABLE public.passenger_complaints (
+-- ==============================================================================
+-- 3. SEPARATED TABLE FOR TRAFFIC ENFORCERS: enforcer_violations
+-- Records official apprehension citations, expired franchise tickets, out-of-line, etc.
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.enforcer_violations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  reporter_name TEXT NOT NULL,
-  reporter_role TEXT NOT NULL DEFAULT 'Passenger',
-  report_type TEXT NOT NULL,
-  plate_no TEXT NOT NULL,
-  vehicle_type TEXT DEFAULT 'Pedicab',
+  enforcer_name TEXT NOT NULL,
+  enforcer_badge TEXT NOT NULL,
+  citation_no TEXT,
+  city_plate_number TEXT,
+  mtop_number TEXT,
+  vehicle_category TEXT DEFAULT 'Pedicab',
+  driver_name TEXT,
+  violation_type TEXT NOT NULL,
+  remarks TEXT,
+  description TEXT,
+  incident_date DATE DEFAULT CURRENT_DATE,
+  status TEXT DEFAULT 'Pending TRD Review',
+  evidence_image TEXT,        -- Stores PNG / JPEG Base64 or Storage URL
+  evidence_filename TEXT,     -- Stores photo filename (e.g. ticket_photo.jpg)
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Photo attachments dedicated to enforcer citations
+CREATE TABLE IF NOT EXISTS public.violation_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  violation_id UUID REFERENCES public.enforcer_violations(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  file_size INTEGER DEFAULT 0,
+  image_data TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ==============================================================================
+-- 4. SEPARATED TABLE FOR PASSENGERS: passenger_complaints
+-- Records passenger overcharging, rude behavior, and service complaints.
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.passenger_complaints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  complainant_name TEXT NOT NULL,
+  city_plate_number TEXT,
+  mtop_number TEXT,
+  vehicle_category TEXT DEFAULT 'Pedicab',
   driver_name TEXT,
   actual_fare NUMERIC,
-  enforcer_badge TEXT,
-  citation_no TEXT,
-  remarks TEXT,
-  status TEXT DEFAULT 'Pending Review',
+  incident_date DATE DEFAULT CURRENT_DATE,
+  issue_type TEXT NOT NULL DEFAULT 'Overcharging (Excess Fare)',
+  description TEXT,
+  status TEXT DEFAULT 'Under Investigation',
+  evidence_image TEXT,        -- Stores PNG / JPEG Base64 or Storage URL
+  evidence_filename TEXT,     -- Stores photo filename (e.g. fare_receipt.png)
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Ensure image columns exist on passenger_complaints if table was already created
+ALTER TABLE public.passenger_complaints ADD COLUMN IF NOT EXISTS evidence_image TEXT;
+ALTER TABLE public.passenger_complaints ADD COLUMN IF NOT EXISTS evidence_filename TEXT;
+ALTER TABLE public.passenger_complaints ADD COLUMN IF NOT EXISTS driver_name TEXT;
+ALTER TABLE public.passenger_complaints ADD COLUMN IF NOT EXISTS actual_fare NUMERIC;
+
+-- Photo attachments dedicated to passenger complaints
+CREATE TABLE IF NOT EXISTS public.complaint_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  complaint_id UUID REFERENCES public.passenger_complaints(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  file_size INTEGER DEFAULT 0,
+  image_data TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- ==============================================================================
--- PERMISSIONS / ROW LEVEL SECURITY (RLS)
--- Disabling RLS allows the mobile web app to write (sign up) and read (log in)
--- without 401 Unauthorized / RLS 42501 errors.
+-- ROW LEVEL SECURITY (RLS) & ACCESS PERMISSIONS
 -- ==============================================================================
 
 ALTER TABLE public.account_enforcer_mobile DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.account_passenger_mobile DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enforcer_violations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.violation_attachments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.passenger_complaints DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.complaint_attachments DISABLE ROW LEVEL SECURITY;
 
--- Grant standard permissions to anon and authenticated roles
 GRANT ALL ON TABLE public.account_enforcer_mobile TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.account_passenger_mobile TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.enforcer_violations TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.violation_attachments TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.passenger_complaints TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.complaint_attachments TO anon, authenticated, service_role;
 
 -- ==============================================================================
 -- INITIAL SEED DATA
--- Default accounts for mobile testing
 -- ==============================================================================
 
 -- Seed Enforcer Accounts
@@ -79,18 +132,3 @@ INSERT INTO public.account_passenger_mobile (username, fullname, password) VALUE
   ('Passenger', 'Maria Santos', 'passenger123'),
   ('Pedro', 'Pedro Penduko', 'pedro123')
 ON CONFLICT (username) DO NOTHING;
-
--- Seed Official Pedicab Franchise Records
-INSERT INTO public.franchise_records (plate_no, operator, driver, route, vehicle_type, expiry, tourist_guide, availability, status) VALUES
-  ('1243', 'Andrie B. Barasona', 'Salvador B. Bacelonia', 'Sua-Igot 24 Tabaco', 'Pedicab', '2026-12-31', true, 'Available', 'Active'),
-  ('0821', 'Carlos Mendoza', 'Rogelio Alcantara', 'Centro - Fatima Route', 'Pedicab', '2026-12-31', true, 'Available', 'Active'),
-  ('0455', 'Elena Ramirez', 'Danilo Gomez', 'San Roque - Divisoria', 'Pedicab', '2026-12-31', false, 'Available', 'Active'),
-  ('0932', 'Roberto Tan', 'Nestor Cruz', 'Tabaco Public Market - Tagas', 'Pedicab', '2026-12-31', true, 'Available', 'Active')
-ON CONFLICT (plate_no) DO NOTHING;
-
--- Seed Official Tricycle Franchise Records
-INSERT INTO public.franchise_records (plate_no, operator, driver, route, vehicle_type, expiry, tourist_guide, availability, status) VALUES
-  ('5521', 'Tabaco Tricycle Operators Corp', 'Eduardo Ramos', 'Sua-Igot to BTC / Tabaco', 'Tricycle', '2026-12-31', true, 'Available', 'Active'),
-  ('7710', 'Bicol Transport Coop', 'Felipe Santos', 'Centro to Oras Terminal', 'Tricycle', '2026-12-31', false, 'Available', 'Active'),
-  ('3319', 'Mayon TODA Association', 'Arnel Bautista', 'San Carlos - Pawa Route', 'Tricycle', '2026-12-31', true, 'Available', 'Active')
-ON CONFLICT (plate_no) DO NOTHING;

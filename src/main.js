@@ -2,13 +2,18 @@ import './style.css';
 import { parseQRCode } from './parser.js';
 import { initScanner, stopScanner, setSoundEnabled, isSoundActive, switchNextCamera, toggleTorch, scanImageFile } from './scanner.js';
 import { saveScanToHistory } from './history.js';
-import { fetchFranchiseByPlate, dbRowToRecord, submitViolationReport } from './db.js';
+import { fetchFranchiseByPlate, dbRowToRecord, submitViolationReport, fetchRoleNotifications, markNotificationAsRead, markAllNotificationsRead, subscribeToRealtimeStatusUpdates, deleteReportRecord, deleteFranchiseRecord } from './db.js';
 import { loginUser, logoutUser, getCurrentUser, isLoggedIn, registerUser, formatFormalName, formatFormalUsername } from './auth.js';
 
 let activeView = 'view-scan';
 let currentVerifiedRecord = null;
 let selectedLoginRole = 'Passenger';
 let selectedSignupRole = 'Passenger';
+
+let currentRoleNotifications = [];
+let currentNotifFilter = 'all';
+let notifPollInterval = null;
+let realtimeUnsubscribe = null;
 
 const ENFORCER_SHIELD_SVG = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -91,11 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVerificationActions();
   setupFareMatrixView();
   setupModals();
+  setupNotificationsCenter();
   setupLogout();
 
   // Restore logged-in state if active session exists
   if (isLoggedIn()) {
     showLoggedInState(getCurrentUser());
+  } else {
+    loadAndRenderNotifications();
   }
 
   // Scanner is the default landing page — hide app header & bottom nav initially
@@ -442,6 +450,19 @@ function showLoggedInState(user) {
       sendReportBtn.classList.add('btn-red');
     }
   }
+
+  // Subscribe to live status updates made by Admin in Supabase Realtime
+  if (realtimeUnsubscribe) {
+    try { realtimeUnsubscribe(); } catch { /* ignore */ }
+    realtimeUnsubscribe = null;
+  }
+  realtimeUnsubscribe = subscribeToRealtimeStatusUpdates(user, (payload) => {
+    console.log('🔔 Live Admin status update received:', payload);
+    loadAndRenderNotifications(true);
+  });
+
+  // Refresh notifications and badge counter for the logged-in role
+  loadAndRenderNotifications();
 }
 
 /* ==========================================================================
@@ -548,6 +569,14 @@ function setupLogout() {
     applyLoginRoleTheme('Passenger');
     applySignupRoleTheme('Passenger');
 
+    if (realtimeUnsubscribe) {
+      try { realtimeUnsubscribe(); } catch { /* ignore */ }
+      realtimeUnsubscribe = null;
+    }
+
+    currentRoleNotifications = [];
+    updateNotificationBadges(0);
+
     showToast('Logged out successfully.');
     switchView('view-login');
   });
@@ -637,16 +666,22 @@ async function handleScannedCode(rawText) {
   if (!rawText) return;
 
   console.log('SCANNED RAW CODE:', rawText);
-  showToast('🔍 Verifying QR Code...');
+  showToast('🔍 Verifying QR Code with Database...');
 
   // 1. Universal Dynamic QR Code Parsing (detects Pedicab or Tricycle automatically)
   let record = parseQRCode(rawText);
+  let isFoundInDb = false;
 
   // 2. Check Supabase database across all admin tables for live verified records
   try {
     const dbRow = await fetchFranchiseByPlate(record.plateNo, rawText);
     if (dbRow) {
       record = dbRowToRecord(dbRow, rawText);
+      isFoundInDb = true;
+    } else {
+      record.fromDatabase = false;
+      record.status = 'Not Registered';
+      record.availability = 'Not in TRD Database';
     }
   } catch (err) {
     console.warn('Database lookup notice:', err);
@@ -655,7 +690,12 @@ async function handleScannedCode(rawText) {
   currentVerifiedRecord = record;
   saveScanToHistory(record);
   renderVerificationDashboard(record);
-  showToast(`✅ Verified ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
+
+  if (isFoundInDb) {
+    showToast(`✅ Verified Active ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
+  } else {
+    showToast(`⚠️ Unit ${record.plateNo || 'QR'} not in TRD Database (Unregistered or Removed)`);
+  }
   switchView('view-verification');
 }
 
@@ -677,10 +717,13 @@ function renderVerificationDashboard(record) {
 
   const vehicleType = record.vehicleType || 'Pedicab';
   const isPedicab = vehicleType.toLowerCase() === 'pedicab';
+  const isLiveInDb = Boolean(record.fromDatabase);
 
   const titleEl = document.getElementById('verified-vehicle-title');
   if (titleEl) {
-    titleEl.textContent = `${vehicleType} Verified Unit`;
+    titleEl.textContent = isLiveInDb 
+      ? `${vehicleType} Verified Unit (TRD Database)`
+      : `${vehicleType} Unregistered Unit (Not in Database)`;
   }
 
   const opEl = document.getElementById('val-operator');
@@ -702,7 +745,10 @@ function renderVerificationDashboard(record) {
   if (tourEl) tourEl.textContent = `• ${record.touristGuide || 'Yes'}`;
 
   const availEl = document.getElementById('val-availability');
-  if (availEl) availEl.textContent = record.availability || 'Available';
+  if (availEl) {
+    availEl.textContent = isLiveInDb ? (record.availability || 'Available') : '⚠️ Not in TRD Database';
+    availEl.style.color = isLiveInDb ? '#059669' : '#dc2626';
+  }
 
   const user = getCurrentUser();
   const isEnforcer = user?.role === 'Traffic Enforcer';
@@ -903,6 +949,148 @@ function setupFareMatrixView() {
 }
 
 /* ==========================================================================
+   REPORT / CITATION FILE ATTACHMENT CONTROLLER
+   ========================================================================== */
+let currentReportAttachment = null;
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 KB';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+/**
+ * High-performance browser image compressor using HTML5 Canvas.
+ * Downscales ultra-high-resolution phone photos to a maximum width/height of 1200px
+ * and compresses to lightweight JPEG, reducing 5MB+ camera photos to ~70-150KB.
+ */
+function compressImage(file, maxWidth = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ dataUrl: e.target.result, size: file.size });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxWidth) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxWidth) / height);
+            height = maxWidth;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // Estimate byte size from Base64 string
+        const base64Length = dataUrl.length - (dataUrl.indexOf(',') + 1);
+        const approxBytes = Math.round((base64Length * 3) / 4);
+
+        resolve({ dataUrl, size: approxBytes });
+      };
+      img.onerror = () => {
+        // Fallback to raw dataUrl if image decoding fails
+        resolve({ dataUrl: event.target.result, size: file.size });
+      };
+      img.src = event.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleSelectedAttachmentFile(file) {
+  if (!file) return;
+
+  // Maximum file size check (15MB before compression)
+  if (file.size > 15 * 1024 * 1024) {
+    showToast('⚠️ File is too large. Please select a file under 15MB.');
+    return;
+  }
+
+  showToast('📎 Processing attachment...');
+
+  try {
+    const isImage = file.type.startsWith('image/');
+    const { dataUrl, size } = await compressImage(file);
+
+    currentReportAttachment = {
+      name: file.name,
+      size: size || file.size,
+      sizeFormatted: formatFileSize(size || file.size),
+      type: file.type || 'application/octet-stream',
+      isImage,
+      dataUrl
+    };
+
+    // Render Preview
+    const previewContainer = document.getElementById('report-attachment-preview');
+    const previewImg = document.getElementById('preview-image');
+    const previewDocIcon = document.getElementById('preview-doc-icon');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewFilesize = document.getElementById('preview-filesize');
+    const sectionContainer = document.getElementById('report-attachment-section');
+
+    if (previewFilename) previewFilename.textContent = file.name;
+    if (previewFilesize) previewFilesize.textContent = currentReportAttachment.sizeFormatted;
+
+    if (isImage) {
+      if (previewImg) {
+        previewImg.src = dataUrl;
+        previewImg.classList.remove('hidden');
+      }
+      if (previewDocIcon) previewDocIcon.classList.add('hidden');
+    } else {
+      if (previewImg) previewImg.classList.add('hidden');
+      if (previewDocIcon) previewDocIcon.classList.remove('hidden');
+    }
+
+    if (previewContainer) previewContainer.classList.remove('hidden');
+    if (sectionContainer) sectionContainer.classList.add('has-file');
+
+    showToast(`✓ Attached: ${file.name}`);
+  } catch (err) {
+    console.error('Error attaching file:', err);
+    showToast('❌ Failed to process file. Please try another photo.');
+  }
+}
+
+function clearReportAttachment() {
+  currentReportAttachment = null;
+
+  const fileInput = document.getElementById('report-file-input');
+  const cameraInput = document.getElementById('report-camera-input');
+  if (fileInput) fileInput.value = '';
+  if (cameraInput) cameraInput.value = '';
+
+  const previewContainer = document.getElementById('report-attachment-preview');
+  const previewImg = document.getElementById('preview-image');
+  const sectionContainer = document.getElementById('report-attachment-section');
+
+  if (previewImg) previewImg.src = '';
+  if (previewContainer) previewContainer.classList.add('hidden');
+  if (sectionContainer) sectionContainer.classList.remove('has-file');
+}
+
+/* ==========================================================================
    ROLE-BASED VIOLATION REPORTING MODAL PERMISSIONS
    ========================================================================== */
 function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultType = null) {
@@ -929,11 +1117,19 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
     return;
   }
 
-  // 3. CONFIGURE & OPEN REPORT FORM
+  // 3. Reset any previous file attachment state
+  clearReportAttachment();
+
+  // 4. CONFIGURE & OPEN REPORT FORM
+  const modalEl = document.getElementById('report-modal');
   const titleEl = document.getElementById('report-modal-title');
   const userRoleText = document.getElementById('report-user-role');
   const reportRoleBadge = document.getElementById('report-role-badge');
   const reportTypeSelect = document.getElementById('report-type');
+
+  if (modalEl) {
+    modalEl.classList.toggle('theme-enforcer-modal', isEnforcer);
+  }
 
   if (titleEl) {
     if (isEnforcer) {
@@ -951,13 +1147,45 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
     reportRoleBadge.classList.toggle('enforcer', isEnforcer);
   }
 
+  const targetPlateEl = document.getElementById('report-target-plate');
+  if (targetPlateEl) {
+    targetPlateEl.textContent = currentVerifiedRecord?.plateNo || '—';
+  }
+
+  // Pre-fill scanned unit banner details from live scan
+  const bannerTypeBadge = document.getElementById('report-banner-type-badge');
+  const bannerPlate = document.getElementById('report-banner-plate');
+  const bannerDriver = document.getElementById('report-banner-driver');
+  const bannerStatus = document.getElementById('report-banner-status');
+
+  if (bannerTypeBadge) bannerTypeBadge.textContent = currentVerifiedRecord?.vehicleType || 'Pedicab';
+  if (bannerPlate) bannerPlate.textContent = `Plate: ${currentVerifiedRecord?.plateNo || '—'}`;
+  if (bannerDriver) bannerDriver.textContent = `Driver: ${currentVerifiedRecord?.driver || 'Official Driver'}`;
+  if (bannerStatus) bannerStatus.textContent = currentVerifiedRecord?.status === 'Active' ? '✓ Verified Unit' : '✓ Scanned Unit';
+
+  // Customize file attachment labels according to user role
+  const attachLabel = document.getElementById('report-attachment-label-text');
+  const cameraBtnText = document.getElementById('btn-camera-text');
+  const uploadBtnText = document.getElementById('btn-upload-text');
+
+  if (attachLabel) {
+    attachLabel.textContent = isEnforcer ? 'Attach Photo of Evidence (PNG / JPEG)' : 'Attach Proof / Fare Receipt';
+  }
+  if (cameraBtnText) {
+    cameraBtnText.textContent = isEnforcer ? '📷 Snap Evidence Photo' : 'Take Photo';
+  }
+  if (uploadBtnText) {
+    uploadBtnText.textContent = isEnforcer ? '📁 Upload Photo Evidence' : 'Upload Receipt / File';
+  }
+
   if (reportTypeSelect) {
     if (isEnforcer) {
       reportTypeSelect.innerHTML = `
-        <option value="Official Overcharging Citation">Official Overcharging Citation</option>
+        <option value="Illegal Route / Out of Line">Illegal Route / Out of Line Operation</option>
         <option value="No Franchise / Expired Permit">No Franchise / Expired TRD Permit</option>
-        <option value="Illegal Route Operation">Illegal Route / Out of Line Operation</option>
-        <option value="Refusal of Service">Refusal of Public Transport Service</option>
+        <option value="Official Overcharging Citation">Official Overcharging Citation</option>
+        <option value="Obstruction of Traffic">Obstruction of Traffic / Illegal Parking</option>
+        <option value="Refusal of Public Transport">Refusal of Public Transport Service</option>
       `;
     } else {
       reportTypeSelect.innerHTML = `
@@ -973,13 +1201,14 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
   const fareWrap = document.getElementById('field-fare-wrap');
   const submitBtn = document.getElementById('btn-report-submit');
 
-  if (enforcerBadgeWrap) enforcerBadgeWrap.classList.toggle('hidden', !isEnforcer);
-  if (citationWrap) citationWrap.classList.toggle('hidden', !isEnforcer);
-  if (fareWrap) fareWrap.classList.remove('hidden');
+  // Enforcer does NOT need manual badge or manual driver input (already scanned)
+  if (enforcerBadgeWrap) enforcerBadgeWrap.classList.add('hidden');
+  if (citationWrap) citationWrap.classList.add('hidden');
+  if (fareWrap) fareWrap.classList.toggle('hidden', isEnforcer);
 
   if (submitBtn) {
     submitBtn.classList.toggle('modal-enforcer-btn', isEnforcer);
-    submitBtn.textContent = isEnforcer ? 'SUBMIT OFFICIAL TRAFFIC CITATION' : 'Submit Report to TRD Office';
+    submitBtn.textContent = isEnforcer ? 'Attach Image' : 'Submit Report to TRD Office';
   }
 
   document.getElementById('report-modal').classList.remove('hidden');
@@ -996,8 +1225,43 @@ function setupModals() {
 
   const closeReportBtn = document.getElementById('btn-close-report');
   if (closeReportBtn) closeReportBtn.addEventListener('click', () => {
+    clearReportAttachment();
     document.getElementById('report-modal').classList.add('hidden');
   });
+
+  // Camera & File Attachment Listeners
+  const btnCamera = document.getElementById('btn-report-camera');
+  const btnUpload = document.getElementById('btn-report-upload');
+  const cameraInput = document.getElementById('report-camera-input');
+  const fileInput = document.getElementById('report-file-input');
+  const btnRemoveAttach = document.getElementById('btn-remove-attachment');
+
+  if (btnCamera && cameraInput) {
+    btnCamera.addEventListener('click', () => {
+      cameraInput.click();
+    });
+    cameraInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleSelectedAttachmentFile(file);
+    });
+  }
+
+  if (btnUpload && fileInput) {
+    btnUpload.addEventListener('click', () => {
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleSelectedAttachmentFile(file);
+    });
+  }
+
+  if (btnRemoveAttach) {
+    btnRemoveAttach.addEventListener('click', () => {
+      clearReportAttachment();
+      showToast('Attachment removed.');
+    });
+  }
 
   const reportForm = document.getElementById('report-form');
   if (reportForm) reportForm.addEventListener('submit', async (e) => {
@@ -1018,11 +1282,13 @@ function setupModals() {
       driver_name: currentVerifiedRecord?.driver || 'Salvador B. Bacelonia',
       vehicle_type: currentVerifiedRecord?.vehicleType || 'Pedicab',
       reporter_name: user?.full_name || user?.username || (isEnforcer ? 'TRD Enforcer' : 'Passenger'),
+      reporter_username: user?.username || '',
       reporter_role: roleName,
       fare_charged: actualFare,
-      enforcer_badge: enforcerBadge,
+      enforcer_badge: enforcerBadge || (isEnforcer ? (user?.username ? `TRD-ENF-${user.username}` : 'TRD-ENF-001') : ''),
       citation_no: citationNo,
-      description: remarks
+      description: remarks,
+      attachment: currentReportAttachment
     };
 
     try {
@@ -1031,15 +1297,436 @@ function setupModals() {
       console.warn('Submit report background note:', err);
     }
 
+    // Success dialog setup
+    const successModal = document.getElementById('success-modal');
+    const successTitle = document.getElementById('success-modal-title');
+    const successSub = document.getElementById('success-modal-sub');
+    const successAttachInfo = document.getElementById('success-attachment-info');
+    const successAttachText = document.getElementById('success-attachment-text');
+
+    if (successTitle) {
+      successTitle.textContent = isEnforcer ? 'Citation Registered' : 'Report Submitted';
+    }
+    if (successSub) {
+      successSub.textContent = isEnforcer
+        ? `Traffic citation ticket recorded for ${payload.vehicle_type} Plate #${payload.plate_no}.`
+        : `Your complaint has been registered with Tabaco City TRD Office.`;
+    }
+
+    if (successAttachInfo && successAttachText) {
+      if (currentReportAttachment?.name) {
+        successAttachText.textContent = `📎 1 Attachment Included: ${currentReportAttachment.name}`;
+        successAttachInfo.classList.remove('hidden');
+      } else {
+        successAttachInfo.classList.add('hidden');
+      }
+    }
+
+    // Hide report modal and show success modal
     document.getElementById('report-modal').classList.add('hidden');
-    document.getElementById('success-modal').classList.remove('hidden');
-    showToast(`✅ ${roleName} report saved to database.`);
+    if (successModal) successModal.classList.remove('hidden');
+
+    showToast(`✅ ${roleName} report submitted with attachment.`);
+    clearReportAttachment();
+
+    // Immediately refresh status notifications for this user
+    loadAndRenderNotifications(true);
   });
 
   const closeSuccessBtn = document.getElementById('btn-close-success');
   if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', () => {
     document.getElementById('success-modal').classList.add('hidden');
   });
+}
+
+/* ==========================================================================
+   ROLE-BASED STATUS NOTIFICATIONS CONTROLLER
+   ========================================================================== */
+
+function setupNotificationsCenter() {
+  // 1. Header notification button
+  const btnHeaderNotifs = document.getElementById('btn-header-notifs');
+  if (btnHeaderNotifs) btnHeaderNotifs.addEventListener('click', () => openNotificationsModal());
+
+  // 2. Modal close buttons
+  const btnCloseNotifs = document.getElementById('btn-close-notifs');
+  const btnDismissNotifs = document.getElementById('btn-dismiss-notifs');
+
+  if (btnCloseNotifs) btnCloseNotifs.addEventListener('click', () => closeNotificationsModal());
+  if (btnDismissNotifs) btnDismissNotifs.addEventListener('click', () => closeNotificationsModal());
+
+  // 3. Refresh button
+  const btnRefreshNotifs = document.getElementById('btn-refresh-notifs');
+  if (btnRefreshNotifs) {
+    btnRefreshNotifs.addEventListener('click', async () => {
+      btnRefreshNotifs.style.transform = 'rotate(360deg)';
+      btnRefreshNotifs.style.transition = 'transform 0.5s ease';
+      showToast('🔄 Refreshing status notifications...');
+      await loadAndRenderNotifications(false);
+      setTimeout(() => {
+        btnRefreshNotifs.style.transform = '';
+        btnRefreshNotifs.style.transition = '';
+      }, 500);
+    });
+  }
+
+  // 4. Mark all as read
+  const btnMarkAll = document.getElementById('btn-mark-all-read');
+  if (btnMarkAll) {
+    btnMarkAll.addEventListener('click', () => {
+      const allIds = currentRoleNotifications.map(n => n.id);
+      markAllNotificationsRead(allIds);
+      currentRoleNotifications.forEach(n => { n.isRead = true; });
+      updateNotificationBadges(0);
+      renderNotificationsList();
+      showToast('✓ All notifications marked as read.');
+    });
+  }
+
+  // 5. Filter tabs
+  const filterTabs = document.querySelectorAll('.notif-filter-tabs .notif-tab');
+  filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentNotifFilter = tab.getAttribute('data-filter') || 'all';
+      renderNotificationsList();
+    });
+  });
+
+  // 6. Live floating status banner handlers
+  const bannerCloseBtn = document.getElementById('btn-banner-close');
+  const liveBanner = document.getElementById('live-status-banner');
+  if (bannerCloseBtn) {
+    bannerCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (liveBanner) liveBanner.classList.add('hidden');
+    });
+  }
+  if (liveBanner) {
+    liveBanner.addEventListener('click', () => {
+      liveBanner.classList.add('hidden');
+      openNotificationsModal();
+    });
+  }
+
+  // 7. Periodic background refresh (every 25 seconds for live status updates)
+  if (notifPollInterval) clearInterval(notifPollInterval);
+  notifPollInterval = setInterval(() => {
+    if (isLoggedIn()) {
+      loadAndRenderNotifications(false);
+    }
+  }, 25000);
+}
+
+/**
+ * Open Notifications Modal with Role-Specific Styling & Data
+ * When opened (user clicks notif button), automatically marks all notifications as READ
+ * and clears the unread badge from the top bar.
+ */
+async function openNotificationsModal() {
+  const modal = document.getElementById('notifications-modal');
+  if (!modal) return;
+
+  const user = getCurrentUser();
+  const isEnforcer = user?.role === 'Traffic Enforcer';
+
+  // Customize modal header by role
+  const modalTitle = document.getElementById('notif-modal-title');
+  const modalSub = document.getElementById('notif-modal-sub');
+  const roleBadge = document.getElementById('notif-role-badge');
+
+  if (roleBadge) {
+    roleBadge.className = isEnforcer ? 'notif-header-badge enforcer' : 'notif-header-badge';
+    roleBadge.textContent = isEnforcer ? '👮 TRD Law Enforcement Status' : '👤 Passenger Report Status';
+  }
+
+  if (modalTitle) {
+    if (isEnforcer) {
+      modalTitle.textContent = 'Officer Citations & Violations Status';
+    } else {
+      modalTitle.textContent = 'My Reports & Complaints Status';
+    }
+  }
+
+  if (modalSub) {
+    if (isEnforcer) {
+      modalSub.textContent = `Tracking review, hearings, & settlements for citations issued by ${user?.full_name || user?.username || 'Officer'}`;
+    } else {
+      modalSub.textContent = 'Live tracking of your filed overcharging & service reports with TRD Office';
+    }
+  }
+
+  modal.classList.remove('hidden');
+
+  // 1. Load latest notifications from database
+  await loadAndRenderNotifications(false);
+
+  // 2. Mark all currently loaded notifications as read because user clicked the button
+  const allIds = currentRoleNotifications.map(n => n.id);
+  if (allIds.length > 0) {
+    markAllNotificationsRead(allIds);
+    currentRoleNotifications.forEach(n => { n.isRead = true; });
+    updateNotificationBadges(0);
+    renderNotificationsList();
+  }
+}
+
+function closeNotificationsModal() {
+  const modal = document.getElementById('notifications-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Load and render live status notifications for the current role
+ */
+async function loadAndRenderNotifications(notifyIfNew = false) {
+  const user = getCurrentUser() || { role: selectedLoginRole || 'Passenger', username: 'Guest' };
+  
+  try {
+    const list = await fetchRoleNotifications(user);
+    const previousUnread = currentRoleNotifications.filter(n => !n.isRead).length;
+    currentRoleNotifications = list;
+
+    // Calculate unread count and filter counts using stepProgress >= 4 and status patterns
+    const isResolvedItem = (n) => (n.stepProgress >= 4) || /resolved|settled|cleared|closed|dismiss|complete|done|paid|sanction|action taken/i.test(n.status || '');
+    const unreadCount = list.filter(n => !n.isRead).length;
+    const allCount = list.length;
+    const pendingCount = list.filter(n => !isResolvedItem(n)).length;
+    const resolvedCount = list.filter(n => isResolvedItem(n)).length;
+
+    // Update tab badges
+    const tabAll = document.getElementById('tab-count-all');
+    const tabPending = document.getElementById('tab-count-pending');
+    const tabResolved = document.getElementById('tab-count-resolved');
+
+    if (tabAll) tabAll.textContent = `(${allCount})`;
+    if (tabPending) tabPending.textContent = `(${pendingCount})`;
+    if (tabResolved) tabResolved.textContent = `(${resolvedCount})`;
+
+    // Update global badge counters
+    updateNotificationBadges(unreadCount);
+
+    // Render list into modal
+    renderNotificationsList();
+
+    // Show live floating banner if new notification arrived
+    if (notifyIfNew && list.length > 0) {
+      const topNotif = list[0];
+      showLiveStatusBanner(
+        topNotif.title || 'Status Notification',
+        `${topNotif.subtitle} • Status: ${topNotif.status}`,
+        topNotif.id
+      );
+    }
+  } catch (err) {
+    console.warn('Error loading notifications:', err);
+  }
+}
+
+/**
+ * Update UI notification bubble badge on top header
+ */
+function updateNotificationBadges(count) {
+  const headerBadge = document.getElementById('header-notif-badge');
+  if (!headerBadge) return;
+
+  const displayCount = count > 99 ? '99+' : String(count);
+
+  if (count > 0) {
+    headerBadge.textContent = displayCount;
+    headerBadge.classList.remove('hidden');
+  } else {
+    headerBadge.classList.add('hidden');
+  }
+}
+
+/**
+ * Render notification cards feed into the modal
+ */
+function renderNotificationsList() {
+  const container = document.getElementById('notifications-list');
+  if (!container) return;
+
+  const isResolvedItem = (n) => (n.stepProgress >= 4) || /resolved|settled|cleared|closed|dismiss|complete|done|paid|sanction|action taken/i.test(n.status || '');
+
+  // Filter list
+  let items = [...currentRoleNotifications];
+  if (currentNotifFilter === 'pending') {
+    items = items.filter(n => !isResolvedItem(n));
+  } else if (currentNotifFilter === 'resolved') {
+    items = items.filter(n => isResolvedItem(n));
+  }
+
+  if (items.length === 0) {
+    const user = getCurrentUser();
+    const isEnforcer = user?.role === 'Traffic Enforcer';
+    const accountName = user?.full_name || user?.username || 'this account';
+
+    container.innerHTML = `
+      <div class="notif-empty-card">
+        <div class="notif-empty-icon">${isEnforcer ? '🛡️' : '📋'}</div>
+        <div class="notif-empty-title">No ${currentNotifFilter === 'all' ? '' : currentNotifFilter} Status Updates</div>
+        <div class="notif-empty-desc">
+          ${isEnforcer 
+            ? `No citations found for Officer ${accountName}. When you issue official violation citations, their TRD review, hearing, and settlement statuses will be tracked here.` 
+            : `No reports submitted by ${accountName} yet. When you submit an overcharging report or fare complaint, its official TRD investigation status will appear here.`}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const user = getCurrentUser();
+  const isEnforcer = user?.role === 'Traffic Enforcer';
+
+  container.innerHTML = items.map(item => {
+    const isUnread = !item.isRead;
+    const cardStatusClass = `status-${item.statusType || 'warning'}`;
+    const badgeClass = `badge-${item.statusType || 'warning'}`;
+
+    // 4-Step Progress definition
+    const step1Label = isEnforcer ? 'Issued' : 'Filed';
+    const step2Label = isEnforcer ? 'TRD Review' : 'Under Review';
+    const step3Label = isEnforcer ? 'Hearing' : 'Investigation';
+    const step4Label = isEnforcer ? 'Settled' : 'Resolved';
+
+    const currentStep = item.stepProgress || 2;
+
+    const step1Class = currentStep >= 1 ? (currentStep === 1 ? 'active' : 'completed') : '';
+    const step2Class = currentStep >= 2 ? (currentStep === 2 ? 'active' : 'completed') : '';
+    const step3Class = currentStep >= 3 ? (currentStep === 3 ? 'active' : 'completed') : '';
+    const step4Class = currentStep >= 4 ? (currentStep === 4 ? 'completed' : 'completed') : '';
+
+    return `
+      <div class="notif-item-card ${cardStatusClass} ${isUnread ? 'is-unread' : ''}" data-id="${item.id}">
+        <div class="notif-card-header">
+          <span class="notif-category-tag">${item.category || (isEnforcer ? 'Official Citation' : 'Complaint Report')}</span>
+          <span class="notif-status-badge ${badgeClass}">
+            <span class="badge-dot"></span>
+            <span>${item.status || 'Under Investigation'}</span>
+          </span>
+        </div>
+
+        <div class="notif-card-title">${item.title}</div>
+        
+        <div class="notif-card-target-pill">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          </svg>
+          <span>${item.vehicleType || 'Pedicab'} Plate #${item.plateNo || '—'}</span>
+          ${item.actualFare ? `• <strong>${item.actualFare}</strong>` : ''}
+          ${item.citationNo ? `• Ticket: ${item.citationNo}` : ''}
+        </div>
+
+        <!-- 4-Step Progress Tracker -->
+        <div class="notif-progress-timeline">
+          <div class="timeline-step ${step1Class}">
+            <div class="timeline-step-dot">${currentStep > 1 ? '✓' : '1'}</div>
+            <span class="timeline-step-label">${step1Label}</span>
+          </div>
+          <div class="timeline-step ${step2Class}">
+            <div class="timeline-step-dot">${currentStep > 2 ? '✓' : '2'}</div>
+            <span class="timeline-step-label">${step2Label}</span>
+          </div>
+          <div class="timeline-step ${step3Class}">
+            <div class="timeline-step-dot">${currentStep > 3 ? '✓' : '3'}</div>
+            <span class="timeline-step-label">${step3Label}</span>
+          </div>
+          <div class="timeline-step ${step4Class}">
+            <div class="timeline-step-dot">${currentStep >= 4 ? '✓' : '4'}</div>
+            <span class="timeline-step-label">${step4Label}</span>
+          </div>
+        </div>
+
+        <div class="notif-desc-box">
+          <strong>TRD Status Note:</strong> ${item.description || 'Report filed and queued for TRD review.'}
+        </div>
+
+        <div class="notif-card-footer">
+          <span>📅 Incident Date: ${item.incidentDate || 'Recent'}</span>
+          <div class="notif-card-actions">
+            <span>${item.driverName ? `Driver: ${item.driverName}` : 'Tabaco City TRD'}</span>
+            <button type="button" class="btn-delete-notif" data-record-id="${item.recordId || item.id}" data-category="${item.category || ''}" title="Delete record from database">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add click to mark as read on individual card
+  container.querySelectorAll('.notif-item-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-delete-notif')) return;
+      const id = card.getAttribute('data-id');
+      if (id) {
+        markNotificationAsRead(id);
+        const item = currentRoleNotifications.find(n => n.id === id);
+        if (item) item.isRead = true;
+        card.classList.remove('is-unread');
+        const unreadCount = currentRoleNotifications.filter(n => !n.isRead).length;
+        updateNotificationBadges(unreadCount);
+      }
+    });
+  });
+
+  // Attach Delete Button Listeners (Two-way Supabase deletion)
+  container.querySelectorAll('.btn-delete-notif').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const recordId = btn.getAttribute('data-record-id');
+      const category = btn.getAttribute('data-category') || '';
+
+      if (!confirm('Are you sure you want to delete this record? It will be permanently removed from the Supabase database and Admin page.')) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Deleting...';
+      showToast('🗑️ Removing record from Supabase database...');
+
+      const res = await deleteReportRecord(recordId, category);
+      if (res.success) {
+        showToast('✅ Record permanently removed from database.');
+        await loadAndRenderNotifications(false);
+      } else {
+        showToast('❌ Failed to delete record.');
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    });
+  });
+}
+
+/**
+ * Display top floating animated banner for real-time status alerts
+ */
+function showLiveStatusBanner(title, desc, notifId = null) {
+  const banner = document.getElementById('live-status-banner');
+  const titleEl = document.getElementById('status-banner-title');
+  const descEl = document.getElementById('status-banner-desc');
+  const iconEl = document.getElementById('status-banner-icon');
+
+  if (!banner || !titleEl || !descEl) return;
+
+  const isEnforcer = getCurrentUser()?.role === 'Traffic Enforcer';
+  if (iconEl) iconEl.textContent = isEnforcer ? '🛡️' : '🔔';
+
+  titleEl.textContent = title;
+  descEl.textContent = desc;
+
+  banner.classList.remove('hidden');
+
+  // Auto hide after 6 seconds
+  setTimeout(() => {
+    banner.classList.add('hidden');
+  }, 6000);
 }
 
 /* ==========================================================================
@@ -1054,3 +1741,6 @@ function showToast(msg) {
   toast.classList.remove('hidden');
   setTimeout(() => { toast.classList.add('hidden'); }, 2400);
 }
+
+
+

@@ -1687,6 +1687,234 @@
       box-shadow: 0 4px 16px rgba(30, 58, 138, 0.4) !important;
     }
 
+    /* Report Modal File Attachment Component */
+    .report-attachment-section {
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .report-attachment-section:hover,
+    .report-attachment-section.has-file {
+      border-color: var(--emerald-primary);
+      background: #f0fdf4;
+    }
+
+    .theme-enforcer-modal .report-attachment-section:hover,
+    .theme-enforcer-modal .report-attachment-section.has-file {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+
+    .attachment-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .attachment-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .attachment-title svg {
+      color: var(--emerald-primary);
+    }
+
+    .theme-enforcer-modal .attachment-title svg {
+      color: #1d4ed8;
+    }
+
+    .attachment-optional-tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #94a3b8;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .attachment-btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-attach-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-family: var(--font-brand);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.15s ease;
+    }
+
+    .btn-attach-action:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: var(--text-dark);
+    }
+
+    .btn-attach-action:active {
+      transform: scale(0.96);
+    }
+
+    .btn-attach-action.btn-camera {
+      color: var(--emerald-primary);
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+    }
+
+    .theme-enforcer-modal .btn-attach-action.btn-camera {
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+
+    /* Attachment Preview Card */
+    .attachment-preview-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      animation: fadeInAttach 0.25s ease;
+    }
+
+    .theme-enforcer-modal .attachment-preview-card {
+      border-color: #bfdbfe;
+    }
+
+    @keyframes fadeInAttach {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .preview-thumb-wrap {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-doc-icon {
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-meta {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .preview-filename {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .preview-details {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-filesize {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .preview-ready-badge {
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #059669;
+      background: #d1fae5;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+    }
+
+    .btn-remove-attach {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-remove-attach:hover {
+      background: #fca5a5;
+      color: #991b1b;
+    }
+
+    .btn-remove-attach:active {
+      transform: scale(0.9);
+    }
+
+    .success-attachment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.74rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
     .toast {
       position: absolute;
       top: 65px;
@@ -1741,6 +1969,13 @@
         </div>
       </div>
       <div class="header-actions">
+        <button id="btn-header-notifs" class="header-notif-btn" type="button" title="View Status Notifications">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="header-notif-badge" class="notif-badge-bubble hidden">0</span>
+        </button>
       </div>
     </header>
 
@@ -2586,12 +2821,30 @@
           <button id="btn-close-report" type="button" class="close-btn">&times;</button>
         </div>
         <div class="sheet-body">
-          <div id="report-role-badge" class="report-role-badge">
-            Logged in as: <strong id="report-user-role">Passenger</strong>
+          <div class="report-meta-pills">
+            <div id="report-role-badge" class="report-role-badge">
+              Officer: <strong id="report-user-role">Juan Dela Cruz</strong>
+            </div>
+            <div id="report-target-badge" class="report-target-badge">
+              City Plate: <strong id="report-target-plate">P-101</strong>
+            </div>
+          </div>
+
+          <!-- Pre-filled Scanned Unit Banner (Zero manual driver input needed) -->
+          <div id="report-scanned-unit-banner" class="report-scanned-unit-banner">
+            <div class="unit-banner-left">
+              <span class="unit-banner-badge" id="report-banner-type-badge">Pedicab</span>
+              <div class="unit-banner-info">
+                <div class="unit-banner-title" id="report-banner-plate">Plate: P-101</div>
+                <div class="unit-banner-sub" id="report-banner-driver">Driver: Eric C. Bobis</div>
+              </div>
+            </div>
+            <div class="unit-banner-verified" id="report-banner-status">✓ Scanned</div>
           </div>
 
           <form id="report-form">
             <div class="input-pill mt-2">
+              <label class="form-field-label" id="report-type-label">Select Violation / Issue Type:</label>
               <select id="report-type">
                 <!-- Dynamically populated by JS based on Passenger vs Traffic Enforcer role -->
               </select>
@@ -2614,6 +2867,71 @@
               <input id="report-remarks" type="text" placeholder="Additional Details / Location Remarks (Optional)" />
             </div>
 
+            <!-- File / Photo Attachment Component -->
+            <div class="report-attachment-section mt-2" id="report-attachment-section">
+              <div class="attachment-label-row">
+                <label class="attachment-title" id="report-attachment-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                  </svg>
+                  <span id="report-attachment-label-text">Attach Proof / Photo Evidence</span>
+                </label>
+                <span class="attachment-optional-tag">Optional</span>
+              </div>
+
+              <!-- Upload buttons (Camera + File Gallery) -->
+              <div class="attachment-btn-group" id="attachment-btn-group">
+                <button type="button" id="btn-report-camera" class="btn-attach-action btn-camera">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                  </svg>
+                  <span id="btn-camera-text">Take Photo</span>
+                </button>
+                <button type="button" id="btn-report-upload" class="btn-attach-action btn-upload">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span id="btn-upload-text">Upload File</span>
+                </button>
+              </div>
+
+              <!-- Hidden input for file picking -->
+              <input type="file" id="report-file-input" accept="image/*,.pdf,.png,.jpg,.jpeg,.webp" class="hidden" />
+              <!-- Hidden input for camera capture -->
+              <input type="file" id="report-camera-input" accept="image/*" capture="environment" class="hidden" />
+
+              <!-- Attachment Preview Card (Shown once file is selected) -->
+              <div id="report-attachment-preview" class="attachment-preview-card hidden">
+                <div class="preview-thumb-wrap" id="preview-thumb-wrap">
+                  <img id="preview-image" src="" alt="Attachment preview" class="preview-img hidden" />
+                  <div id="preview-doc-icon" class="preview-doc-icon hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                  </div>
+                </div>
+                <div class="preview-meta">
+                  <div class="preview-filename" id="preview-filename">evidence_photo.jpg</div>
+                  <div class="preview-details">
+                    <span id="preview-filesize" class="preview-filesize">142 KB</span>
+                    <span class="preview-ready-badge">✓ Attached</span>
+                  </div>
+                </div>
+                <button type="button" id="btn-remove-attachment" class="btn-remove-attach" title="Remove attachment">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
             <button id="btn-report-submit" type="submit" class="figma-emerald-btn mt-3">
               Submit Report to TRD Office
             </button>
@@ -2631,13 +2949,73 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <h3>Submitted Success</h3>
-        <p class="text-muted">Your complaint has been registered with Tabaco City TRD Office.</p>
+        <h3 id="success-modal-title">Submitted Success</h3>
+        <p class="text-muted" id="success-modal-sub">Your report has been registered with Tabaco City TRD Office.</p>
+        <div id="success-attachment-info" class="success-attachment-badge hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+          </svg>
+          <span id="success-attachment-text">1 Attachment Attached</span>
+        </div>
         <button id="btn-close-success" type="button" class="figma-emerald-btn mt-3">OK, Got It</button>
       </div>
     </div>
 
 
+
+    <!-- Modal 4: Role-Based Status Notifications Center -->
+    <div id="notifications-modal" class="modal-overlay hidden">
+      <div class="bottom-sheet notif-bottom-sheet">
+        <div class="sheet-drag-handle"></div>
+        <div class="sheet-header notif-sheet-header">
+          <div class="notif-header-info">
+            <div class="notif-header-badge" id="notif-role-badge">👤 Passenger Status Center</div>
+            <h3 id="notif-modal-title">My Reports & Complaints Status</h3>
+            <p class="notif-modal-sub" id="notif-modal-sub">Live tracking of your filed reports with Tabaco City TRD</p>
+          </div>
+          <div class="notif-header-actions">
+            <button id="btn-refresh-notifs" type="button" class="notif-icon-action-btn" title="Refresh Status">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+            <button id="btn-close-notifs" type="button" class="close-btn">&times;</button>
+          </div>
+        </div>
+
+        <!-- Filter Segmented Tabs -->
+        <div class="notif-filter-tabs">
+          <button type="button" class="notif-tab active" data-filter="all">All <span id="tab-count-all">(0)</span></button>
+          <button type="button" class="notif-tab" data-filter="pending">In Progress <span id="tab-count-pending">(0)</span></button>
+          <button type="button" class="notif-tab" data-filter="resolved">Resolved <span id="tab-count-resolved">(0)</span></button>
+        </div>
+
+        <div class="notif-quick-bar">
+          <span id="notif-summary-text" class="notif-summary-text">Showing latest status updates</span>
+          <button type="button" id="btn-mark-all-read" class="btn-mark-read">Mark all as read</button>
+        </div>
+
+        <!-- Notifications Scrollable Feed -->
+        <div id="notifications-list" class="notifications-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="notif-footer-actions">
+          <button type="button" id="btn-dismiss-notifs" class="figma-emerald-btn compact">Close Status Center</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Live Status Update Notification Banner -->
+    <div id="live-status-banner" class="live-status-banner hidden">
+      <div class="status-banner-icon" id="status-banner-icon">🔔</div>
+      <div class="status-banner-content">
+        <div class="status-banner-title" id="status-banner-title">Report Status Updated</div>
+        <div class="status-banner-desc" id="status-banner-desc">Your report on Plate # P-101 is now Under Investigation.</div>
+      </div>
+      <button type="button" id="btn-banner-close" class="banner-close-btn">&times;</button>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden">

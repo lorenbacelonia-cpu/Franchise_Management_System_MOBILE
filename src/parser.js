@@ -104,9 +104,9 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     };
   }
 
-  // 4. Try Delimited Segment Parsing (e.g. "TRD:PEDICAB:1243:Juan Dela Cruz:Pedro Santos:Sua-Igot:2026-12-31")
-  const segments = text.split(/[:|,\/\n\r]+/).map(s => s.trim()).filter(Boolean);
-  if (segments.length >= 3) {
+  // 4. Try Delimited Segment Parsing (e.g. "TRD:PEDICAB:1243:Juan Dela Cruz:Pedro Santos:Sua-Igot:2026-12-31" or "TRD:TRICYCLE:T-999:...")
+  const rawSegments = text.split(/[:|,\n\r]+/).map(s => s.trim()).filter(Boolean);
+  if (rawSegments.length >= 3) {
     let vehicleType = isTricycle(text || currentMode) ? 'Tricycle' : 'Pedicab';
     let plateNo = '';
     let driver = '';
@@ -114,23 +114,37 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     let route = '';
     let expiry = '';
 
-    for (const seg of segments) {
-      if (/pedicab/i.test(seg)) vehicleType = 'Pedicab';
-      else if (/tricycle/i.test(seg)) vehicleType = 'Tricycle';
-      else if (/^\d{3,6}$/.test(seg) && !plateNo) plateNo = seg;
-      else if (/^\d{4}-\d{2}-\d{2}$/.test(seg) || /^\d{2}\/\d{2}\/\d{4}$/.test(seg)) expiry = seg;
-      else if (!driver) driver = seg;
-      else if (!operator) operator = seg;
-      else if (!route) route = seg;
+    const meaningfulSegments = rawSegments.filter(seg => {
+      const s = seg.toUpperCase();
+      if (s === 'TRD' || s === 'TABACOROUTE' || s === 'FRANCHISE' || s === 'QR') return false;
+      if (s === 'PEDICAB' || s === 'TRICYCLE') {
+        vehicleType = s === 'TRICYCLE' ? 'Tricycle' : 'Pedicab';
+        return false;
+      }
+      return true;
+    });
+
+    for (const seg of meaningfulSegments) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(seg) || /^\d{2}\/\d{2}\/\d{4}$/.test(seg)) {
+        expiry = seg;
+      } else if (!plateNo && (/^[A-Za-z]{0,3}[-_ ]?\d{2,6}[-_ ]?[A-Za-z]{0,3}$/.test(seg) || /^[A-Za-z0-9\-_]{2,8}$/.test(seg))) {
+        plateNo = seg;
+      } else if (!operator) {
+        operator = seg;
+      } else if (!driver) {
+        driver = seg;
+      } else if (!route) {
+        route = seg;
+      }
     }
 
-    if (plateNo || driver) {
+    if (plateNo || driver || operator) {
       return {
         type: 'franchise',
         vehicleType,
         vehicleTitle: `${vehicleType} Verified Unit`,
         operator: operator || '—',
-        driver: driver || '—',
+        driver: driver || operator || '—',
         plateNo: plateNo || '—',
         route: route || 'Tabaco City Route',
         expiry: expiry || '2026-12-31',
@@ -146,8 +160,14 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
   // 5. Fallback for raw text: extract any plate numbers or text segments dynamically
   const isTri = isTricycle(text || currentMode);
   const vehicleType = isTri ? 'Tricycle' : 'Pedicab';
-  const numMatch = text.match(/\b\d{3,6}\b/);
-  const extractedPlate = numMatch ? numMatch[0] : (text.replace(/[^0-9]/g, '').substring(0, 4) || '—');
+
+  let extractedPlate = '—';
+  if (/^[A-Za-z0-9\-_ ]{2,15}$/.test(text)) {
+    extractedPlate = text.trim();
+  } else {
+    const numMatch = text.match(/\b[A-Za-z]{0,3}[-_ ]?\d{2,6}[-_ ]?[A-Za-z]{0,3}\b/);
+    extractedPlate = numMatch ? numMatch[0].trim() : (text.replace(/[^0-9A-Za-z]/g, '').substring(0, 8) || '—');
+  }
 
   return {
     type: 'franchise',
