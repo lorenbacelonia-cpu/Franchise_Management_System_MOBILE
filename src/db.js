@@ -10,43 +10,174 @@ import { supabase } from './supabase.js';
  * 
  * Returns enriched record or null if not in DB.
  */
+/**
+ * Helper to sanitize search terms
+ */
+function cleanSearchTerm(term) {
+  if (!term || term === '—') return '';
+  return String(term).trim().replace(/['"%_]/g, '');
+}
+
+/**
+ * Look up a franchise / driver record in Supabase from Admin tables:
+ * - 'franchise_records_pedicab_admin'
+ * - 'franchise_records_tricycle_admin'
+ * 
+ * Supports looking up by City Plate, MTOP, Driver Name, Driver License No,
+ * Operator Name, Application No, QR code raw text, or JSON payload.
+ * 
+ * Returns enriched record or null if not registered in Admin DB.
+ */
 export async function fetchFranchiseByPlate(plateNo, rawText = '') {
   if (!plateNo && !rawText) return null;
 
-  const cleanPlate = (plateNo && plateNo !== '—') ? plateNo.trim() : '';
-
-  // Search across both official admin franchise tables
   const targetTables = ['franchise_records_tricycle_admin', 'franchise_records_pedicab_admin'];
 
-  for (const tableName of targetTables) {
+  // Categorize candidate search terms into priority tiers
+  const primaryPlates = new Set();
+  const driverNames = new Set();
+  const licensesAndApps = new Set();
+  const genericTerms = new Set();
+
+  const addTerm = (val) => {
+    const clean = cleanSearchTerm(val);
+    if (!clean || clean.length < 2 || clean === '—' || clean === 'null' || clean === 'undefined') return;
+
+    // Check if it's an application number (e.g. APP-2026-661)
+    if (/^APP[-_ ]?\d+/i.test(clean)) {
+      licensesAndApps.add(clean);
+      return;
+    }
+
+    // Check if it's a license number (e.g. N02-18-994820)
+    if (/^[A-Z]\d{2}[-_ ]?\d{2}[-_ ]?\d{6}$/i.test(clean) || (/^(?=.*\d)[A-Z0-9-_]{7,20}$/i.test(clean) && !/^[TPtp]?[-_ ]?\d{2,5}$/.test(clean))) {
+      licensesAndApps.add(clean);
+      return;
+    }
+
+    // Check if it's a plate number (e.g. 1136, T-1136, P-106, 1136-TR, P-106-PED)
+    if (/^[TPtp]?[-_ ]?\d{2,5}(?:[-_ ]?[A-Za-z]{2,4})?$/.test(clean)) {
+      primaryPlates.add(clean);
+      const digits = clean.match(/\d{2,5}/);
+      if (digits) {
+        primaryPlates.add(digits[0]);
+      }
+      return;
+    }
+
+    // Check if it looks like a driver/operator name (alphabetical / spaces)
+    if (/^[A-Za-z\s.\-]{3,50}$/.test(clean)) {
+      driverNames.add(clean);
+      return;
+    }
+
+    genericTerms.add(clean);
+  };
+
+  addTerm(plateNo);
+
+  if (rawText) {
+    // 1. Check if rawText is JSON
     try {
-      // 1. Search across city_plate_number, plate_number, mtop_number, application_no
-      if (cleanPlate) {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.plateNo || parsed.plate_no || parsed.plate || parsed.city_plate_number) {
+          addTerm(parsed.plateNo || parsed.plate_no || parsed.plate || parsed.city_plate_number);
+        }
+        if (parsed.driver || parsed.driver_name || parsed.driverName || parsed.name) {
+          addTerm(parsed.driver || parsed.driver_name || parsed.driverName || parsed.name);
+        }
+        if (parsed.operator || parsed.operator_name || parsed.operatorName || parsed.owner) {
+          addTerm(parsed.operator || parsed.operator_name || parsed.operatorName || parsed.owner);
+        }
+        if (parsed.application_no || parsed.app_no || parsed.appNo) {
+          addTerm(parsed.application_no || parsed.app_no || parsed.appNo);
+        }
+        if (parsed.license || parsed.driver_license_no || parsed.license_no) {
+          addTerm(parsed.license || parsed.driver_license_no || parsed.license_no);
+        }
+        if (parsed.id) {
+          addTerm(parsed.id);
+        }
+      }
+    } catch {}
+
+    // 2. Delimited tokens (e.g. TRD:TRICYCLE:1136:Operator:Driver:Route:Date)
+    const tokens = rawText.split(/[:|,\n\r;\t]+/).map(s => s.trim()).filter(s => s.length >= 2);
+    for (const t of tokens) {
+      const up = t.toUpperCase();
+      if (up !== 'TRD' && up !== 'PEDICAB' && up !== 'TRICYCLE' && up !== 'QR' && up !== 'FRANCHISE') {
+        addTerm(t);
+      }
+    }
+  }
+
+  // Tier 1: Search by Plate variations (exact & patterns)
+  for (const tableName of targetTables) {
+    for (const plate of primaryPlates) {
+      try {
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .or(`city_plate_number.ilike.%${cleanPlate}%,plate_number.ilike.%${cleanPlate}%,mtop_number.ilike.%${cleanPlate}%,application_no.ilike.%${cleanPlate}%`)
+          .or(`city_plate_number.ilike.%${plate}%,plate_number.ilike.%${plate}%,mtop_number.ilike.%${plate}%`)
           .limit(1);
 
         if (!error && data && data.length > 0) {
           return { ...data[0], _sourceTable: tableName };
         }
-      }
+      } catch {}
+    }
+  }
 
-      // 2. Exact match fallback
-      if (cleanPlate) {
-        const { data: cData, error: cErr } = await supabase
+  // Tier 2: Search by Driver Name & Operator Name
+  for (const tableName of targetTables) {
+    for (const name of driverNames) {
+      try {
+        const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .eq('city_plate_number', cleanPlate)
+          .or(`driver_name.ilike.%${name}%,driver_first_name.ilike.%${name}%,driver_last_name.ilike.%${name}%,operator_name.ilike.%${name}%,operator_last_name.ilike.%${name}%`)
           .limit(1);
 
-        if (!cErr && cData && cData.length > 0) {
-          return { ...cData[0], _sourceTable: tableName };
+        if (!error && data && data.length > 0) {
+          return { ...data[0], _sourceTable: tableName };
         }
-      }
-    } catch (err) {
-      // Table may not exist or column difference, proceed to next table
+      } catch {}
+    }
+  }
+
+  // Tier 3: Search by Application No & Driver License No
+  for (const tableName of targetTables) {
+    for (const lic of licensesAndApps) {
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .or(`application_no.ilike.%${lic}%,driver_license_no.ilike.%${lic}%`)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          return { ...data[0], _sourceTable: tableName };
+        }
+      } catch {}
+    }
+  }
+
+  // Tier 4: Fallback generic terms across all identifier columns
+  for (const tableName of targetTables) {
+    for (const term of genericTerms) {
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .or(`city_plate_number.ilike.%${term}%,plate_number.ilike.%${term}%,mtop_number.ilike.%${term}%,driver_name.ilike.%${term}%,operator_name.ilike.%${term}%,application_no.ilike.%${term}%`)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          return { ...data[0], _sourceTable: tableName };
+        }
+      } catch {}
     }
   }
 
@@ -61,22 +192,52 @@ export function dbRowToRecord(row, rawText = '') {
   const isTricycle = sourceTable.includes('tricycle') || /tricycle|trike/i.test(row.vehicle_category || row.vehicle_type || row.type || '');
   const vehicleType = isTricycle ? 'Tricycle' : 'Pedicab';
 
+  // Construct full driver name if separated
+  const driverFullName = row.driver_name ||
+    [row.driver_first_name, row.driver_middle_name, row.driver_last_name].filter(Boolean).join(' ') ||
+    row.driver || row.drivername || '—';
+
+  // Construct full operator name if separated
+  const operatorFullName = row.operator_name ||
+    [row.operator_first_name, row.operator_middle_name, row.operator_last_name].filter(Boolean).join(' ') ||
+    row.operator || row.owner || row.fullname || '—';
+
+  const rawStatus = (row.status || 'Active').trim();
+  const expiryDateStr = row.expiration_date || row.expiry || row.expiry_date || row.valid_until
+    ? String(row.expiration_date || row.expiry || row.expiry_date || row.valid_until).substring(0, 10)
+    : '2026-12-31';
+
+  // Automatically mark expired if permit expiration date has passed
+  let resolvedStatus = rawStatus;
+  if (expiryDateStr && expiryDateStr !== '—') {
+    const expDate = new Date(expiryDateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (!isNaN(expDate.getTime()) && expDate < today && rawStatus !== 'Deactivated') {
+      resolvedStatus = 'Expired';
+    }
+  }
+
+  const isStatusActive = resolvedStatus === 'Active';
+
   return {
     type: 'franchise',
     vehicleType,
     vehicleTitle: `${vehicleType} Verified Unit`,
-    operator: row.operator_name || row.operator || row.owner || row.fullname || '—',
-    driver: row.driver_name || row.driver || row.drivername || '—',
+    operator: operatorFullName,
+    driver: driverFullName,
     plateNo: row.city_plate_number || row.plate_number || row.mtop_number || row.plate_no || row.plate || '—',
     route: row.route_parada || row.route || row.parada || row.line || row.route_name || 'Tabaco City Route',
-    expiry: row.expiration_date || row.expiry || row.expiry_date || row.valid_until ? String(row.expiration_date || row.expiry || row.expiry_date || row.valid_until).substring(0, 10) : '2026-12-31',
+    expiry: expiryDateStr,
     touristGuide: (row.tourist_guide === true || row.tourist_guide === 'Yes' || row.tourist === 'Yes') ? 'Yes' : 'No',
-    availability: row.availability || row.status || 'Available',
-    status: row.status || 'Active',
+    availability: row.availability || (isStatusActive ? 'Available / On-Duty' : resolvedStatus === 'Expired' ? 'Expired (Permit Needs Renewal)' : resolvedStatus),
+    status: resolvedStatus,
     fareFee: row.standard_fare || row.fare_fee || row.fare || null,
     fareMatrix: Array.isArray(row.fare_matrix) ? row.fare_matrix : null,
     violationsCount: row.violations_count || 0,
     documentsVerified: row.documents_verified ?? true,
+    licenseNo: row.driver_license_no || '',
+    applicationNo: row.application_no || '',
     raw: rawText || row.city_plate_number || row.plate_number || '',
     fromDatabase: true,
   };
@@ -220,7 +381,41 @@ export async function submitEnforcerViolation(reportData) {
     evidence_filename: evidenceFileName
   };
 
-  // 1. Try dedicated 'enforcer_violations' table
+  // 1. Save directly into Admin violations table (violations_tricycle_admin or violations_pedicab_admin)
+  const adminViolTable = category === 'Pedicab' ? 'violations_pedicab_admin' : 'violations_tricycle_admin';
+  try {
+    const adminViolPayload = {
+      city_plate_number: plate,
+      mtop_number: plate,
+      plate_number: reportData.plate_no ? `${reportData.plate_no}-${category === 'Pedicab' ? 'PED' : 'TR'}` : plate,
+      operator_name: reportData.operator_name || 'Registered Operator',
+      driver_name: reportData.driver_name || 'Apprehended Driver',
+      violation_type: violationType,
+      location: reportData.location || 'Tabaco City Commercial Center',
+      fine_amount: category === 'Pedicab' ? 300 : 500,
+      enforcer_name: enforcerName,
+      reported_by: reportData.reporter_username || enforcerName,
+      remarks: reportData.description || fullDescription,
+      status: 'Pending',
+      date_submitted: new Date().toISOString().split('T')[0]
+    };
+
+    const { data: vData, error: vErr } = await supabase
+      .from(adminViolTable)
+      .insert([adminViolPayload])
+      .select();
+
+    if (!vErr && vData && vData.length > 0) {
+      console.log(`✅ Violation Citation saved to ${adminViolTable}:`, vData[0]);
+      return { success: true, data: vData[0], table: adminViolTable };
+    } else if (vErr) {
+      console.warn(`Admin ${adminViolTable} insert note:`, vErr.message);
+    }
+  } catch (err) {
+    console.warn('Admin violation table exception:', err);
+  }
+
+  // 2. Try dedicated 'enforcer_violations' table if present
   try {
     const { data: enfData, error: enfErr } = await supabase
       .from('enforcer_violations')
@@ -238,7 +433,7 @@ export async function submitEnforcerViolation(reportData) {
     console.warn('enforcer_violations table notice, falling back:', err);
   }
 
-  // 2. Fallback to unified passenger_complaints with enforcer metadata
+  // 3. Fallback to unified passenger_complaints with enforcer metadata
   try {
     const fallbackPayload = {
       complainant_name: `[Enforcer] ${enforcerName} (${enforcerBadge})`,
@@ -464,17 +659,26 @@ export function parseCaseStatus(rawStatus) {
   const status = (rawStatus || 'Pending TRD Review').trim();
   const lower = status.toLowerCase();
 
-  // 1. Resolved / Settled / Action Taken / Sanctions / Refunded / Dismissed / Completed / Done
+  // 1. Resolved / Settled / Action Taken / Sanctions / Refunded / Approved / Dismissed / Completed / Done
   if (/resolved|settled|cleared|closed|sanction|refund|penalized|penalty|paid|approved|dismiss|complete|done|finish|action taken|concluded/i.test(lower)) {
     return {
       status,
-      statusType: /dismiss|revok|suspend/i.test(lower) ? 'danger' : 'success',
+      statusType: /dismiss|revok|suspend|reject/i.test(lower) ? 'danger' : 'success',
       stepProgress: 4
     };
   }
 
-  // 2. Hearing / Summons / Driver Summoned / Adjudication / Impounded
-  if (/hearing|summon|adjudicat|impound/i.test(lower)) {
+  // 2. Escalated / Legal / Revocation / Impounded
+  if (/escalat|impound|revok|suspend/i.test(lower)) {
+    return {
+      status,
+      statusType: 'danger',
+      stepProgress: 3
+    };
+  }
+
+  // 3. Hearing / Summons / Driver Summoned / Adjudication
+  if (/hearing|summon|adjudicat/i.test(lower)) {
     return {
       status,
       statusType: 'info',
@@ -482,7 +686,7 @@ export function parseCaseStatus(rawStatus) {
     };
   }
 
-  // 3. Investigation / Under Investigation / Investigating
+  // 4. Investigation / Under Investigation / Investigating
   if (/investigat/i.test(lower)) {
     return {
       status,
@@ -491,7 +695,7 @@ export function parseCaseStatus(rawStatus) {
     };
   }
 
-  // 4. Review / Under Review / In Review / Processing / Queued
+  // 5. Review / Under Review / In Review / Processing / Queued
   if (/review|process|evaluat|queue/i.test(lower)) {
     return {
       status,
@@ -500,7 +704,7 @@ export function parseCaseStatus(rawStatus) {
     };
   }
 
-  // 5. Initial Pending / Filed
+  // 6. Initial Pending / Filed
   if (/pending|filed|submitted|received/i.test(lower)) {
     return {
       status,
@@ -521,10 +725,19 @@ export function parseCaseStatus(rawStatus) {
  * Match a complainant name string (which may be masked like 'pas***ger' or 'Mar***tos')
  * to the logged-in passenger account.
  */
-function isMatchingPassengerReporter(compStr, currentUser, userPlates = []) {
-  if (!compStr || !currentUser) return false;
-  const comp = compStr.trim().toLowerCase();
+function isMatchingPassengerReporter(compStr, currentUser, userPlates = [], submittedRecordIds = [], itemPlate = null, itemId = null) {
+  if (!currentUser) return false;
+  const comp = (compStr || '').trim().toLowerCase();
   if (comp.includes('[enforcer]')) return false; // Ignore enforcer citations
+
+  // Match if plate was submitted by this user/device
+  if (itemPlate && userPlates.length > 0 && userPlates.includes(itemPlate)) {
+    return true;
+  }
+  // Match if ID was submitted on this device
+  if (itemId && submittedRecordIds.length > 0 && (submittedRecordIds.includes(itemId) || submittedRecordIds.includes(String(itemId)))) {
+    return true;
+  }
 
   const rawUser = (currentUser.username || '').trim().toLowerCase();
   const rawFull = (currentUser.full_name || '').trim().toLowerCase();
@@ -561,8 +774,8 @@ function isMatchingPassengerReporter(compStr, currentUser, userPlates = []) {
     if (firstName && firstName.length >= 3 && comp.startsWith(firstName)) return true;
   }
 
-  // If this device submitted reports for this plate under this account
-  if (userPlates.length > 0 && userPlates.includes(compStr)) {
+  // Default for passenger demo/guest test accounts
+  if ((rawUser === 'passenger' || rawUser === 'guest') && comp.includes('pas')) {
     return true;
   }
 
@@ -572,8 +785,13 @@ function isMatchingPassengerReporter(compStr, currentUser, userPlates = []) {
 /**
  * Match an enforcer record in DB to the logged-in officer account.
  */
-function isMatchingEnforcerOfficer(enfNameStr, enfBadgeStr, compStr, currentUser, userPlates = []) {
+function isMatchingEnforcerOfficer(enfNameStr, enfBadgeStr, compStr, currentUser, userPlates = [], submittedRecordIds = [], itemPlate = null, itemId = null) {
   if (!currentUser) return false;
+  // If user is a Traffic Enforcer, allow them to view and track all bureau citations
+  if (currentUser.role === 'Traffic Enforcer' || (currentUser.role && currentUser.role.toLowerCase().includes('enforcer'))) {
+    return true;
+  }
+
   const rawUser = (currentUser.username || '').trim().toLowerCase();
   const rawFull = (currentUser.full_name || '').trim().toLowerCase();
 
@@ -581,26 +799,34 @@ function isMatchingEnforcerOfficer(enfNameStr, enfBadgeStr, compStr, currentUser
   const enfBadge = (enfBadgeStr || '').trim().toLowerCase();
   const comp = (compStr || '').trim().toLowerCase();
 
-  // 1. Name & badge checks
+  // 1. Direct username or name matching
   if (rawUser && (enfName.includes(rawUser) || enfBadge.includes(rawUser) || comp.includes(rawUser))) return true;
   if (rawFull && (enfName.includes(rawFull) || comp.includes(rawFull))) return true;
 
-  // 2. Check parts of full name (e.g. "Juan Dela Cruz" matches "Juan")
+  // 2. Check parts of full name (e.g. 'Juan Dela Cruz' matches 'Juan')
   if (rawFull) {
     const words = rawFull.split(' ').filter(w => w.length > 2);
     if (words.some(w => enfName.includes(w) || comp.includes(w))) return true;
   }
 
-  // 3. Fallback generic officer matching
-  if (comp.includes('[enforcer]') && (rawUser === 'enforcer' || rawUser === 'admin')) return true;
+  // 3. Check if submitted on this device
+  if (itemId && (submittedRecordIds.includes(itemId) || submittedRecordIds.includes(String(itemId)))) return true;
+  if (itemPlate && userPlates.includes(itemPlate)) return true;
+  if (userPlates.length > 0 && (userPlates.includes(enfNameStr) || userPlates.includes(compStr))) return true;
+
+  // 4. Default for Enforcer officer accounts: show official bureau citations
+  if (rawUser === 'enforcer' || rawUser === 'admin') {
+    return true;
+  }
 
   return false;
 }
 
 /**
- * Sync Supabase status updates back into local storage reports cache
+ * Sync Supabase status and admin response updates back into local storage reports cache
  */
-function syncStatusToLocalReports(plateNo, status, reportType) {
+function syncStatusToLocalReports(plateNo, status, reportType, adminResponse = null, recordId = null) {
+  if (typeof localStorage === 'undefined') return;
   try {
     const raw = localStorage.getItem('trd_submitted_reports');
     if (!raw) return;
@@ -608,9 +834,16 @@ function syncStatusToLocalReports(plateNo, status, reportType) {
     let changed = false;
 
     local.forEach(item => {
-      if (item.plate_no === plateNo && (!reportType || item.report_type === reportType || item.issue_type === reportType)) {
+      const matchId = recordId && (item.id === recordId || item.recordId === recordId || item.id == recordId);
+      const matchPlate = plateNo && (item.plate_no === plateNo || item.city_plate_number === plateNo);
+
+      if (matchId || matchPlate) {
         if (item.status !== status) {
           item.status = status;
+          changed = true;
+        }
+        if (adminResponse && item.admin_response !== adminResponse) {
+          item.admin_response = adminResponse;
           changed = true;
         }
       }
@@ -626,7 +859,7 @@ function syncStatusToLocalReports(plateNo, status, reportType) {
 
 /**
  * Fetch Passenger Report Status Notifications strictly for the logged-in account.
- * Preserves all previous cases and dynamically reflects Admin status changes.
+ * Preserves all previous cases and dynamically reflects Admin status changes & replies.
  */
 async function fetchPassengerNotifications(currentUser, readIds) {
   if (!currentUser?.username && !currentUser?.full_name) return [];
@@ -635,23 +868,28 @@ async function fetchPassengerNotifications(currentUser, readIds) {
   const rawUsername = (currentUser.username || '').trim().toLowerCase();
   const rawFullName = (currentUser.full_name || '').trim().toLowerCase();
 
-  // Get plates submitted locally by this user to assist matching
+  // Get plates and record IDs submitted locally by this user to assist matching
   let userSubmittedPlates = [];
+  let userSubmittedRecordIds = [];
   try {
-    const localReports = JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]');
-    userSubmittedPlates = localReports
-      .filter(r => {
-        const u = (r.reporter_username || '').trim().toLowerCase();
-        const n = (r.reporter_name || r.reporter_display || '').trim().toLowerCase();
-        return (rawUsername && u === rawUsername) || (rawFullName && n.includes(rawFullName));
-      })
-      .map(r => r.plate_no)
-      .filter(Boolean);
+    const localReports = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
+    localReports.forEach(r => {
+      const u = (r.reporter_username || '').trim().toLowerCase();
+      const n = (r.reporter_name || r.reporter_display || '').trim().toLowerCase();
+      const isMine = (rawUsername && u === rawUsername) || (rawFullName && n.includes(rawFullName)) || (!u && !n);
+      if (isMine) {
+        if (r.plate_no) userSubmittedPlates.push(r.plate_no);
+        if (r.id) userSubmittedRecordIds.push(r.id);
+        if (r.recordId) userSubmittedRecordIds.push(r.recordId);
+      }
+    });
   } catch {
     userSubmittedPlates = [];
+    userSubmittedRecordIds = [];
   }
 
-  // 1. Fetch all cases from Supabase 'passenger_complaints'
+  // 1. Fetch from Supabase 'passenger_complaints'
+  let complaintsData = [];
   try {
     const { data, error } = await supabase
       .from('passenger_complaints')
@@ -659,51 +897,129 @@ async function fetchPassengerNotifications(currentUser, readIds) {
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (!error && data && data.length > 0) {
-      // Filter strictly to previous and current reports filed by THIS user
-      const userReports = data.filter(item => {
-        return isMatchingPassengerReporter(item.complainant_name, currentUser, userSubmittedPlates);
-      });
-
-      userReports.forEach((item, index) => {
-        const { status, statusType, stepProgress } = parseCaseStatus(item.status);
-        const notifId = `notif_pass_${item.id || index}_${status}`;
-
-        // Sync fresh status to local storage cache so offline view is consistent
-        if (item.city_plate_number) {
-          syncStatusToLocalReports(item.city_plate_number, item.status || status, item.issue_type);
-        }
-
-        notifs.push({
-          id: notifId,
-          recordId: item.id,
-          role: 'Passenger',
-          category: 'Report Status',
-          title: item.issue_type || 'Overcharging Report',
-          subtitle: `Plate #${item.city_plate_number || '—'} (${item.vehicle_category || 'Pedicab'})`,
-          plateNo: item.city_plate_number || '—',
-          driverName: item.driver_name || 'Assigned Driver',
-          vehicleType: item.vehicle_category || 'Pedicab',
-          actualFare: item.actual_fare ? `₱${item.actual_fare}` : null,
-          status: status,
-          statusType: statusType,
-          stepProgress: stepProgress,
-          incidentDate: item.incident_date || (item.created_at ? item.created_at.substring(0, 10) : 'Recent'),
-          description: item.description || 'Report registered with TRD Office.',
-          evidenceImage: item.evidence_image || null,
-          evidenceFilename: item.evidence_filename || null,
-          isRead: readIds.includes(notifId),
-          timestamp: item.created_at || new Date().toISOString()
-        });
-      });
+    if (!error && Array.isArray(data)) {
+      complaintsData = data;
     }
   } catch (err) {
     console.warn('Error fetching passenger report notifications:', err);
   }
 
+  // Filter strictly to previous and current reports filed by THIS user
+  const userReports = complaintsData.filter(item => {
+    const isIdMatch = userSubmittedRecordIds.length > 0 && (userSubmittedRecordIds.includes(item.id) || userSubmittedRecordIds.includes(String(item.id)));
+    const isPlateMatch = item.city_plate_number && userSubmittedPlates.includes(item.city_plate_number);
+    const isReporterMatch = isMatchingPassengerReporter(item.complainant_name, currentUser, userSubmittedPlates, userSubmittedRecordIds, item.city_plate_number, item.id);
+    return isIdMatch || isPlateMatch || isReporterMatch;
+  });
+
+  // Fetch related admin messages from 'complaint_messages' for these complaints
+  let complaintMessagesMap = {};
+  if (userReports.length > 0) {
+    try {
+      const compIds = userReports.map(c => c.id).filter(Boolean);
+      if (compIds.length > 0) {
+        const { data: msgData, error: msgErr } = await supabase
+          .from('complaint_messages')
+          .select('*')
+          .in('complaint_id', compIds)
+          .order('created_at', { ascending: true });
+
+        if (!msgErr && Array.isArray(msgData)) {
+          msgData.forEach(m => {
+            if (!complaintMessagesMap[m.complaint_id]) {
+              complaintMessagesMap[m.complaint_id] = [];
+            }
+            complaintMessagesMap[m.complaint_id].push(m);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Complaint messages fetch note:', e);
+    }
+  }
+
+  // Fetch related notifications from 'mobile_notifications' table
+  let mobileNotifsMap = {};
+  try {
+    const { data: mobData, error: mobErr } = await supabase
+      .from('mobile_notifications')
+      .select('*')
+      .or(`recipient_type.eq.passenger,recipient_type.eq.all,recipient_username.ilike.%${rawUsername}%`)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (!mobErr && Array.isArray(mobData)) {
+      mobData.forEach(mn => {
+        if (mn.record_id) {
+          mobileNotifsMap[mn.record_id] = mn;
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('mobile_notifications fetch note:', e);
+  }
+
+  userReports.forEach((item, index) => {
+    // Determine effective status: check admin_decision first, then status
+    const rawStatus = (item.admin_decision && item.admin_decision.trim() && item.admin_decision !== 'Under Investigation')
+      ? item.admin_decision.trim()
+      : (item.status || 'Under Investigation');
+    const { status, statusType, stepProgress } = parseCaseStatus(rawStatus);
+    const notifId = `notif_pass_${item.id || index}_${status}`;
+
+    // Admin response resolution:
+    // Priority: direct admin_response column -> admin_decision -> mobile_notifications message -> latest complaint_messages admin reply
+    const relatedNotif = mobileNotifsMap[item.id];
+    const relatedReplies = complaintMessagesMap[item.id] || [];
+    const latestAdminReply = relatedReplies.filter(r => r.sender === 'admin' || (r.sender_name && r.sender_name.toLowerCase().includes('admin'))).slice(-1)[0];
+
+    const adminResponse = item.admin_response ||
+      (item.admin_decision && item.admin_decision !== status ? item.admin_decision : null) ||
+      `Official TRD Decision: Marked as [${status}].` ||
+      item.admin_remarks ||
+      (relatedNotif ? relatedNotif.message : null) ||
+      (latestAdminReply ? latestAdminReply.message : null) ||
+      null;
+
+    const adminUpdatedAt = item.updated_at ||
+      (relatedNotif ? relatedNotif.created_at : null) ||
+      (latestAdminReply ? latestAdminReply.created_at : null) ||
+      item.created_at;
+
+    // Sync fresh status & response to local storage cache so offline view is consistent
+    if (item.city_plate_number) {
+      syncStatusToLocalReports(item.city_plate_number, status, item.issue_type, adminResponse, item.id);
+    }
+
+    notifs.push({
+      id: notifId,
+      recordId: item.id,
+      role: 'Passenger',
+      category: 'Report Status',
+      title: item.issue_type || 'Overcharging Report',
+      subtitle: `Plate #${item.city_plate_number || '—'} (${item.vehicle_category || 'Pedicab'})`,
+      plateNo: item.city_plate_number || '—',
+      driverName: item.driver_name || 'Assigned Driver',
+      vehicleType: item.vehicle_category || 'Pedicab',
+      actualFare: item.actual_fare ? `₱${item.actual_fare}` : null,
+      status: status,
+      statusType: statusType,
+      stepProgress: stepProgress,
+      incidentDate: item.incident_date || (item.created_at ? item.created_at.substring(0, 10) : 'Recent'),
+      description: item.description || 'Report registered with TRD Office.',
+      adminResponse: adminResponse,
+      adminUpdatedAt: adminUpdatedAt,
+      adminReplies: relatedReplies,
+      evidenceImage: item.evidence_image || null,
+      evidenceFilename: item.evidence_filename || null,
+      isRead: readIds.includes(notifId),
+      timestamp: item.created_at || new Date().toISOString()
+    });
+  });
+
   // 2. Only merge local pending submissions if offline or submitted within the last 30 seconds
   try {
-    const local = JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]');
+    const local = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
     const nowMs = Date.now();
     const passLocals = local.filter(r => {
       const repUser = (r.reporter_username || '').trim().toLowerCase();
@@ -711,7 +1027,6 @@ async function fetchPassengerNotifications(currentUser, readIds) {
       const role = (r.reporter_role || '').toLowerCase();
       if (role.includes('enforcer')) return false;
 
-      // Only keep very recent local-only items (e.g. < 30s) to prevent resurrecting database-deleted items
       const isVeryRecent = r.submitted_at && (nowMs - new Date(r.submitted_at).getTime() < 30000);
       return isVeryRecent && ((rawUsername && repUser === rawUsername) || (rawFullName && repName.includes(rawFullName)));
     });
@@ -737,6 +1052,8 @@ async function fetchPassengerNotifications(currentUser, readIds) {
           stepProgress: stepProgress,
           incidentDate: loc.submitted_at ? loc.submitted_at.substring(0, 10) : 'Today',
           description: loc.description || loc.full_description || 'Report filed and queued for TRD review.',
+          adminResponse: loc.admin_response || null,
+          adminUpdatedAt: loc.submitted_at,
           evidenceImage: loc.attachment?.dataUrl || null,
           evidenceFilename: loc.attachment?.name || null,
           isRead: readIds.includes(locId),
@@ -755,61 +1072,89 @@ async function fetchPassengerNotifications(currentUser, readIds) {
 
 /**
  * Fetch Traffic Enforcer Violation Status Notifications strictly for the logged-in officer.
- * Preserves all previous citations and dynamically reflects Admin status changes.
+ * Preserves all previous citations and dynamically reflects Admin status changes and remarks.
  */
 async function fetchEnforcerNotifications(currentUser, readIds) {
   if (!currentUser?.username && !currentUser?.full_name) return [];
 
   const notifs = [];
+  const rawUser = (currentUser.username || '').trim().toLowerCase();
+  const rawFull = (currentUser.full_name || '').trim().toLowerCase();
   const enforcerBadge = currentUser.username ? `TRD-ENF-${currentUser.username}` : 'TRD-ENF';
 
-  // 1. Fetch from 'enforcer_violations' table strictly matching this officer
+  let userSubmittedPlates = [];
+  let userSubmittedRecordIds = [];
   try {
-    const { data: enfData, error: enfErr } = await supabase
-      .from('enforcer_violations')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const local = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
+    local.forEach(r => {
+      if (r.plate_no) userSubmittedPlates.push(r.plate_no);
+      if (r.id) userSubmittedRecordIds.push(r.id);
+      if (r.recordId) userSubmittedRecordIds.push(r.recordId);
+    });
+  } catch {}
 
-    if (!enfErr && enfData && enfData.length > 0) {
-      const officerViolations = enfData.filter(item => {
-        return isMatchingEnforcerOfficer(item.enforcer_name, item.enforcer_badge, null, currentUser);
-      });
+  // 1. Fetch from 'violations_tricycle_admin' and 'violations_pedicab_admin' (The actual Admin tables)
+  const targetViolationTables = ['violations_tricycle_admin', 'violations_pedicab_admin'];
+  for (const tableName of targetViolationTables) {
+    try {
+      const { data: vData, error: vErr } = await supabase
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-      officerViolations.forEach((item, index) => {
-        const { status, statusType, stepProgress } = parseCaseStatus(item.status);
-        const notifId = `notif_enf_${item.id || index}_${status}`;
-
-        if (item.city_plate_number) {
-          syncStatusToLocalReports(item.city_plate_number, item.status || status, item.violation_type);
-        }
-
-        notifs.push({
-          id: notifId,
-          recordId: item.id,
-          role: 'Traffic Enforcer',
-          category: 'Citation Status',
-          title: `Citation: ${item.violation_type || 'Traffic Violation'}`,
-          subtitle: `Ticket #${item.citation_no || 'CIT-' + (item.id || '').substring(0, 6)} • Plate #${item.city_plate_number || '—'}`,
-          citationNo: item.citation_no || 'CIT-2026',
-          badgeNo: item.enforcer_badge || enforcerBadge,
-          plateNo: item.city_plate_number || '—',
-          driverName: item.driver_name || 'Apprehended Driver',
-          vehicleType: item.vehicle_category || 'Pedicab',
-          status: status,
-          statusType: statusType,
-          stepProgress: stepProgress,
-          incidentDate: item.incident_date || (item.created_at ? item.created_at.substring(0, 10) : 'Recent'),
-          description: item.remarks || item.description || 'Violation citation logged.',
-          evidenceImage: item.evidence_image || null,
-          evidenceFilename: item.evidence_filename || null,
-          isRead: readIds.includes(notifId),
-          timestamp: item.created_at || new Date().toISOString()
+      if (!vErr && Array.isArray(vData) && vData.length > 0) {
+        const officerViolations = vData.filter(item => {
+          const isIdMatch = userSubmittedRecordIds.length > 0 && userSubmittedRecordIds.includes(item.id);
+          const isOfficerMatch = isMatchingEnforcerOfficer(item.enforcer_name, null, item.reported_by, currentUser, userSubmittedPlates, userSubmittedRecordIds);
+          return isIdMatch || isOfficerMatch;
         });
-      });
+
+        const vType = tableName.includes('tri') ? 'Tricycle' : 'Pedicab';
+
+        officerViolations.forEach((item, index) => {
+          const { status, statusType, stepProgress } = parseCaseStatus(item.status);
+          const notifId = `notif_enf_admin_${item.id || index}_${status}`;
+
+          // Extract admin response: In violation tables, Admin records status changes and updates 'remarks'
+          const adminResponse = item.remarks || (item.status === 'Settled' ? 'Citation settled and fine cleared at Treasury.' : null);
+
+          if (item.city_plate_number) {
+            syncStatusToLocalReports(item.city_plate_number, item.status || status, item.violation_type, adminResponse, item.id);
+          }
+
+          if (!notifs.some(n => n.recordId === item.id)) {
+            notifs.push({
+              id: notifId,
+              recordId: item.id,
+              tableSource: tableName,
+              role: 'Traffic Enforcer',
+              category: 'Official Citation',
+              title: `Citation: ${item.violation_type || 'Traffic Violation'}`,
+              subtitle: `Ticket #${item.plate_number || item.city_plate_number || '—'} • Plate #${item.city_plate_number || '—'} (${vType})`,
+              citationNo: item.plate_number || 'CIT-2026',
+              badgeNo: enforcerBadge,
+              plateNo: item.city_plate_number || item.mtop_number || '—',
+              driverName: item.driver_name || 'Apprehended Driver',
+              vehicleType: vType,
+              status: status,
+              statusType: statusType,
+              stepProgress: stepProgress,
+              incidentDate: item.date_submitted || (item.created_at ? item.created_at.substring(0, 10) : 'Recent'),
+              description: `Location: ${item.location || 'Tabaco City'} | Fine: ₱${item.fine_amount || '500'} | Apprehending Officer: ${item.enforcer_name || 'TRD'}`,
+              adminResponse: adminResponse,
+              adminUpdatedAt: item.settled_date || item.updated_at || item.created_at,
+              evidenceImage: item.evidence_image || null,
+              evidenceFilename: item.evidence_filename || null,
+              isRead: readIds.includes(notifId),
+              timestamp: item.created_at || new Date().toISOString()
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.warn(`Error querying ${tableName}:`, err);
     }
-  } catch (err) {
-    console.warn('Error fetching enforcer_violations notifications:', err);
   }
 
   // 2. Also check passenger_complaints for fallback citations submitted by this officer
@@ -821,20 +1166,21 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (!compErr && compData && compData.length > 0) {
+    if (!compErr && Array.isArray(compData) && compData.length > 0) {
       const officerCompCitations = compData.filter(item => {
-        return isMatchingEnforcerOfficer(null, null, item.complainant_name, currentUser);
+        return isMatchingEnforcerOfficer(null, null, item.complainant_name, currentUser, userSubmittedPlates, userSubmittedRecordIds);
       });
 
       officerCompCitations.forEach((item, index) => {
         const { status, statusType, stepProgress } = parseCaseStatus(item.status);
         const notifId = `notif_enf_comp_${item.id || index}_${status}`;
+        const adminResponse = item.admin_response || item.admin_decision || item.admin_remarks || null;
 
         if (item.city_plate_number) {
-          syncStatusToLocalReports(item.city_plate_number, item.status || status, item.issue_type);
+          syncStatusToLocalReports(item.city_plate_number, item.status || status, item.issue_type, adminResponse, item.id);
         }
 
-        if (!notifs.some(n => n.plateNo === item.city_plate_number)) {
+        if (!notifs.some(n => n.recordId === item.id)) {
           notifs.push({
             id: notifId,
             recordId: item.id,
@@ -852,6 +1198,8 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
             stepProgress: stepProgress,
             incidentDate: item.incident_date || 'Recent',
             description: item.description || 'Citation logged via TRD portal.',
+            adminResponse: adminResponse,
+            adminUpdatedAt: item.updated_at || item.created_at,
             evidenceImage: item.evidence_image || null,
             evidenceFilename: item.evidence_filename || null,
             isRead: readIds.includes(notifId),
@@ -866,9 +1214,7 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
 
   // 3. Only merge recent local citations if offline or submitted within the last 30 seconds
   try {
-    const rawUsername = (currentUser.username || '').trim().toLowerCase();
-    const rawFullName = (currentUser.full_name || '').trim().toLowerCase();
-    const local = JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]');
+    const local = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
     const nowMs = Date.now();
     const enfLocals = local.filter(r => {
       const role = (r.reporter_role || '').toLowerCase();
@@ -878,8 +1224,7 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
       const repUser = (r.reporter_username || '').trim().toLowerCase();
       const repName = (r.reporter_name || r.reporter_display || '').trim().toLowerCase();
 
-      return isVeryRecent && ((rawUsername && repUser === rawUsername) ||
-             (rawFullName && repName.includes(rawFullName)));
+      return isVeryRecent && ((rawUser && repUser === rawUser) || (rawFull && repName.includes(rawFull)));
     });
 
     enfLocals.forEach((loc, idx) => {
@@ -903,6 +1248,8 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
           stepProgress: stepProgress,
           incidentDate: loc.submitted_at ? loc.submitted_at.substring(0, 10) : 'Today',
           description: loc.description || loc.full_description || 'Citation submitted to TRD central division.',
+          adminResponse: loc.admin_response || null,
+          adminUpdatedAt: loc.submitted_at,
           evidenceImage: loc.attachment?.dataUrl || null,
           evidenceFilename: loc.attachment?.name || null,
           isRead: readIds.includes(locId),
@@ -945,34 +1292,54 @@ export async function deleteReportRecord(recordId, tableHint = '') {
     }
   }
 
-  // 2. Try deleting from 'enforcer_violations'
-  if (!tableHint || tableHint.includes('violation')) {
-    try {
-      const { error } = await supabase
-        .from('enforcer_violations')
-        .delete()
-        .eq('id', recordId);
-
-      if (!error) {
-        console.log('✅ Deleted from enforcer_violations:', recordId);
-        deletedFromDb = true;
-      }
-    } catch (err) {
-      console.warn('enforcer_violations delete note:', err);
-    }
-  }
-
-  // 3. Purge from local storage cache
+  // 2. Try deleting from 'violations_tricycle_admin'
   try {
-    const raw = localStorage.getItem('trd_submitted_reports');
-    if (raw) {
-      const local = JSON.parse(raw);
-      const filtered = local.filter(item => item.id !== recordId && item.recordId !== recordId);
-      localStorage.setItem('trd_submitted_reports', JSON.stringify(filtered));
+    const { error } = await supabase
+      .from('violations_tricycle_admin')
+      .delete()
+      .eq('id', recordId);
+
+    if (!error) {
+      console.log('✅ Deleted from violations_tricycle_admin:', recordId);
+      deletedFromDb = true;
     }
-  } catch (err) {
-    console.warn('Local storage purge note:', err);
-  }
+  } catch (err) {}
+
+  // 3. Try deleting from 'violations_pedicab_admin'
+  try {
+    const { error } = await supabase
+      .from('violations_pedicab_admin')
+      .delete()
+      .eq('id', recordId);
+
+    if (!error) {
+      console.log('✅ Deleted from violations_pedicab_admin:', recordId);
+      deletedFromDb = true;
+    }
+  } catch (err) {}
+
+  // 4. Try deleting from 'enforcer_violations'
+  try {
+    const { error } = await supabase
+      .from('enforcer_violations')
+      .delete()
+      .eq('id', recordId);
+
+    if (!error) {
+      deletedFromDb = true;
+    }
+  } catch (err) {}
+
+  // 5. Try deleting from 'mobile_notifications'
+  try {
+    await supabase
+      .from('mobile_notifications')
+      .delete()
+      .eq('record_id', recordId);
+  } catch (err) {}
+
+  // 6. Purge from local storage cache
+  purgeLocalReportById(recordId);
 
   return { success: true, deletedFromDb };
 }
@@ -1027,38 +1394,25 @@ export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) 
   const channelId = `realtime_sync_${currentUser.username || 'user'}_${Date.now()}`;
   const channel = supabase.channel(channelId);
 
+  const handleUpdate = (tableName, payload) => {
+    console.log(`⚡ Supabase realtime sync [${tableName}]:`, payload.eventType, payload);
+    if (payload.eventType === 'DELETE' && payload.old?.id) {
+      purgeLocalReportById(payload.old.id);
+    }
+    if (typeof onUpdateCallback === 'function') {
+      onUpdateCallback(payload);
+    }
+  };
+
   channel
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_complaints' }, (payload) => {
-      console.log('⚡ Supabase realtime sync [passenger_complaints]:', payload.eventType, payload);
-      // If deleted by Admin in Supabase, purge from local storage cache
-      if (payload.eventType === 'DELETE' && payload.old?.id) {
-        purgeLocalReportById(payload.old.id);
-      }
-      if (typeof onUpdateCallback === 'function') {
-        onUpdateCallback(payload);
-      }
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'enforcer_violations' }, (payload) => {
-      console.log('⚡ Supabase realtime sync [enforcer_violations]:', payload.eventType, payload);
-      if (payload.eventType === 'DELETE' && payload.old?.id) {
-        purgeLocalReportById(payload.old.id);
-      }
-      if (typeof onUpdateCallback === 'function') {
-        onUpdateCallback(payload);
-      }
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_pedicab_admin' }, (payload) => {
-      console.log('⚡ Supabase realtime sync [franchise_records_pedicab_admin]:', payload.eventType, payload);
-      if (typeof onUpdateCallback === 'function') {
-        onUpdateCallback(payload);
-      }
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_tricycle_admin' }, (payload) => {
-      console.log('⚡ Supabase realtime sync [franchise_records_tricycle_admin]:', payload.eventType, payload);
-      if (typeof onUpdateCallback === 'function') {
-        onUpdateCallback(payload);
-      }
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'passenger_complaints' }, (p) => handleUpdate('passenger_complaints', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'violations_tricycle_admin' }, (p) => handleUpdate('violations_tricycle_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'violations_pedicab_admin' }, (p) => handleUpdate('violations_pedicab_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'mobile_notifications' }, (p) => handleUpdate('mobile_notifications', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'complaint_messages' }, (p) => handleUpdate('complaint_messages', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_pedicab_admin' }, (p) => handleUpdate('franchise_records_pedicab_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_tricycle_admin' }, (p) => handleUpdate('franchise_records_tricycle_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_reviews' }, (p) => handleUpdate('pending_reviews', p))
     .subscribe();
 
   activeRealtimeChannel = channel;
@@ -1076,6 +1430,7 @@ export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) 
 }
 
 function purgeLocalReportById(id) {
+  if (typeof localStorage === 'undefined') return;
   try {
     const raw = localStorage.getItem('trd_submitted_reports');
     if (raw) {

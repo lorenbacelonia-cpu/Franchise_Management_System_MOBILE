@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: './',
   server: {
     host: true,
-    allowedHosts: 'all', // Allow any external tunnel (Cloudflare, ngrok, etc.)
+    allowedHosts: true, // Allow any external tunnel (Cloudflare, ngrok, etc.)
   }
 });

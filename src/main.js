@@ -45,7 +45,10 @@ export function applyLoginRoleTheme(role) {
     loginSubmitBtn.textContent = isEnforcer ? 'LOG IN AS TRAFFIC ENFORCER' : 'LOG IN AS PASSENGER';
   }
   if (loginGiantIcon) {
-    loginGiantIcon.innerHTML = isEnforcer ? ENFORCER_SHIELD_SVG : PASSENGER_LOCK_SVG;
+    loginGiantIcon.innerHTML = `
+      <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
+      ${isEnforcer ? '<span class="auth-enforcer-badge">👮</span>' : ''}
+    `;
   }
   if (loginPortalBadge) {
     loginPortalBadge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
@@ -74,7 +77,10 @@ export function applySignupRoleTheme(role) {
     signupSubmitBtn.textContent = isEnforcer ? 'CREATE TRAFFIC ENFORCER ACCOUNT' : 'CREATE PASSENGER ACCOUNT';
   }
   if (signupGiantIcon) {
-    signupGiantIcon.innerHTML = isEnforcer ? ENFORCER_SHIELD_SVG : PASSENGER_LOCK_SVG;
+    signupGiantIcon.innerHTML = `
+      <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
+      ${isEnforcer ? '<span class="auth-enforcer-badge">👮</span>' : ''}
+    `;
   }
   if (signupPortalBadge) {
     signupPortalBadge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
@@ -86,6 +92,12 @@ export function applySignupRoleTheme(role) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Purge legacy test reports and notification caches
+  try {
+    localStorage.removeItem('trd_submitted_reports');
+    localStorage.removeItem('trd_read_notifications_ids');
+  } catch {}
+
   setupNavigation();
   setupSoundToggle();
   setupRoleTabs();
@@ -424,10 +436,10 @@ function showLoggedInState(user) {
     recordUserAvatar.textContent = isEnforcer ? '👮' : '👤';
   }
 
-  // Update header brand text and seal
-  const headerSeal = document.querySelector('.lock-seal');
-  if (headerSeal) {
-    headerSeal.innerHTML = isEnforcer ? ENFORCER_SHIELD_SVG : PASSENGER_LOCK_SVG;
+  // Update header enforcer badge
+  const headerEnforcerBadge = document.getElementById('header-enforcer-badge');
+  if (headerEnforcerBadge) {
+    headerEnforcerBadge.classList.toggle('hidden', !isEnforcer);
   }
   const subBadge = document.querySelector('.sub-badge');
   if (subBadge) {
@@ -559,8 +571,8 @@ function setupLogout() {
     const navLoginBtn = document.getElementById('nav-btn-login');
     if (navLoginBtn) navLoginBtn.classList.remove('hidden');
 
-    const headerSeal = document.querySelector('.lock-seal');
-    if (headerSeal) headerSeal.innerHTML = PASSENGER_LOCK_SVG;
+    const headerEnforcerBadge = document.getElementById('header-enforcer-badge');
+    if (headerEnforcerBadge) headerEnforcerBadge.classList.add('hidden');
     const subBadge = document.querySelector('.sub-badge');
     if (subBadge) subBadge.textContent = 'Franchise Verifier';
     const enforcerBanner = document.getElementById('enforcer-verify-banner');
@@ -693,7 +705,11 @@ async function handleScannedCode(rawText) {
   renderVerificationDashboard(record);
 
   if (isFoundInDb) {
-    showToast(`✅ Verified Active ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
+    if (/expired/i.test(record.status)) {
+      showToast(`⚠️ Verified Unit (${record.plateNo}) - EXPIRED PERMIT`);
+    } else {
+      showToast(`✅ Verified Active ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
+    }
   } else {
     showToast(`⚠️ ${record.vehicleType || 'Pedicab'} Unregistered Unit (${record.plateNo || 'QR'})`);
   }
@@ -721,19 +737,34 @@ function renderVerificationDashboard(record) {
   const isLiveInDb = Boolean(record.fromDatabase);
 
   const titleEl = document.getElementById('verified-vehicle-title');
-  if (titleEl) {
-    titleEl.textContent = isLiveInDb 
-      ? `${vehicleType} Verified Unit`
-      : `${vehicleType} Unregistered Unit`;
-  }
-
   const pillEl = document.getElementById('verified-status-pill');
   const pillTextEl = document.getElementById('verified-status-text');
-  if (pillTextEl) {
-    pillTextEl.textContent = isLiveInDb ? (record.status || 'Active') : 'Unregistered';
+
+  const rawStatus = (record.status || (isLiveInDb ? 'Active' : 'Unregistered')).trim();
+  const isActiveRegistered = isLiveInDb && !/unregistered|inactive|revoked|suspended|expired/i.test(rawStatus);
+
+  if (titleEl) {
+    if (isActiveRegistered) {
+      titleEl.textContent = `${vehicleType} Verified Registered Unit`;
+    } else if (isLiveInDb) {
+      titleEl.textContent = `${vehicleType} Unit (${rawStatus})`;
+    } else {
+      titleEl.textContent = `${vehicleType} Unregistered Unit`;
+    }
   }
+
+  if (pillTextEl) {
+    if (isActiveRegistered) {
+      pillTextEl.textContent = 'Active (Registered)';
+    } else if (isLiveInDb) {
+      pillTextEl.textContent = rawStatus;
+    } else {
+      pillTextEl.textContent = 'Unregistered (Not in TRD Database)';
+    }
+  }
+
   if (pillEl) {
-    if (isLiveInDb) {
+    if (isActiveRegistered) {
       pillEl.classList.remove('unregistered');
     } else {
       pillEl.classList.add('unregistered');
@@ -760,8 +791,13 @@ function renderVerificationDashboard(record) {
 
   const availEl = document.getElementById('val-availability');
   if (availEl) {
-    availEl.textContent = isLiveInDb ? (record.availability || 'Available') : (record.availability || 'Unregistered');
-    availEl.style.color = isLiveInDb ? '#059669' : '#dc2626';
+    const isExpired = /expired/i.test(rawStatus);
+    availEl.textContent = isExpired
+      ? 'Expired (Renewal Required)'
+      : isLiveInDb
+      ? (record.availability || 'Available')
+      : (record.availability || 'Unregistered');
+    availEl.style.color = (isLiveInDb && !isExpired) ? '#059669' : '#dc2626';
   }
 
   const user = getCurrentUser();
@@ -1424,13 +1460,13 @@ function setupNotificationsCenter() {
     });
   }
 
-  // 7. Periodic background refresh (every 25 seconds for live status updates)
+  // 7. Periodic background refresh (every 12 seconds for responsive live status updates)
   if (notifPollInterval) clearInterval(notifPollInterval);
   notifPollInterval = setInterval(() => {
     if (isLoggedIn()) {
       loadAndRenderNotifications(false);
     }
-  }, 25000);
+  }, 4000);
 }
 
 /**
@@ -1524,12 +1560,13 @@ async function loadAndRenderNotifications(notifyIfNew = false) {
     // Render list into modal
     renderNotificationsList();
 
-    // Show live floating banner if new notification arrived
+    // Show live floating banner if new notification arrived or status was updated
     if (notifyIfNew && list.length > 0) {
       const topNotif = list[0];
+      const adminNote = topNotif.adminResponse ? ` • TRD Response: "${topNotif.adminResponse}"` : ` • Status: ${topNotif.status}`;
       showLiveStatusBanner(
-        topNotif.title || 'Status Notification',
-        `${topNotif.subtitle} • Status: ${topNotif.status}`,
+        topNotif.title || 'TRD Status Notification',
+        `Plate #${topNotif.plateNo || '—'} [${topNotif.status}]${adminNote}`,
         topNotif.id
       );
     }
@@ -1612,6 +1649,10 @@ function renderNotificationsList() {
     const step3Class = currentStep >= 3 ? (currentStep === 3 ? 'active' : 'completed') : '';
     const step4Class = currentStep >= 4 ? (currentStep === 4 ? 'completed' : 'completed') : '';
 
+    const hasAdminResponse = Boolean(item.adminResponse && item.adminResponse.trim().length > 0);
+    const adminResponseText = hasAdminResponse ? item.adminResponse.trim() : null;
+    const formattedAdminDate = item.adminUpdatedAt ? new Date(item.adminUpdatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
+
     return `
       <div class="notif-item-card ${cardStatusClass} ${isUnread ? 'is-unread' : ''}" data-id="${item.id}">
         <div class="notif-card-header">
@@ -1653,9 +1694,46 @@ function renderNotificationsList() {
           </div>
         </div>
 
-        <div class="notif-desc-box">
-          <strong>TRD Status Note:</strong> ${item.description || 'Report filed and queued for TRD review.'}
+        <!-- Official TRD Admin Response Box (Prominent & Real-Time) -->
+        ${hasAdminResponse ? `
+          <div class="notif-admin-box status-${item.statusType || 'info'}">
+            <div class="notif-admin-box-header">
+              <div class="admin-header-title">
+                <span>🏛️</span>
+                <strong>Official TRD Admin Response</strong>
+              </div>
+              <span class="admin-status-tag ${badgeClass}">${item.status}</span>
+            </div>
+            <div class="notif-admin-box-message">${adminResponseText}</div>
+            ${formattedAdminDate ? `<div class="notif-admin-box-date">Decision timestamp: ${formattedAdminDate}</div>` : ''}
+          </div>
+        ` : `
+          <div class="notif-admin-box status-warning">
+            <div class="notif-admin-box-header">
+              <div class="admin-header-title">
+                <span>⏳</span>
+                <strong>TRD Administration Review</strong>
+              </div>
+              <span class="admin-status-tag badge-warning">${item.status || 'Pending Review'}</span>
+            </div>
+            <div class="notif-admin-box-message text-muted">Awaiting TRD Officer administrative action. Case status is currently marked as <strong>${item.status || 'Under Investigation'}</strong>.</div>
+          </div>
+        `}
+
+        <!-- User Original Filed Report Box -->
+        <div class="notif-user-box">
+          <span class="user-box-label">${isEnforcer ? 'Apprehension Citation Details:' : 'Your Filed Report / Incident Details:'}</span>
+          <p class="user-box-content">${item.description || 'Report queued for TRD administrative review.'}</p>
         </div>
+
+        ${item.evidenceImage ? `
+          <div class="notif-evidence-box">
+            <a href="${item.evidenceImage}" target="_blank" rel="noopener noreferrer" class="evidence-thumb-link">
+              <img src="${item.evidenceImage}" alt="Evidence" class="evidence-thumb-img" onerror="this.style.display='none'" />
+              <span>📎 View Attached Proof (${item.evidenceFilename || 'Photo'})</span>
+            </a>
+          </div>
+        ` : ''}
 
         <div class="notif-card-footer">
           <span>📅 Incident Date: ${item.incidentDate || 'Recent'}</span>
@@ -1755,6 +1833,3 @@ function showToast(msg) {
   toast.classList.remove('hidden');
   setTimeout(() => { toast.classList.add('hidden'); }, 2400);
 }
-
-
-

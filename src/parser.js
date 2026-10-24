@@ -87,6 +87,17 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
   if (extracted.matchedCount >= 2 || extracted.plateNo || extracted.driver) {
     const isTri = isTricycle(extracted.vehicleType || text || currentMode);
     const vehicleType = isTri ? 'Tricycle' : 'Pedicab';
+
+    let resolvedStatus = extracted.status || 'Active';
+    if (extracted.expiry) {
+      const expDate = new Date(extracted.expiry);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (!isNaN(expDate.getTime()) && expDate < today && resolvedStatus !== 'Deactivated') {
+        resolvedStatus = 'Expired';
+      }
+    }
+
     return {
       type: 'franchise',
       vehicleType,
@@ -97,8 +108,8 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
       route: extracted.route || 'Tabaco City Route',
       expiry: extracted.expiry || '2026-12-31',
       touristGuide: parseTouristGuide(extracted.touristGuide),
-      availability: extracted.availability || 'Available',
-      status: extracted.status || 'Active',
+      availability: extracted.availability || (resolvedStatus === 'Expired' ? 'Expired' : 'Available'),
+      status: resolvedStatus,
       fareFee: extracted.fareFee || null,
       raw: text
     };
@@ -212,15 +223,16 @@ function extractKeyValuePairs(text) {
   const result = { matchedCount: 0 };
 
   const patterns = [
-    { key: 'operator', regex: /(?:operator|owner|operator_name|op)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'driver', regex: /(?:driver|driver_name|driverName|name|dr)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'plateNo', regex: /(?:plate|plate_no|plateNo|city_plate|body_no|unit_no|id)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'route', regex: /(?:route|parada|line|destination|dest)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'vehicleType', regex: /(?:type|vehicle|vehicle_type|vehicleType|veh)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'expiry', regex: /(?:expiry|expiry_date|expiration|valid_until|valid)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'touristGuide', regex: /(?:tourist|tourist_guide|tg)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'availability', regex: /(?:availability|avail|status)\s*[:=\-]\s*([^\r\n|,;]+)/i },
-    { key: 'fareFee', regex: /(?:fare|fare_fee|rate|fee|price)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'operator', regex: /(?:operator(?:\s*name)?|owner|operator_name|op)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'driver', regex: /(?:driver(?:\s*name)?|driverName|driver_name|name|dr)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'plateNo', regex: /(?:city\s*plate(?:\s*(?:no\.?|number))?|cityplate(?:\s*(?:no\.?|number))?|plate\s*no\.?|plate\s*number|mtop(?:\s*(?:no\.?|number))?|body\s*no\.?|unit\s*(?:id|no\.?)|plate)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'route', regex: /(?:(?:route\s*[\/\\]\s*parada|parada\s*[\/\\]\s*route)|parada|route|line|destination|dest)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'vehicleType', regex: /(?:vehicle\s*type|vehicle_type|vehicleType|type|vehicle|veh)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'status', regex: /(?:permit\s*status|franchise\s*status|status)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'expiry', regex: /(?:expiry\s*date|expiration\s*date|valid\s*until|expiry_date|expiry|expiration)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'availability', regex: /(?:availability|avail)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'fareFee', regex: /(?:standard\s*fare|base\s*fare|fare|fare_fee|rate|fee|price)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'touristGuide', regex: /(?:tourist\s*guide|tourist_guide|tourist|tg)\s*[:=\-]\s*([^\r\n|,;]+)/i },
   ];
 
   for (const p of patterns) {
@@ -229,6 +241,11 @@ function extractKeyValuePairs(text) {
       result[p.key] = match[1].trim();
       result.matchedCount++;
     }
+  }
+
+  // Clean plate number (remove any captured prefix label)
+  if (result.plateNo) {
+    result.plateNo = result.plateNo.replace(/^(?:City Plate Number|CityPlate Number|City Plate No\.?|Plate No\.?)\s*[:=\-]?\s*/i, '').trim();
   }
 
   return result;

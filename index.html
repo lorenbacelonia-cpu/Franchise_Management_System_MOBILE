@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Franchise Management Verifier - Tabaco City TRD</title>
   <meta name="description" content="Tabaco City TRD Official Franchise Management Verifier Mobile Application" />
+  <link rel="icon" type="image/png" href="/tabaco-city-seal.png" />
+  <link rel="apple-touch-icon" href="/tabaco-city-seal.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -96,20 +98,41 @@
     }
 
     .lock-seal {
-      width: 38px;
-      height: 38px;
-      border-radius: var(--radius-md);
-      background: var(--emerald-primary);
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 4px 12px var(--emerald-glow);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+      border: 1.5px solid #e2e8f0;
+      flex-shrink: 0;
     }
 
-    .lock-seal svg {
-      width: 22px;
-      height: 22px;
+    .lock-seal img.header-seal-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .header-enforcer-badge {
+      position: absolute;
+      bottom: -3px;
+      right: -3px;
+      font-size: 0.72rem;
+      background: #1e3a8a;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
 
     .brand-text h1 {
@@ -669,25 +692,88 @@
       height: 22px;
     }
 
-    /* Scanner center lock icon */
+    /* Scanner center logo seal */
     .scan-lock-icon {
       position: relative;
       z-index: 10;
-      width: 74px;
-      height: 74px;
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
-      background: var(--emerald-primary);
-      color: #fff;
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 4px auto 12px;
-      box-shadow: 0 8px 24px var(--emerald-glow);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      border: 3px solid #ffffff;
+      overflow: hidden;
     }
 
-    .scan-lock-icon svg {
-      width: 36px;
-      height: 36px;
+    .scan-lock-icon img.scan-seal-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .giant-lock-icon.auth-seal-wrap {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 8px auto 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+      border: 3px solid #ffffff;
+      overflow: visible;
+    }
+
+    .giant-lock-icon.auth-seal-wrap img.auth-seal-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .auth-enforcer-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      font-size: 1.1rem;
+      background: #1e3a8a;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .instructions-seal-wrap {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      border: 2.5px solid #ffffff;
+      overflow: hidden;
+    }
+
+    .instructions-seal-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     /* White scanner card */
@@ -1135,16 +1221,24 @@
     }
 
     .verified-seal-wrap {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       margin: 0 auto 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      border: 2px solid #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .verified-seal-wrap img {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
       object-fit: cover;
+      display: block;
     }
 
     .seal-fallback {
@@ -1964,10 +2058,8 @@
     <header id="app-header" class="app-header">
       <div class="brand">
         <div class="lock-seal">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-          </svg>
+          <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="header-seal-img" />
+          <span class="header-enforcer-badge hidden" id="header-enforcer-badge">👮</span>
         </div>
         <div class="brand-text">
           <h1>TABACO CITY TRD</h1>
@@ -1991,11 +2083,8 @@
       <!-- VIEW 1: Login Screen -->
       <section id="view-login" class="view-panel">
         <div id="login-card" class="figma-card login-card">
-          <div id="login-giant-icon" class="giant-lock-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-            </svg>
+          <div id="login-giant-icon" class="giant-lock-icon auth-seal-wrap">
+            <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
           </div>
           <div id="login-portal-badge" class="passenger-portal-badge">Passenger Verifier Portal</div>
           <h2 id="login-title">Franchise Management Verifier</h2>
@@ -2078,11 +2167,8 @@
       <!-- VIEW 1b: Sign Up Screen -->
       <section id="view-signup" class="view-panel">
         <div id="signup-card" class="figma-card login-card">
-          <div id="signup-giant-icon" class="giant-lock-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
+          <div id="signup-giant-icon" class="giant-lock-icon auth-seal-wrap">
+            <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
           </div>
           <div id="signup-portal-badge" class="passenger-portal-badge">Passenger Account Registration</div>
           <h2 id="signup-title">Create Verifier Account</h2>
@@ -2202,11 +2288,8 @@
       <section id="view-instructions" class="view-panel">
         <div class="figma-card instructions-card">
           <div class="top-icon-header">
-            <div class="giant-lock-icon small">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-              </svg>
+            <div class="instructions-seal-wrap">
+              <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2>How It Works</h2>
             <p>Official 6-Step Verification Guide</p>
@@ -2356,12 +2439,9 @@
           </button>
         </div>
 
-        <!-- Green lock icon -->
+        <!-- City of Tabaco Official Seal Badge (Tap to go to Profile/Login) -->
         <div id="btn-scan-lock" class="scan-lock-icon" style="cursor: pointer;" title="Go to Dashboard / Login">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-          </svg>
+          <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="scan-seal-img" />
         </div>
 
         <!-- White scanner card -->
@@ -2389,17 +2469,17 @@
               </button>
             </div>
 
-            <div id="camera-prompt-wrap" class="camera-fallback-ui hidden">
+            <div id="camera-prompt-wrap" class="camera-fallback-ui">
               <span style="font-size:2rem; margin-bottom:8px;">📷</span>
               <p id="camera-status-msg" style="color:#f8fafc; font-size:0.85rem; font-weight:600; margin-bottom:12px;">
                 Connecting to camera...</p>
-              <button id="btn-allow-camera" type="button" class="figma-emerald-btn compact"
+              <button id="btn-allow-camera" type="button" class="figma-emerald-btn compact hidden"
                 style="width:auto; padding:10px 22px; cursor:pointer;">
                 TAP TO OPEN CAMERA
               </button>
             </div>
 
-            <div id="scanner-overlay">
+            <div id="scanner-overlay" style="display:none;">
               <div class="figma-reticle">
                 <span class="figma-corner top-left"></span>
                 <span class="figma-corner top-right"></span>
@@ -2515,7 +2595,7 @@
           <!-- Seal + Title Header -->
           <div class="verified-header">
             <div class="verified-seal-wrap">
-              <img id="verified-seal" src="/seal.svg" alt="Tabaco City TRD Seal" />
+              <img id="verified-seal" src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2 id="verified-vehicle-title">Franchise Verified Unit</h2>
             <p class="verified-sub">Tabaco City TRD - Official Record</p>
@@ -2656,7 +2736,7 @@
           <!-- Seal + Titles -->
           <div class="verified-header">
             <div class="verified-seal-wrap">
-              <img src="/seal.svg" alt="Tabaco City TRD Seal" />
+              <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2 class="fare-main-title">Official Fare Matrix</h2>
             <p id="fare-subtitle" class="verified-sub">Barangay / Local Area Rates (Tabaco City)</p>

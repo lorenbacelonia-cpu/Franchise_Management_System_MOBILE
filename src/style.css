@@ -92,18 +92,42 @@ html, body {
 }
 
 .lock-seal {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md);
-  background: var(--emerald-primary);
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 4px 12px var(--emerald-glow);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  border: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
-.lock-seal svg { width: 22px; height: 22px; }
+.lock-seal img.header-seal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.header-enforcer-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  font-size: 0.72rem;
+  background: #1e3a8a;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
 
 .brand-text h1 {
   font-family: var(--font-brand);
@@ -2563,7 +2587,7 @@ html, body {
   color: var(--text-dark);
 }
 
-/* Remarks & Evidence Box */
+/* Remarks & Evidence Box (Legacy fallback) */
 .notif-desc-box {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -2573,6 +2597,144 @@ html, body {
   color: #475569;
   line-height: 1.4;
   margin-top: 6px;
+}
+
+/* Official Admin Response Box */
+.notif-admin-box {
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-top: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #10b981;
+}
+
+.notif-admin-box.status-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #f59e0b;
+}
+
+.notif-admin-box.status-info {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  border-left-color: #0284c7;
+}
+
+.notif-admin-box.status-success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  border-left-color: #10b981;
+}
+
+.notif-admin-box.status-danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  border-left-color: #ef4444;
+}
+
+.notif-admin-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.admin-header-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-status-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+.notif-admin-box-message {
+  font-size: 0.76rem;
+  color: #1e293b;
+  line-height: 1.45;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.notif-admin-box-message.text-muted {
+  color: #64748b;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.notif-admin-box-date {
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* User Original Report Details Box */
+.notif-user-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  font-size: 0.73rem;
+  color: #475569;
+}
+
+.user-box-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
+}
+
+.user-box-content {
+  margin: 0;
+  line-height: 1.35;
+  word-break: break-word;
+  color: #334155;
+}
+
+/* Evidence Thumbnail in Notification */
+.notif-evidence-box {
+  margin-top: 6px;
+}
+
+.evidence-thumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-decoration: none;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.evidence-thumb-link:hover {
+  background: #e0f2fe;
+}
+
+.evidence-thumb-img {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
 }
 
 .notif-card-footer {
