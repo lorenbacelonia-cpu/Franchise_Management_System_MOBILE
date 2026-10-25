@@ -57,6 +57,7 @@ export function applyLoginRoleTheme(role) {
   if (loginSub) {
     loginSub.textContent = isEnforcer ? 'Sign in to official TRD Law Enforcement account' : 'Sign in with your TRD verifier account';
   }
+  hideLoginError();
 }
 
 export function applySignupRoleTheme(role) {
@@ -89,6 +90,10 @@ export function applySignupRoleTheme(role) {
   if (signupSub) {
     signupSub.textContent = isEnforcer ? 'Register official TRD Law Enforcement Officer credentials' : 'Register to access the TRD franchise system';
   }
+  const signupErr = document.getElementById('signup-error-msg');
+  const signupSucc = document.getElementById('signup-success-msg');
+  if (signupErr) { signupErr.textContent = ''; signupErr.classList.add('hidden'); }
+  if (signupSucc) { signupSucc.textContent = ''; signupSucc.classList.add('hidden'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -250,6 +255,16 @@ function switchView(viewId) {
     stopScanner();
   }
 
+  if (viewId === 'view-login') {
+    hideLoginError();
+  }
+  if (viewId === 'view-signup') {
+    const signupErr = document.getElementById('signup-error-msg');
+    const signupSucc = document.getElementById('signup-success-msg');
+    if (signupErr) { signupErr.textContent = ''; signupErr.classList.add('hidden'); }
+    if (signupSucc) { signupSucc.textContent = ''; signupSucc.classList.add('hidden'); }
+  }
+
   // Handle Verification / Record Page setup on view switch
   if (viewId === 'view-verification') {
     const emptyState = document.getElementById('verification-empty-state');
@@ -346,8 +361,13 @@ function setupLoginView() {
   };
 
   const usernameInput = document.getElementById('input-username');
+  const passwordInput = document.getElementById('input-password');
   if (usernameInput) {
     attachAutoCapitalize(usernameInput, 'first-letter');
+    usernameInput.addEventListener('input', hideLoginError);
+  }
+  if (passwordInput) {
+    passwordInput.addEventListener('input', hideLoginError);
   }
 
   if (form) form.addEventListener('submit', doLogin);
@@ -1506,23 +1526,7 @@ function setupNotificationsCenter() {
     });
   });
 
-  // 6. Live floating status banner handlers
-  const bannerCloseBtn = document.getElementById('btn-banner-close');
-  const liveBanner = document.getElementById('live-status-banner');
-  if (bannerCloseBtn) {
-    bannerCloseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (liveBanner) liveBanner.classList.add('hidden');
-    });
-  }
-  if (liveBanner) {
-    liveBanner.addEventListener('click', () => {
-      liveBanner.classList.add('hidden');
-      openNotificationsModal();
-    });
-  }
-
-  // 7. Periodic background refresh (every 12 seconds for responsive live status updates)
+  // 6. Periodic background refresh (for status updates and unread badges)
   if (notifPollInterval) clearInterval(notifPollInterval);
   notifPollInterval = setInterval(() => {
     if (isLoggedIn()) {
@@ -1622,16 +1626,7 @@ async function loadAndRenderNotifications(notifyIfNew = false) {
     // Render list into modal
     renderNotificationsList();
 
-    // Show live floating banner if new notification arrived or status was updated
-    if (notifyIfNew && list.length > 0) {
-      const topNotif = list[0];
-      const adminNote = topNotif.adminResponse ? ` • TRD Response: "${topNotif.adminResponse}"` : ` • Status: ${topNotif.status}`;
-      showLiveStatusBanner(
-        topNotif.title || 'TRD Status Notification',
-        `Plate #${topNotif.plateNo || '—'} [${topNotif.status}]${adminNote}`,
-        topNotif.id
-      );
-    }
+
   } catch (err) {
     console.warn('Error loading notifications:', err);
   }
@@ -1858,30 +1853,7 @@ function renderNotificationsList() {
   });
 }
 
-/**
- * Display top floating animated banner for real-time status alerts
- */
-function showLiveStatusBanner(title, desc, notifId = null) {
-  const banner = document.getElementById('live-status-banner');
-  const titleEl = document.getElementById('status-banner-title');
-  const descEl = document.getElementById('status-banner-desc');
-  const iconEl = document.getElementById('status-banner-icon');
 
-  if (!banner || !titleEl || !descEl) return;
-
-  const isEnforcer = getCurrentUser()?.role === 'Traffic Enforcer';
-  if (iconEl) iconEl.textContent = isEnforcer ? '🛡️' : '🔔';
-
-  titleEl.textContent = title;
-  descEl.textContent = desc;
-
-  banner.classList.remove('hidden');
-
-  // Auto hide after 6 seconds
-  setTimeout(() => {
-    banner.classList.add('hidden');
-  }, 6000);
-}
 
 /* ==========================================================================
    Toast

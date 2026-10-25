@@ -14,7 +14,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
     rel="stylesheet">
 
-  
+  <link rel="stylesheet" href="/src/style.css" />
 </head>
 
 <body>
@@ -56,7 +56,7 @@
           <h2 id="login-title">Franchise Management Verifier</h2>
           <p id="login-sub" class="login-sub">Sign in with your TRD verifier account</p>
 
-          <div id="login-error-msg" class="login-error hidden">Invalid username or password.</div>
+          <div id="login-error-msg" class="login-error hidden"></div>
 
           <form id="login-form" class="login-form" onsubmit="return false;">
             <!-- Role Selection Segmented Control -->
@@ -1035,16 +1035,6 @@
           <button type="button" id="btn-dismiss-notifs" class="figma-emerald-btn compact">Close Status Center</button>
         </div>
       </div>
-    </div>
-
-    <!-- Floating Live Status Update Notification Banner -->
-    <div id="live-status-banner" class="live-status-banner hidden">
-      <div class="status-banner-icon" id="status-banner-icon">🔔</div>
-      <div class="status-banner-content">
-        <div class="status-banner-title" id="status-banner-title">Report Status Updated</div>
-        <div class="status-banner-desc" id="status-banner-desc">Your report on Plate # P-101 is now Under Investigation.</div>
-      </div>
-      <button type="button" id="btn-banner-close" class="banner-close-btn">&times;</button>
     </div>
 
     <!-- Toast Notification -->
