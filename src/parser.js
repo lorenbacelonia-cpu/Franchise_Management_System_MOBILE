@@ -41,26 +41,40 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     // Not valid JSON, continue to next parsers
   }
 
-  // 2. Try URL Query Parameter Parsing (e.g. https://domain.com/verify?plate=123&driver=Juan...)
+    // 2. Try URL Query Parameter Parsing (e.g. https://domain.com/verify?plate=123&driver=Juan...)
   if (text.includes('?') || text.startsWith('http://') || text.startsWith('https://')) {
     try {
       const urlStr = text.startsWith('http') ? text : `http://dummy.local/?${text.split('?')[1] || text}`;
       const url = new URL(urlStr);
       const params = url.searchParams;
 
-      const plate = params.get('plate') || params.get('plate_no') || params.get('plateNo') || params.get('id');
+      const plate = params.get('plate') || params.get('plate_no') || params.get('plateNo') || params.get('id') || params.get('mtop');
       const driver = params.get('driver') || params.get('driver_name') || params.get('driverName') || params.get('name');
       const operator = params.get('operator') || params.get('operator_name') || params.get('owner');
       const route = params.get('route') || params.get('parada') || params.get('destination');
       const type = params.get('type') || params.get('vehicle_type') || params.get('vehicleType');
       const expiry = params.get('expiry') || params.get('expiry_date') || params.get('exp');
       const fare = params.get('fare') || params.get('fare_fee') || params.get('fee');
-      const tourist = params.get('tourist') || params.get('tourist_guide');
-      const status = params.get('status') || params.get('availability');
+      const tourist = params.get('tourist') || params.get('tourist_guide') || params.get('tg');
+      const statusParam = params.get('status');
+      const availabilityParam = params.get('avail') || params.get('availability');
 
       if (plate || driver || operator || route) {
         const isTri = isTricycle(type || text || currentMode);
         const vehicleType = isTri ? 'Tricycle' : 'Pedicab';
+
+        let resolvedStatus = statusParam || 'Active';
+        if (expiry) {
+          const expDate = new Date(expiry);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (!isNaN(expDate.getTime()) && expDate < today && resolvedStatus !== 'Deactivated') {
+            resolvedStatus = 'Expired';
+          }
+        }
+
+        const resolvedAvail = availabilityParam || (resolvedStatus === 'Expired' ? 'Expired' : 'Available');
+
         return {
           type: 'franchise',
           vehicleType,
@@ -68,12 +82,13 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
           operator: operator || '—',
           driver: driver || '—',
           plateNo: plate || '—',
-          route: route || 'Tabaco City Route',
+          route: route || 'Sua-Igot 24 Tabaco',
           expiry: expiry || '2026-12-31',
           touristGuide: parseTouristGuide(tourist),
-          availability: status || 'Available',
-          status: 'Active',
+          availability: resolvedAvail,
+          status: resolvedStatus,
           fareFee: fare || null,
+          fromDatabase: Boolean((operator && operator !== '—') || (driver && driver !== '—')),
           raw: text
         };
       }

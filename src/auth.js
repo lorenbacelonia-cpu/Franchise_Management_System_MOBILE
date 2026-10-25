@@ -237,6 +237,7 @@ export async function loginUser(username, password, selectedRole = 'Passenger') 
         };
 
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
         saveLocalAccount(isEnforcer, user);
         return { success: true, user: sessionUser };
       }
@@ -245,19 +246,32 @@ export async function loginUser(username, password, selectedRole = 'Passenger') 
     }
   }
 
-  // 2. Check if account exists in the other role table to give friendly guidance
+  // 2. Check if account exists in the other role table - auto-authenticate if password matches!
   for (const table of otherTables) {
     try {
       const { data: otherData } = await supabase
         .from(table)
-        .select('username')
+        .select('*')
         .ilike('username', cleanUsername)
         .limit(1);
 
       if (otherData && otherData.length > 0) {
+        const otherUser = otherData[0];
+        if (otherUser.password === password) {
+          const sessionUser = {
+            id: otherUser.id,
+            username: otherUser.username,
+            full_name: otherUser.fullname || otherUser.username,
+            role: otherRoleName
+          };
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+          try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
+          saveLocalAccount(!isEnforcer, otherUser);
+          return { success: true, user: sessionUser, switchedRole: otherRoleName };
+        }
         return {
           success: false,
-          error: `This account is registered under "${otherRoleName}". Please switch to the ${otherRoleName} tab.`
+          error: `This account is registered as "${otherRoleName}". Please enter the correct password or switch to the ${otherRoleName} tab.`
         };
       }
     } catch {
@@ -302,6 +316,7 @@ export async function loginUser(username, password, selectedRole = 'Passenger') 
  */
 export function logoutUser() {
   sessionStorage.removeItem(SESSION_KEY);
+  try { localStorage.removeItem(SESSION_KEY); } catch {}
 }
 
 /**
@@ -309,7 +324,7 @@ export function logoutUser() {
  */
 export function getCurrentUser() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

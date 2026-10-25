@@ -118,17 +118,30 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAndRenderNotifications();
   }
 
-  // Scanner is the default landing page — hide app header & bottom nav initially
+  // Check if opened via QR Code scan (Google Lens, built-in camera, or direct URL with parameters)
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasIncomingScan = urlParams.has('plate') || urlParams.has('plateNo') || urlParams.has('mtop') || urlParams.has('id') || urlParams.has('driver');
+
   const appHeader = document.getElementById('app-header');
   const bottomNav = document.querySelector('.bottom-nav');
-  if (appHeader) appHeader.style.display = 'none';
-  if (bottomNav) bottomNav.style.display = 'none';
-  document.body.classList.add('scan-active');
 
-  // Immediately start the camera scanner automatically on launch
-  startCameraScanner().catch(err => {
-    console.warn('Auto camera startup warning:', err);
-  });
+  if (hasIncomingScan) {
+    if (appHeader) appHeader.style.display = '';
+    if (bottomNav) bottomNav.style.display = '';
+    document.body.classList.remove('scan-active');
+
+    // Immediately handle and render verification for the scanned URL
+    handleIncomingUrlVerification(window.location.href);
+  } else {
+    // Normal direct open without QR scan — show camera scanner as landing page
+    if (appHeader) appHeader.style.display = 'none';
+    if (bottomNav) bottomNav.style.display = 'none';
+    document.body.classList.add('scan-active');
+
+    startCameraScanner().catch(err => {
+      console.warn('Auto camera startup warning:', err);
+    });
+  }
 });
 
 /* ==========================================================================
@@ -674,6 +687,57 @@ async function startCameraScanner() {
 /* ==========================================================================
    QR Scan → Dynamic Universal Parsing & Supabase Verification
    ========================================================================== */
+/* ==========================================================================
+   Handle Direct URL Verification (Google Lens / Phone Camera QR Scan)
+   ========================================================================== */
+async function handleIncomingUrlVerification(rawUrl) {
+  if (!rawUrl) return;
+
+  // 1. Immediately parse parameters from the QR URL so the screen displays instantly
+  let record = parseQRCode(rawUrl);
+  let isFoundInDb = false;
+
+  currentVerifiedRecord = record;
+  renderVerificationDashboard(record);
+  switchView('view-verification');
+  showToast('🔍 Verifying ' + (record.vehicleType || 'Pedicab') + ' Unit (' + (record.plateNo || '') + ')...');
+
+  // 2. Query Supabase for latest live database record
+  try {
+    const dbRow = await fetchFranchiseByPlate(record.plateNo, rawUrl);
+    if (dbRow) {
+      record = dbRowToRecord(dbRow, rawUrl);
+      isFoundInDb = true;
+    } else {
+      if (record.driver && record.driver !== '—' && record.operator && record.operator !== '—') {
+        record.fromDatabase = true;
+      } else {
+        record.fromDatabase = false;
+        record.status = 'Unregistered';
+        record.availability = 'Unregistered';
+        record.vehicleTitle = (record.vehicleType || 'Pedicab') + ' Unregistered Unit';
+      }
+    }
+  } catch (err) {
+    console.warn('Live DB verification notice:', err);
+  }
+
+  currentVerifiedRecord = record;
+  saveScanToHistory(record);
+  renderVerificationDashboard(record);
+  switchView('view-verification');
+
+  if (isFoundInDb || (record.driver && record.driver !== '—')) {
+    if (/expired/i.test(record.status)) {
+      showToast('⚠️ Verified Unit (' + record.plateNo + ') - EXPIRED PERMIT');
+    } else {
+      showToast('✅ Verified Active ' + (record.vehicleType || 'Pedicab') + ' Unit (' + record.plateNo + ')');
+    }
+  } else {
+    showToast('⚠️ ' + (record.vehicleType || 'Pedicab') + ' Unregistered Unit (' + (record.plateNo || 'QR') + ')');
+  }
+}
+
 async function handleScannedCode(rawText) {
   if (!rawText) return;
 
@@ -741,11 +805,11 @@ function renderVerificationDashboard(record) {
   const pillTextEl = document.getElementById('verified-status-text');
 
   const rawStatus = (record.status || (isLiveInDb ? 'Active' : 'Unregistered')).trim();
-  const isActiveRegistered = isLiveInDb && !/unregistered|inactive|revoked|suspended|expired/i.test(rawStatus);
+  const isActiveRegistered = (isLiveInDb || (record.operator && record.operator !== "—" && record.driver && record.driver !== "—")) && !/unregistered|inactive|revoked|suspended|expired/i.test(rawStatus);
 
   if (titleEl) {
     if (isActiveRegistered) {
-      titleEl.textContent = `${vehicleType} Verified Registered Unit`;
+      titleEl.textContent = `${vehicleType} Verified Unit`;
     } else if (isLiveInDb) {
       titleEl.textContent = `${vehicleType} Unit (${rawStatus})`;
     } else {
@@ -755,7 +819,7 @@ function renderVerificationDashboard(record) {
 
   if (pillTextEl) {
     if (isActiveRegistered) {
-      pillTextEl.textContent = 'Active (Registered)';
+      pillTextEl.textContent = 'Active';
     } else if (isLiveInDb) {
       pillTextEl.textContent = rawStatus;
     } else {
@@ -787,17 +851,15 @@ function renderVerificationDashboard(record) {
   if (expEl) expEl.textContent = record.expiry || '2026-12-31';
 
   const tourEl = document.getElementById('val-tourist');
-  if (tourEl) tourEl.textContent = `• ${record.touristGuide || 'Yes'}`;
+  if (tourEl) tourEl.innerHTML = `<span style="color:#059669; font-weight:bold;">•</span> ${record.touristGuide || 'Yes'}`;
 
   const availEl = document.getElementById('val-availability');
   if (availEl) {
     const isExpired = /expired/i.test(rawStatus);
     availEl.textContent = isExpired
       ? 'Expired (Renewal Required)'
-      : isLiveInDb
-      ? (record.availability || 'Available')
-      : (record.availability || 'Unregistered');
-    availEl.style.color = (isLiveInDb && !isExpired) ? '#059669' : '#dc2626';
+      : (record.availability || 'Available');
+    availEl.style.color = (isActiveRegistered && !isExpired) ? '#059669' : '#dc2626';
   }
 
   const user = getCurrentUser();
