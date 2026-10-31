@@ -371,7 +371,7 @@ function setupLoginView() {
   }
 
   if (form) form.addEventListener('submit', doLogin);
-  if (submitBtn) submitBtn.addEventListener('click', doLogin);
+  // login handled by form
 }
 
 /**
@@ -579,7 +579,7 @@ function setupSignupView() {
   }
 
   if (form) form.addEventListener('submit', doRegister);
-  if (submitBtn) submitBtn.addEventListener('click', doRegister);
+  // submit handled by form
 }
 
 /* ==========================================================================
