@@ -1,0 +1,201 @@
+<mxfile host="app.diagrams.net" modified="2026-11-03T13:35:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="tabaco-trd-use-case-replica" name="Use Case Diagram - Tabaco TRD System">
+    <mxGraphModel dx="1422" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1450" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================= SYSTEM BOUNDARY ================= -->
+        <mxCell id="sys_boundary" value="Franchise Management and Enforcement System of&#xa;Tabaco City" style="shape=rect;rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;verticalAlign=top;align=center;fontSize=14;fontStyle=1;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="190" y="30" width="720" height="1360" as="geometry" />
+        </mxCell>
+
+        <!-- ================= ACTORS ================= -->
+        <!-- TOP-LEFT: Customer / Passenger -->
+        <mxCell id="act_passenger" value="Passenger /&#xa;Commuter" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="55" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- BOTTOM-LEFT: Traffic Enforcer -->
+        <mxCell id="act_enforcer" value="Traffic Enforcer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="960" width="55" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- TOP-RIGHT: Driver / Operator -->
+        <mxCell id="act_driver" value="Driver / Operator&#xa;(Franchise Owner)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="330" width="55" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- BOTTOM-RIGHT: TRD Administrator -->
+        <mxCell id="act_admin" value="TRD Administrator" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="970" width="55" height="100" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= QUADRANT 1: PASSENGER USE CASES (TOP-LEFT) ================= -->
+        <mxCell id="uc_p_scan" value="Scan Vehicle QR Code" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="20" y="110" width="140" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_p_parse" value="Parse Plate &amp;&#xa;MTOP Payload" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="140" y="20" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_p_verify" value="Verify Active Franchise&#xa;Validity Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="190" y="80" width="135" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_p_track" value="Track Case Review&#xa;Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="130" y="170" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_p_notif" value="Receive Real-Time&#xa;Push Notifications" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="290" y="150" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_p_fare" value="Calculate Route Fare &amp;&#xa;20% Statutory Discount" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="230" y="270" width="145" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_p_matrix" value="Access Official Barangay&#xa;Fare Matrix Table" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="200" y="370" width="140" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_p_report" value="File Passenger Overcharging&#xa;Complaint Report" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="20" y="440" width="155" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_p_photo" value="Attach Photo Evidence&#xa;&amp; Fare Proof" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="200" y="445" width="140" height="50" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= QUADRANT 2: ENFORCER USE CASES (BOTTOM-LEFT) ================= -->
+        <mxCell id="uc_e_scan" value="Perform Roadside Optical&#xa;QR Verification" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="20" y="580" width="155" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_e_class" value="Check Motorized /&#xa;Pedicab Classification" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="210" y="580" width="135" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_e_driver" value="Verify Physical Plate &amp;&#xa;Driver Identity" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="140" y="665" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_e_citation" value="Issue Selective Traffic&#xa;Violation Citation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="150" y="750" width="150" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_e_fine" value="Auto-Calculate Cumulative&#xa;Penalty Fine Amount" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="330" y="740" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_e_proof" value="Capture On-Scene Violation&#xa;Photo Evidence" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="210" y="825" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_e_history" value="Log Roadside Apprehension&#xa;&amp; Inspection History" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="30" y="930" width="150" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_e_csv" value="Export Local Scan Logs&#xa;as CSV" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="220" y="930" width="135" height="50" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= QUADRANT 3: DRIVER / OPERATOR USE CASES (TOP-RIGHT) ================= -->
+        <mxCell id="uc_d_qr" value="Display Vehicle QR&#xa;Identity Badge" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="400" y="130" width="135" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_d_inspect" value="Undergo On-Street Road&#xa;Vehicle Inspection" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="560" y="130" width="145" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_d_tariff" value="Present Official MTOP &amp;&#xa;Concession Tariff" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="500" y="225" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_d_notice" value="Receive Violation Summon&#xa;&amp; Citation Notice" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="370" y="325" width="140" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_d_settle" value="Attend TRD Hearing &amp;&#xa;Settle Penalty Citation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="540" y="325" width="145" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_d_renewal" value="Monitor MTOP Expiration&#xa;&amp; Franchise Renewal" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="530" y="420" width="145" height="50" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= QUADRANT 4: TRD ADMIN USE CASES (BOTTOM-RIGHT) ================= -->
+        <mxCell id="uc_a_cert" value="Issue Statutory Franchise&#xa;Clearance Certificate" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="380" y="590" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_a_adjudicate" value="Review &amp; Adjudicate&#xa;Citations &amp; Penalties" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="550" y="590" width="145" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_a_rbac" value="Manage Staff Accounts &amp;&#xa;RBAC Permissions" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="370" y="705" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_a_investigate" value="Investigate Overcharging&#xa;Whistleblower Reports" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.3;fontSize=11;fontStyle=1;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="540" y="700" width="145" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_a_status" value="Update Regulatory&#xa;Enforcement Case Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="365" y="810" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_a_pdf" value="Generate Legal TRD Daily&#xa;Production PDF Report" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="530" y="805" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uc_a_audit" value="Audit Revenue Inflows &amp;&#xa;Franchise Throughput" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10;" vertex="1" parent="sys_boundary">
+          <mxGeometry x="530" y="895" width="140" height="50" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= SOLID ACTOR-TO-USE-CASE ASSOCIATIONS ================= -->
+        <!-- Passenger Connections -->
+        <mxCell id="asc_p1" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_passenger" target="uc_p_scan"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_p2" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_passenger" target="uc_p_track"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_p3" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_passenger" target="uc_p_fare"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_p4" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_passenger" target="uc_p_matrix"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_p5" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_passenger" target="uc_p_report"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Enforcer Connections -->
+        <mxCell id="asc_e1" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_enforcer" target="uc_e_scan"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_e2" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_enforcer" target="uc_e_driver"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_e3" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_enforcer" target="uc_e_citation"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_e4" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_enforcer" target="uc_e_proof"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_e5" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_enforcer" target="uc_e_history"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Driver / Operator Connections -->
+        <mxCell id="asc_d1" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_driver" target="uc_d_inspect"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_d2" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_driver" target="uc_d_tariff"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_d3" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_driver" target="uc_d_settle"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_d4" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_driver" target="uc_d_renewal"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- TRD Admin Connections -->
+        <mxCell id="asc_a1" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_admin" target="uc_a_adjudicate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_a2" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_admin" target="uc_a_investigate"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_a3" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_admin" target="uc_a_pdf"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="asc_a4" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.3;" edge="1" parent="1" source="act_admin" target="uc_a_audit"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+
+        <!-- ================= DASHED INCLUSIONS & EXTENSIONS (1:1 TOPOLOGY) ================= -->
+        <!-- Passenger Inclusions -->
+        <mxCell id="rel_p_parse" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0.8;exitY=0;entryX=0.2;entryY=1;" edge="1" parent="sys_boundary" source="uc_p_scan" target="uc_p_parse"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_p_verify" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0.9;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_p_scan" target="uc_p_verify"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_p_notif" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_p_track" target="uc_p_notif"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_p_photo" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_p_report" target="uc_p_photo"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Enforcer Inclusions -->
+        <mxCell id="rel_e_class" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_e_scan" target="uc_e_class"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_e_fine" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_e_citation" target="uc_e_fine"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_e_csv" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_e_history" target="uc_e_csv"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Driver / Operator Extensions -->
+        <mxCell id="rel_d_qr" value="«extends»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_d_inspect" target="uc_d_qr"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_d_notice" value="«extends»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_d_settle" target="uc_d_notice"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- TRD Admin Inclusions -->
+        <mxCell id="rel_a_cert" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_a_adjudicate" target="uc_a_cert"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_a_rbac" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="sys_boundary" source="uc_a_investigate" target="uc_a_rbac"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rel_a_status" value="«include»" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;strokeWidth=1.2;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="sys_boundary" source="uc_a_rbac" target="uc_a_status"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,179 @@
+classDiagram
+    %% ─────────────────────────────────────────────────────────────
+    %% INHERITANCE: USER HIERARCHY
+    %% ─────────────────────────────────────────────────────────────
+    User <|-- Passenger
+    User <|-- TrafficEnforcer
+    User <|-- Administrator
+
+    class User {
+        +UUID id
+        +String username
+        +String full_name
+        +String role
+        +String contact_number
+        +DateTime created_at
+        +login(credentials) Boolean
+        +logout() void
+    }
+
+    class Passenger {
+        +searchFareMatrix(origin, dest) FareRate
+        +scanQRCode(qrData) VehicleDetails
+        +fileOverchargingComplaint(complaintData) String
+        +trackComplaintStatus(ticketId) Status
+    }
+
+    class TrafficEnforcer {
+        +String badge_number
+        +String assigned_sector
+        +verifyVehicleFranchise(plateNo) FranchiseStatus
+        +selectInfractions(infractionList) List
+        +calculateCumulativeFine(infractions, vehicleType) Decimal
+        +issueViolationCitation(citationData) String
+        +attachEvidencePhoto(imageFile) String
+    }
+
+    class Administrator {
+        +String admin_passcode
+        +String access_level
+        +approveRenewal(mtopNo, appNo, expiryDate) void
+        +updateDriverRegistry(operatorName, driverName, confirmed) void
+        +adjudicateComplaint(caseId, decision) void
+        +settlePenalty(caseId, amountPaid) void
+        +generatePDFSummaryReport() File
+        +printQRCertificate(franchiseId) File
+    }
+
+    %% ─────────────────────────────────────────────────────────────
+    %% CORE DOMAIN ENTITIES
+    %% ─────────────────────────────────────────────────────────────
+    class FranchiseRecord {
+        +UUID id
+        +String mtop_number
+        +String city_plate_number
+        +String vehicle_category
+        +String operator_name
+        +String driver_name
+        +String route_assigned
+        +String status
+        +String application_number
+        +Date next_expiration_date
+        +String qr_signature_hash
+        +DateTime updated_at
+        +checkRenewalEligibility() Boolean
+        +regenerateQRCode() String
+        +deactivateMTOP() void
+    }
+
+    class DriverOperatorRegistry {
+        +UUID id
+        +UUID franchise_id
+        +String operator_name
+        +String operator_contact
+        +String driver_name
+        +String driver_license_no
+        +Boolean confirmed_by_admin
+        +DateTime date_registered
+        +reviewPersonnelChanges() Boolean
+        +commitRegistryUpdate() void
+    }
+
+    class ViolationCitation {
+        +UUID id
+        +String citation_no
+        +String city_plate_number
+        +String mtop_number
+        +String vehicle_category
+        +String driver_name
+        +String operator_name
+        +String violation_type
+        +Decimal fine_amount
+        +String enforcer_badge
+        +String enforcer_name
+        +String location
+        +Date incident_date
+        +String status
+        +String evidence_image_url
+        +String remarks
+        +calculateTotalFine() Decimal
+        +submitToAdmin() void
+        +markSettled(amount) void
+    }
+
+    class PassengerComplaint {
+        +UUID id
+        +String complaint_ticket_no
+        +String complainant_name
+        +String complainant_contact
+        +String city_plate_number
+        +String mtop_number
+        +String vehicle_category
+        +String issue_type
+        +Decimal fare_charged
+        +String description
+        +Date incident_date
+        +String status
+        +String evidence_image_url
+        +DateTime created_at
+        +registerComplaint() String
+        +updateInvestigationStatus(status) void
+        +notifyPassenger() void
+    }
+
+    class FareMatrix {
+        +UUID id
+        +String vehicle_category
+        +String origin
+        +String destination
+        +Decimal base_fare
+        +Decimal per_km_rate
+        +Decimal student_senior_rate
+        +Date effective_date
+        +computeFare(distanceKm, isDiscounted) Decimal
+        +getDestinationRates(query) List
+    }
+
+    class SettlementAuditLog {
+        +UUID id
+        +UUID case_id
+        +String case_type
+        +Decimal amount_paid
+        +String settled_by_admin
+        +DateTime settlement_date
+        +String remarks
+        +logAuditTransaction() void
+        +exportAuditCSV() File
+    }
+
+    class QRInspectionCertificate {
+        +UUID id
+        +UUID franchise_id
+        +String plate_number
+        +String qr_code_url
+        +Date issue_date
+        +Date valid_until
+        +String printed_by_admin
+        +generatePrintableDocument() File
+    }
+
+    %% ─────────────────────────────────────────────────────────────
+    %% RELATIONSHIPS & CARDINALITIES
+    %% ─────────────────────────────────────────────────────────────
+    FranchiseRecord "1" *-- "1" DriverOperatorRegistry : maintains
+    FranchiseRecord "1" o-- "0..*" ViolationCitation : incurs
+    FranchiseRecord "1" o-- "0..*" PassengerComplaint : receives
+    FranchiseRecord "1" -- "1" QRInspectionCertificate : generates
+
+    TrafficEnforcer "1" ..> "0..*" ViolationCitation : issues
+    Passenger "1" ..> "0..*" PassengerComplaint : files
+    Passenger "1" ..> "1..*" FareMatrix : consults
+
+    Administrator "1" ..> "0..*" FranchiseRecord : manages
+    Administrator "1" ..> "0..*" ViolationCitation : adjudicates
+    Administrator "1" ..> "0..*" PassengerComplaint : resolves
+    Administrator "1" ..> "0..*" SettlementAuditLog : authorizes
+
+    ViolationCitation "1" -- "0..1" SettlementAuditLog : settles
+    PassengerComplaint "1" -- "0..1" SettlementAuditLog : settles
+

@@ -150,13 +150,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   Password Visibility Toggle
+   Password Visibility Toggle (Mobile Touch & Pointer Optimized)
    ========================================================================== */
 function setupPasswordToggles() {
   const toggleBtns = document.querySelectorAll('.btn-toggle-pwd');
   toggleBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
+    let lastActionTime = 0;
+
+    const toggleVisibility = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      const now = Date.now();
+      if (now - lastActionTime < 350) return;
+      lastActionTime = now;
+
       const targetId = btn.getAttribute('data-target');
       const input = document.getElementById(targetId);
       if (!input) return;
@@ -169,6 +179,16 @@ function setupPasswordToggles() {
 
       if (eyeShow) eyeShow.classList.toggle('hidden', isPassword);
       if (eyeHide) eyeHide.classList.toggle('hidden', !isPassword);
+
+      btn.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+    };
+
+    // 'pointerdown' provides instant, zero-delay feedback on mobile touchscreens
+    // and prevents virtual keyboard dismiss or layout shift cancelations.
+    btn.addEventListener('pointerdown', toggleVisibility);
+    btn.addEventListener('click', toggleVisibility);
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
     });
   });
 }
@@ -800,6 +820,528 @@ async function handleScannedCode(rawText) {
   switchView('view-verification');
 }
 
+
+/* ==========================================================================
+   OFFICIAL TABACCO CITY TRD SELECTIVE VIOLATIONS
+   ========================================================================== */
+export const TRD_VIOLATIONS = [
+  {
+    id: 'unregistered_unit',
+    title: 'Unregistered Pedalled/Motorized Tricycle',
+    shortTitle: 'Unregistered Unit',
+    desc: 'Operating without valid initial registration or annual renewal',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '📄'
+  },
+  {
+    id: 'unlicensed_driver',
+    title: 'Unlicensed Driver / Uncarried DL',
+    shortTitle: 'Unlicensed Driver',
+    desc: 'Driving without a valid driver license or failing to carry physical license',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🪪'
+  },
+  {
+    id: 'unfranchised_colorum',
+    title: 'Unfranchised OPN/Colorum',
+    shortTitle: 'Colorum Unit',
+    desc: 'Commercial passenger operation without an approved MTOP franchise',
+    pedicabFine: 500,
+    tricycleFine: 1000,
+    icon: '🚫'
+  },
+  {
+    id: 'invalid_expired_dl',
+    title: 'Invalid or suspended / revoked / expired DL',
+    shortTitle: 'Expired/Invalid DL',
+    desc: 'Driving with an expired, delinquent, or officially suspended license',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '⚠️'
+  },
+  {
+    id: 'out_of_line',
+    title: 'Out of Line',
+    shortTitle: 'Out of Line',
+    desc: 'Operating beyond permitted route boundary or outside designated zone',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🗺️'
+  },
+  {
+    id: 'student_driver_alone',
+    title: 'Student Driver not accompanied by a Licensed Driver',
+    shortTitle: 'Student Driver Alone',
+    desc: 'Student permit holder operating without an accredited licensed driver',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🎓'
+  },
+  {
+    id: 'discourteous_driver',
+    title: 'Discourteous Driver/Conduct',
+    shortTitle: 'Discourteous Conduct',
+    desc: 'Arrogant behavior, profanity, or disrespect towards commuting passengers',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🗣️'
+  },
+  {
+    id: 'no_or_cr',
+    title: 'OR/CR not Carried',
+    shortTitle: 'No OR/CR',
+    desc: 'Failure to present Official Receipt and Certificate of Registration',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '📑'
+  },
+  {
+    id: 'permits_not_carried',
+    title: 'OFC / PA / Permits not Carried',
+    shortTitle: 'Permits not Carried',
+    desc: 'Failure to carry Certificate of Public Convenience or Mayor Permit',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '📁'
+  },
+  {
+    id: 'improvised_plates',
+    title: 'Unauthorized Improvised Plates',
+    shortTitle: 'Improvised Plates',
+    desc: 'Using non-official, homemade, or unregistered vehicle plates',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🔢'
+  },
+  {
+    id: 'reckless_driving',
+    title: 'Reckless Driving',
+    shortTitle: 'Reckless Driving',
+    desc: 'Endangering public safety, swerving, or aggressive road operation',
+    pedicabFine: 500,
+    tricycleFine: 1000,
+    icon: '🏎️'
+  },
+  {
+    id: 'overloading_top',
+    title: 'Allowing Passenger on Top of MV/ Overloading',
+    shortTitle: 'Overloading / Roof Ride',
+    desc: 'Carrying passengers on the roof, excess capacity, or hazardous loading',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '👥'
+  },
+  {
+    id: 'no_early_warning',
+    title: 'No Early Warning Devices',
+    shortTitle: 'No Warning Device',
+    desc: 'Failure to equip required reflective early warning safety devices',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🔺'
+  },
+  {
+    id: 'no_front_panel_route',
+    title: 'No Front Panel Route',
+    shortTitle: 'No Route Sign',
+    desc: 'Missing or obscured front panel signage indicating authorized route',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🪧'
+  },
+  {
+    id: 'cargo_without_cover',
+    title: 'Loaded Cargo Truck without Cover',
+    shortTitle: 'Cargo Without Cover',
+    desc: 'Transporting loose cargo or aggregates without protective tarpaulin',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🚛'
+  },
+  {
+    id: 'illegal_franchise_transfer',
+    title: 'Violation of the Sale, Mortgage and Transfer of Franchise',
+    shortTitle: 'Illegal Transfer',
+    desc: 'Unauthorized conveyance, sale, or mortgage of MTOP franchise permit',
+    pedicabFine: 500,
+    tricycleFine: 1000,
+    icon: '🤝'
+  },
+  {
+    id: 'no_tailgate_sign',
+    title: 'No Tailgate / No for hire Sign',
+    shortTitle: 'No Tailgate/Hire Sign',
+    desc: 'Missing rear safety tailgate markings or official For Hire signage',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🛑'
+  },
+  {
+    id: 'no_tariff_display',
+    title: 'No Tariff Display',
+    shortTitle: 'No Tariff Display',
+    desc: 'Failure to visibly post official Tabaco City fare matrix inside vehicle',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🏷️'
+  },
+  {
+    id: 'no_pedalled_id',
+    title: 'No Pedalled ID',
+    shortTitle: 'No Pedalled ID',
+    desc: 'Failure to display accredited pedicab driver identification card',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🪪'
+  },
+  {
+    id: 'dts_dtio',
+    title: 'DTS / DTIO',
+    shortTitle: 'DTS/DTIO Infraction',
+    desc: 'Violation of Dispatch Terminal System or Daily Terminal Inspection Order',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '📋'
+  },
+  {
+    id: 'illegal_terminal',
+    title: 'Illegal Terminal',
+    shortTitle: 'Illegal Terminal',
+    desc: 'Operating or barkada queueing outside designated municipal terminals',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🚏'
+  },
+  {
+    id: 'illegal_parking',
+    title: 'Illegal Parking',
+    shortTitle: 'Illegal Parking',
+    desc: 'Parking in no-parking zones, pedestrian sidewalks, or blocking roads',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🅿️'
+  },
+  {
+    id: 'obstruction',
+    title: 'Obstruction',
+    shortTitle: 'Traffic Obstruction',
+    desc: 'Impeding smooth vehicular traffic flow or loading in travel lanes',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🚧'
+  },
+  {
+    id: 'overcharging',
+    title: 'Overcharging',
+    shortTitle: 'Overcharging',
+    desc: 'Demanding or collecting fares higher than the legal municipal fare matrix',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '💰'
+  },
+  {
+    id: 'refused_convey_passenger',
+    title: 'Refused to Convey Passenger',
+    shortTitle: 'Refusal to Convey',
+    desc: 'Selective passenger pick-up or unjust refusal to transport commuters',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🚷'
+  },
+  {
+    id: 'jaywalking',
+    title: 'Jaywalking',
+    shortTitle: 'Jaywalking',
+    desc: 'Crossing streets outside designated pedestrian lanes or ignoring signals',
+    pedicabFine: 200,
+    tricycleFine: 200,
+    icon: '🚶'
+  },
+  {
+    id: 'improper_attire',
+    title: 'Unauthorized Wearing Shirt/ Improper Attire',
+    shortTitle: 'Improper Attire / No Shoes',
+    desc: 'Operating without uniform shirt, wearing slippers, or driving without shoes',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '👕'
+  },
+  {
+    id: 'no_pedalled_driver_permit',
+    title: "No Pedalled Driver's Permit",
+    shortTitle: 'No Pedalled Permit',
+    desc: 'Operating a non-motorized pedicab without a valid city driver permit',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🚲'
+  },
+  {
+    id: 'smoking_while_driving',
+    title: 'Smoking While Driving',
+    shortTitle: 'Smoking While Driving',
+    desc: 'Smoking cigarettes or vapes while operating public conveyance',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🚭'
+  },
+  {
+    id: 'no_body_plate_number',
+    title: 'No Body Plate Number',
+    shortTitle: 'No Body Plate',
+    desc: 'Missing, unpainted, or obscured municipal body number on sidecar',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🔢'
+  },
+  {
+    id: 'loitering_pedicab',
+    title: 'Loitering Pedalled Tricycle',
+    shortTitle: 'Loitering Pedicab',
+    desc: 'Cruising or loitering along restricted main thoroughfares without passengers',
+    pedicabFine: 300,
+    tricycleFine: 300,
+    icon: '🔄'
+  },
+  {
+    id: 'air_noise_pollution',
+    title: 'Violation on Air and Noise Pollution',
+    shortTitle: 'Noise/Air Pollution',
+    desc: 'Excessive exhaust smoke emissions or open/loud modified mufflers',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '💨'
+  },
+  {
+    id: 'ordinance_010_2016',
+    title: 'Violation on Ordinance 010-2016 (Regulating the Loading and Unloading)',
+    shortTitle: 'Ord. 010-2016 (Load/Unload)',
+    desc: 'Loading or discharging passengers outside designated yellow bays',
+    pedicabFine: 300,
+    tricycleFine: 500,
+    icon: '🛑'
+  }
+];
+
+const selectedViolationIds = new Set();
+
+function getFineForViolation(violationId, isPedicab) {
+  const v = TRD_VIOLATIONS.find(item => item.id === violationId);
+  if (!v) return isPedicab ? 300 : 500;
+  return isPedicab ? v.pedicabFine : v.tricycleFine;
+}
+
+function toggleViolationSelection(violationId) {
+  if (selectedViolationIds.has(violationId)) {
+    selectedViolationIds.delete(violationId);
+  } else {
+    selectedViolationIds.add(violationId);
+  }
+  updateSelectiveViolationUI();
+}
+
+function updateSelectiveViolationUI() {
+  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
+  const count = selectedViolationIds.size;
+  let totalFine = 0;
+
+  selectedViolationIds.forEach(id => {
+    totalFine += getFineForViolation(id, isPedicab);
+  });
+
+  const formattedFine = '₱' + totalFine.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Update on-page stats
+  const onpageCountEl = document.getElementById('onpage-selected-count');
+  const onpageTotalEl = document.getElementById('onpage-total-fine');
+  const modalBadgeEl = document.getElementById('modal-total-fine-badge');
+
+  if (onpageCountEl) onpageCountEl.textContent = count === 1 ? '1 infraction' : `${count} infractions`;
+  if (onpageTotalEl) onpageTotalEl.textContent = formattedFine;
+  if (modalBadgeEl) modalBadgeEl.textContent = `Total Fine: ${formattedFine}`;
+
+  // Update all chips state across onpage and modal grids
+  document.querySelectorAll('.violation-chip[data-id]').forEach(chip => {
+    const chipId = chip.getAttribute('data-id');
+    const isSelected = selectedViolationIds.has(chipId);
+    chip.classList.toggle('selected', isSelected);
+    const checkWrap = chip.querySelector('.chip-checkbox-wrap');
+    if (checkWrap) {
+      checkWrap.innerHTML = isSelected
+        ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        : '';
+    }
+  });
+
+  // Render selected violation pills in summary
+  const pillsWrap = document.getElementById('onpage-selected-pills');
+  if (pillsWrap) {
+    if (count === 0) {
+      pillsWrap.innerHTML = '<span style="font-size:0.7rem; opacity:0.75; font-style:italic;">No infractions chosen yet. Tap any item above to select.</span>';
+    } else {
+      pillsWrap.innerHTML = Array.from(selectedViolationIds).map(id => {
+        const v = TRD_VIOLATIONS.find(item => item.id === id);
+        if (!v) return '';
+        const fine = isPedicab ? v.pedicabFine : v.tricycleFine;
+        return `<span class="violation-tag-pill">${v.icon} ${v.shortTitle} (₱${fine}) <button type="button" class="pill-remove-btn" data-remove="${id}">&times;</button></span>`;
+      }).join('');
+
+      pillsWrap.querySelectorAll('.pill-remove-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const removeId = e.currentTarget.getAttribute('data-remove');
+          if (removeId) {
+            selectedViolationIds.delete(removeId);
+            updateSelectiveViolationUI();
+          }
+        });
+      });
+    }
+  }
+}
+
+function renderSelectiveViolationGrids() {
+  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
+
+  const onpageGrid = document.getElementById('onpage-selective-violation-grid');
+  const modalGrid = document.getElementById('modal-selective-violation-grid');
+
+  const generateChipsHtml = () => {
+    return TRD_VIOLATIONS.map(v => {
+      const fine = isPedicab ? v.pedicabFine : v.tricycleFine;
+      const isSelected = selectedViolationIds.has(v.id);
+      return `
+        <div class="violation-chip ${isSelected ? 'selected' : ''}" data-id="${v.id}">
+          <div class="chip-checkbox-wrap">
+            ${isSelected ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+          </div>
+          <div class="chip-info">
+            <div class="chip-title-row">
+              <span class="chip-title">${v.icon} ${v.title}</span>
+              <span class="chip-fine-tag">₱${fine}</span>
+            </div>
+            <div class="chip-desc">${v.desc}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  const bindChipEvents = (container) => {
+    if (!container) return;
+    container.querySelectorAll('.violation-chip[data-id]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const id = chip.getAttribute('data-id');
+        if (id) toggleViolationSelection(id);
+      });
+    });
+  };
+
+  if (onpageGrid) {
+    onpageGrid.innerHTML = generateChipsHtml();
+    bindChipEvents(onpageGrid);
+  }
+
+  if (modalGrid) {
+    modalGrid.innerHTML = generateChipsHtml();
+    bindChipEvents(modalGrid);
+  }
+
+  updateSelectiveViolationUI();
+}
+
+async function handleEnforcerIssueCitation(openModalForEvidence = false) {
+  if (!isLoggedIn()) {
+    showToast('⚠️ Please log in as a Traffic Enforcer.');
+    applyLoginRoleTheme('Traffic Enforcer');
+    switchView('view-login');
+    return;
+  }
+
+  const user = getCurrentUser();
+  if (user?.role !== 'Traffic Enforcer') {
+    showToast('⛔ Only authorized Traffic Enforcers can issue citations.');
+    return;
+  }
+
+  if (selectedViolationIds.size === 0) {
+    showToast('⚠️ Please select at least one violation before issuing citation.');
+    const cardEl = document.getElementById('enforcer-selective-violations-card');
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cardEl.style.transition = 'all 0.3s ease';
+      cardEl.style.boxShadow = '0 0 0 3px #ef4444';
+      setTimeout(() => { cardEl.style.boxShadow = ''; }, 1500);
+    }
+    return;
+  }
+
+  if (openModalForEvidence) {
+    openReportModalForCurrentUser('violation');
+    return;
+  }
+
+  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
+  const selectedItems = Array.from(selectedViolationIds).map(id => TRD_VIOLATIONS.find(v => v.id === id)).filter(Boolean);
+  const violationTitles = selectedItems.map(v => v.title).join(', ');
+  const totalFine = selectedItems.reduce((sum, v) => sum + (isPedicab ? v.pedicabFine : v.tricycleFine), 0);
+  const location = document.getElementById('onpage-enforcer-location')?.value || 'Tabaco City Commercial Center';
+  const remarks = document.getElementById('onpage-enforcer-remarks')?.value || '';
+  const citationNo = 'CIT-' + Date.now().toString().slice(-6);
+
+  const payload = {
+    report_type: violationTitles,
+    plate_no: currentVerifiedRecord?.plateNo || '—',
+    driver_name: currentVerifiedRecord?.driver || 'Apprehended Driver',
+    operator_name: currentVerifiedRecord?.operator || 'Registered Operator',
+    vehicle_type: currentVerifiedRecord?.vehicleType || (isPedicab ? 'Pedicab' : 'Tricycle'),
+    reporter_name: user?.full_name || user?.username || 'TRD Traffic Enforcer',
+    reporter_username: user?.username || '',
+    reporter_role: 'Traffic Enforcer',
+    fine_amount: totalFine,
+    location: location,
+    citation_no: citationNo,
+    enforcer_badge: user?.username ? `TRD-ENF-${user.username}` : 'TRD-ENF-001',
+    description: [
+      `Selective Infractions: ${violationTitles}`,
+      `Total Fine: ₱${totalFine}`,
+      `Location: ${location}`,
+      remarks ? `Officer Remarks: ${remarks}` : ''
+    ].filter(Boolean).join(' | '),
+    attachment: null
+  };
+
+  showToast('⏳ Registering citation ticket...');
+
+  try {
+    await submitViolationReport(payload);
+  } catch (err) {
+    console.warn('Submit citation background note:', err);
+  }
+
+  // Setup and display success dialog
+  const successModal = document.getElementById('success-modal');
+  const successTitle = document.getElementById('success-modal-title');
+  const successSub = document.getElementById('success-modal-sub');
+  const successAttachInfo = document.getElementById('success-attachment-info');
+
+  if (successTitle) successTitle.textContent = 'Citation Registered';
+  if (successSub) {
+    successSub.textContent = `Official TRD citation registered for ${payload.vehicle_type} Plate #${payload.plate_no}. Infractions: ${violationTitles}. Total Fine: ₱${totalFine.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`;
+  }
+  if (successAttachInfo) successAttachInfo.classList.add('hidden');
+  if (successModal) successModal.classList.remove('hidden');
+
+  // Reset selected violations & inputs
+  selectedViolationIds.clear();
+  updateSelectiveViolationUI();
+  const locInput = document.getElementById('onpage-enforcer-location');
+  const remInput = document.getElementById('onpage-enforcer-remarks');
+  if (locInput) locInput.value = '';
+  if (remInput) remInput.value = '';
+}
+
 /* ==========================================================================
    Verification Dashboard
    ========================================================================== */
@@ -1312,18 +1854,15 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
 
   if (reportTypeSelect) {
     if (isEnforcer) {
-      reportTypeSelect.innerHTML = `
-        <option value="Illegal Route / Out of Line">Illegal Route / Out of Line Operation</option>
-        <option value="No Franchise / Expired Permit">No Franchise / Expired TRD Permit</option>
-        <option value="Official Overcharging Citation">Official Overcharging Citation</option>
-        <option value="Obstruction of Traffic">Obstruction of Traffic / Illegal Parking</option>
-        <option value="Refusal of Public Transport">Refusal of Public Transport Service</option>
-      `;
+      reportTypeSelect.innerHTML = TRD_VIOLATIONS.map(v => '<option value="' + v.title + '">' + v.title + '</option>').join('\n        ');
     } else {
       reportTypeSelect.innerHTML = `
-        <option value="Report Overcharging">Report Overcharging (Excess Fare)</option>
-        <option value="Fare Complaint">Submit Fare Complaint / Discourtesy</option>
-        <option value="Driver Conduct">Driver Conduct / Refusal to Convey</option>
+        <option value="Over Speeding">Over Speeding</option>
+        <option value="Abusive Language/Cursing">Abusive language/cursing</option>
+        <option value="Drunk Driving">Drunk Driving</option>
+        <option value="Harassment">Harassment</option>
+        <option value="Dropping off passenger at the wrong destination">Dropping off passenger at the wrong destination</option>
+        <option value="Overcharging (Excess Fare)">Overcharging (Excess Fare)</option>
       `;
     }
   }
@@ -1340,7 +1879,7 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
 
   if (submitBtn) {
     submitBtn.classList.toggle('modal-enforcer-btn', isEnforcer);
-    submitBtn.textContent = isEnforcer ? 'Attach Image' : 'Submit Report to TRD Office';
+    submitBtn.textContent = isEnforcer ? '👮 Issue Official Citation' : 'Submit Report to TRD Office';
   }
 
   document.getElementById('report-modal').classList.remove('hidden');

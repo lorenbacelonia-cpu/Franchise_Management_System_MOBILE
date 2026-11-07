@@ -1,0 +1,113 @@
+flowchart LR
+    %% ─────────────────────────────────────────────────────────────
+    %% EXACT 1:1 REPLICA OF THE USE CASE DIAGRAM LAYOUT
+    %% ─────────────────────────────────────────────────────────────
+
+    %% ── 4 EXTERNAL ACTORS (POSITIONED EXACTLY AS THE IMAGE) ──
+    Admin["Owner / Admin<br/><b>TRD Administrator</b>"]
+    Enforcer["Operations / Staff<br/><b>Traffic Enforcer</b>"]
+    Driver["Service Processor<br/><b>Driver / Operator</b>"]
+    Passenger["Client / End User<br/><b>Commuter (Passenger)</b>"]
+
+    subgraph SystemBoundary ["Tabaco City TRD Franchise Management and Enforcement System"]
+
+        %% ── TOP CROSS-ACTOR USE CASE (LINKING TOP LEFT & TOP RIGHT) ──
+        UC_TopSummary(["Generate Official TRD<br/>Summary & PDF Reports"])
+
+        %% ── TOP LEFT ACTOR (ADMIN) OVALS ──
+        UC_A1(["Monitor Financial Fines<br/>& Revenue Reports"])
+        UC_A2(["Monitor Discrepancy &<br/>Audit Logs"])
+        UC_A3(["Approved Driver & Operator<br/>Registry Changes"])
+        UC_A4(["Manage User Accounts &<br/>RBAC Permissions"])
+
+        %% ── BOTTOM LEFT ACTOR (ENFORCER) OVALS & EXTENSIONS ──
+        UC_E_Main1(["Issue Selective Violation<br/>Citation"])
+        UC_E_Ext1(["Submit Citation for<br/>TRD Review"])
+        UC_E_Ext2(["Auto-Calculate Cumulative<br/>Fine (P500 / P300)"])
+        UC_E_Ext3(["Snap On-Scene Evidence<br/>Photo Proof"])
+
+        UC_E_Main2(["Perform On-Street<br/>Vehicle Inspection"])
+        UC_E_Ext4(["Inspect Visible Physical<br/>TRD Plate"])
+        UC_E_Ext5(["Scan Vehicle TRD<br/>QR Sticker"])
+        UC_E_Ext6(["Flag Unregistered /<br/>Colorum Unit"])
+
+        %% ── CHAINED INCLUSIONS IN LOWER CENTER ──
+        UC_Center_Query(["Query Central Database<br/>by Plate / MTOP"])
+        UC_Center_Verify(["Verify Driver & Operator<br/>Legitimacy"])
+        UC_Center_SearchFare(["Search Destination in<br/>Official Fare Matrix"])
+
+        %% ── TOP RIGHT ACTOR (DRIVER/OPERATOR) OVALS & EXTENSIONS ──
+        UC_D_Main(["Process Violation Adjudication<br/>& Hearing Settlement"])
+        UC_D_Ext1(["Pay Penalty & Settle Fine<br/>(TAMT PAID = AMT + FINE)"])
+        UC_D_Ext2(["Update Franchise Status<br/>in Central Registry"])
+        UC_D_Ext3(["Retrieve Passenger<br/>Overcharging Complaint"])
+        UC_D_Ext4(["Receive Official TRD<br/>Hearing Summon"])
+
+        UC_Token(["Generate Settlement Clearance<br/>Receipt Token"])
+
+        %% ── BOTTOM RIGHT ACTOR (PASSENGER) OVALS & EXTENSIONS ──
+        UC_P_Main(["Build & Submit Passenger<br/>Complaint"])
+        UC_P_Ext1(["Input Actual Fare Charged<br/>& Photo Proof"])
+        UC_P_Ext2(["Track In-App Case<br/>Resolution Status"])
+
+        UC_P_Cart(["Verify Permitted Route<br/>& Local Zone"])
+
+    end
+
+    %% ─────────────────────────────────────────────────────────────
+    %% SOLID ASSOCIATION LINES (MATCHING EXACT GUIDE IMAGE)
+    %% ─────────────────────────────────────────────────────────────
+
+    %% Top Left Actor (Owner / Admin) Connections
+    Admin --- UC_TopSummary
+    Admin --- UC_A1
+    Admin --- UC_A2
+    Admin --- UC_A3
+    Admin --- UC_A4
+
+    %% Bottom Left Actor (Inventory Clerk / Enforcer) Connections
+    Enforcer --- UC_E_Main1
+    Enforcer --- UC_E_Main2
+
+    %% Top Right Actor (Cashier / Driver-Operator) Connections
+    Driver --- UC_TopSummary
+    Driver --- UC_D_Main
+
+    %% Bottom Right Actor (Customer / Passenger) Connections
+    Passenger --- UC_P_Main
+    Passenger --- UC_P_Cart
+    Passenger --- UC_Center_SearchFare
+
+    %% ─────────────────────────────────────────────────────────────
+    %% DASHED <<extend>> AND <<include>> RELATIONSHIPS (1:1 TOPOLOGY)
+    %% ─────────────────────────────────────────────────────────────
+
+    %% Enforcer Main 1 Extensions (fanning rightward/upward like Make Stock Adjustments)
+    UC_E_Main1 -.->|"<<extend>>"| UC_E_Ext1
+    UC_E_Main1 -.->|"<<extend>>"| UC_E_Ext2
+    UC_E_Main1 -.->|"<<extend>>"| UC_E_Ext3
+
+    %% Enforcer Main 2 Extensions (fanning downward like Manage Hardware Inventory)
+    UC_E_Main2 -.->|"<<extend>>"| UC_E_Ext4
+    UC_E_Main2 -.->|"<<extend>>"| UC_E_Ext5
+    UC_E_Main2 -.->|"<<extend>>"| UC_E_Ext6
+
+    %% Chained Inclusion Flow across bottom (matching delivery -> waitlist -> search catalog)
+    UC_E_Ext5 -.->|"<<include>>"| UC_Center_Query
+    UC_Center_Query --- UC_Center_Verify
+    UC_Center_SearchFare -.->|"<<include>>"| UC_Center_Verify
+
+    %% Driver Main Extensions (fanning like Process a Customer Sale)
+    UC_D_Main -.->|"<<extend>>"| UC_D_Ext1
+    UC_D_Main -.->|"<<extend>>"| UC_D_Ext2
+    UC_D_Main -.->|"<<extend>>"| UC_D_Ext3
+    UC_D_Main -.->|"<<extend>>"| UC_D_Ext4
+
+    %% Token Connection
+    UC_D_Ext3 --- UC_Token
+    UC_P_Main -.->|"<<extend>>"| UC_Token
+
+    %% Passenger Complaint Extensions (fanning like Build & Submit Order)
+    UC_P_Main -.->|"<<extend>>"| UC_P_Ext1
+    UC_P_Main -.->|"<<extend>>"| UC_P_Ext2
+

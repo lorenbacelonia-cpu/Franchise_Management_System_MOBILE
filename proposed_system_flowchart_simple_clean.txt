@@ -1,0 +1,29 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% SIMPLE PROPOSED SYSTEM FLOWCHART (Based on textbook guide)
+    %% ─────────────────────────────────────────────────────────────
+
+    %% 1. START TERMINATOR
+    Start(["Start"]) --> ScanInput[/"Passenger scans vehicle QR code on Mobile Web App"/]
+
+    %% 2. FIRST DECISION: YES / NO
+    ScanInput --> IsRegistered{"Is vehicle registered in Database?"}
+
+    IsRegistered -- "Yes" --> ShowDetails[/"Display verified driver, plate, and route"/]
+    IsRegistered -- "No" --> ShowAlert[/"Display unregistered vehicle warning"/]
+
+    %% 3. SECOND DECISION: YES / NO
+    ShowDetails --> CheckViolation{"Is overcharging or violation reported?"}
+    ShowAlert --> CheckViolation
+
+    %% 4. BRANCHES (YES / NO)
+    CheckViolation -- "Yes" --> SubmitReport[/"Passenger submits complaint with actual fare & photo proof"/]
+    SubmitReport --> AdminProcess["Admin reviews complaint in Web Portal & resolves case"]
+    AdminProcess --> Finish
+
+    CheckViolation -- "No" --> ClearTrip["Trip verified successfully with official TRD fare"]
+    ClearTrip --> Finish
+
+    %% 5. END TERMINATOR
+    Finish --> EndNode(["End"])
+

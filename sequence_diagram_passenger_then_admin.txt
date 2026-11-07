@@ -1,0 +1,85 @@
+sequenceDiagram
+    autonumber
+
+    actor Passenger as 👤 Commuter (Passenger)
+    participant MobileApp as 📱 Mobile Web App
+    participant Database as 🗄️ Supabase Central DB
+    participant AdminPortal as 💻 Web Admin Portal
+    actor Admin as 🖥️ TRD Administrator
+
+    %% =============================================================
+    %% PHASE 1: PASSENGER INTERACTION (MOBILE WEB APP)
+    %% =============================================================
+    rect rgb(240, 248, 255)
+    Note over Passenger, Database: PHASE 1: PASSENGER ON-THE-ROAD INTERACTION
+
+    %% Step 1: Check Fare Matrix
+    Passenger->>MobileApp: 1. Open App & Check Official Fare Matrix
+    MobileApp-->>Passenger: Display Authorized Rates (Base Fare + Per-KM Rates)
+
+    %% Step 2: Scan QR Code
+    Passenger->>MobileApp: 2. Scan Vehicle QR Sticker via Camera
+    MobileApp->>Database: Query Vehicle by City Plate / MTOP Number
+    Database-->>MobileApp: Return Operator, Driver Name, Plate & Route
+
+    alt Unit is Unregistered or Expired
+        MobileApp-->>Passenger: Alert: "Unregistered or Expired Vehicle"
+    else Unit is Verified & Active
+        MobileApp-->>Passenger: Display Verified Driver & Franchise Details
+    end
+
+    %% Step 3: File Overcharging Complaint
+    opt Driver Overcharges or Misconducts
+        Passenger->>MobileApp: 3. File Overcharging / Conduct Report
+        Passenger->>MobileApp: Input Fare Charged, Remarks & Attach Photo Proof
+        MobileApp->>Database: Insert into `passenger_complaints` (Status: "Under Investigation")
+        Database-->>MobileApp: Complaint Saved & Return Ticket ID
+        MobileApp-->>Passenger: Display Notice: "Complaint Sent to TRD Office"
+    end
+    end
+
+    %% =============================================================
+    %% PHASE 2: ADMIN ADJUDICATION & LIFECYCLE (WEB ADMIN PORTAL)
+    %% =============================================================
+    rect rgb(255, 248, 240)
+    Note over Database, Admin: PHASE 2: TRD ADMIN OFFICE ADJUDICATION & MANAGEMENT
+
+    %% Step 4: Admin Login & Notification
+    Database-->>AdminPortal: Real-Time Event: New Passenger Complaint Received
+    Admin->>AdminPortal: 4. Log in with Admin Credentials & Passcode
+    AdminPortal->>Database: Verify Admin Account
+    Database-->>AdminPortal: Access Granted (TRD Executive Dashboard)
+
+    %% Step 5: Review & Adjudicate Complaint
+    Admin->>AdminPortal: 5. Open Complaints & Violations Console
+    AdminPortal->>Database: Fetch Passenger Complaint & Photo Receipt
+    Database-->>AdminPortal: Return Details (Excess Fare, Driver Name, Evidence)
+    AdminPortal-->>Admin: Display Case Investigation Details
+
+    alt Driver Settles & Penalty Paid
+        Admin->>AdminPortal: Record Fine Settlement (TAMT_PAID = AMT_PAID + FINE)
+        AdminPortal->>Database: Update Status = "Resolved / Cleared"
+    else Driver Summoned for Hearing
+        Admin->>AdminPortal: Issue Official Summon for TRD Hearing
+        AdminPortal->>Database: Update Status = "Driver Summoned"
+    end
+
+    %% Step 6: Franchise Maintenance & Official Report
+    opt Franchise Record Due for Renewal
+        Admin->>AdminPortal: 6. Open Franchise Renewal
+        Admin->>AdminPortal: Set Next Expiration Date & Application Number
+        AdminPortal->>Database: Update Expiry Date & Status = "Active"
+        AdminPortal->>AdminPortal: Regenerate Verified Vehicle QR Code
+    end
+
+    %% Step 7: Print Official PDF Report
+    Admin->>AdminPortal: 7. Generate Official Monthly Summary
+    AdminPortal->>Database: Fetch Total Verified Units, Complaints & Revenue
+    Database-->>AdminPortal: Return Aggregated Metrics
+    AdminPortal->>Admin: Generate & Print Official PDF Report & QR Certificate
+
+    %% Step 8: Notify Passenger of Case Resolution
+    Database-->>MobileApp: Status Sync: Complaint "Resolved / Cleared"
+    MobileApp-->>Passenger: In-App Notification: "Your Report Has Been Resolved"
+    end
+

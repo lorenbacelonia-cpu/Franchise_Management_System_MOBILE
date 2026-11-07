@@ -1,0 +1,74 @@
+classDiagram
+    %% USER INHERITANCE
+    User <|-- Passenger
+    User <|-- TrafficEnforcer
+    User <|-- Administrator
+
+    class User {
+        +String username
+        +String full_name
+        +String role
+        +login()
+    }
+
+    class Passenger {
+        +scanQRCode()
+        +fileComplaint()
+    }
+
+    class TrafficEnforcer {
+        +String badge_no
+        +issueCitation()
+    }
+
+    class Administrator {
+        +String passcode
+        +renewFranchise()
+        +updateRegistry()
+    }
+
+    %% CORE ENTITIES
+    class FranchiseRecord {
+        +String city_plate_no
+        +String mtop_no
+        +String vehicle_type
+        +String operator_name
+        +String driver_name
+        +Date expiry_date
+        +String status
+        +regenerateQR()
+    }
+
+    class ViolationCitation {
+        +String citation_no
+        +String city_plate_no
+        +String violation_type
+        +Decimal fine_amount
+        +String status
+        +markSettled()
+    }
+
+    class PassengerComplaint {
+        +String ticket_no
+        +String city_plate_no
+        +Decimal fare_charged
+        +String description
+        +String status
+    }
+
+    class FareMatrix {
+        +String vehicle_type
+        +String origin
+        +String destination
+        +Decimal base_fare
+        +computeFare()
+    }
+
+    %% RELATIONSHIPS
+    FranchiseRecord "1" --> "0..*" ViolationCitation : has
+    FranchiseRecord "1" --> "0..*" PassengerComplaint : receives
+    TrafficEnforcer "1" --> "0..*" ViolationCitation : issues
+    Passenger "1" --> "0..*" PassengerComplaint : files
+    Passenger ..> FareMatrix : views
+    Administrator "1" --> "0..*" FranchiseRecord : manages
+

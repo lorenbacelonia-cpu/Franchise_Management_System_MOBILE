@@ -1,0 +1,76 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% EXACT 1:1 REPLICA OF THE UPLOADED FLOWCHART STRUCTURE
+    %% ─────────────────────────────────────────────────────────────
+
+    %% 1. START TERMINATOR
+    Start(["START"]) --> Init
+
+    %% 2. HEXAGON PREPARATION / FORMULAS
+    Init{{"CTR = CTR + 1<br/>CITATIONS = CITATIONS + 1<br/>TOTAL_FINES = FINES + AMT<br/>ACTIVE_FRANCHISES = FRANCHISES ± QTY<br/>PENDING_REPORTS = REPORTS ± COUNT"}}
+
+    %% 3. LOGIN PARALLELOGRAM
+    Init --> Login[/"Login"/]
+
+    %% 4. UPDATE CTR COUNT
+    Login --> UpdateCTR["Update CTR Count"]
+    UpdateCTR --> MergeA
+
+    %% 5. CONNECTOR A MERGE
+    ConnA1((A)) --> MergeA(( ))
+    MergeA --> PurchaseCheck{"Scan Vehicle<br/>QR Code?"}
+
+    %% ─────────────────────────────────────────────────────────────
+    %% LEFT BRANCH (NO) - ADMIN OFFICE ROUTINE
+    %% ─────────────────────────────────────────────────────────────
+    PurchaseCheck -- "NO" --> StoreProduct["Retrieve Admin Records"]
+    StoreProduct --> LogWaitlist["Process Franchise Renewal & Registry"]
+    LogWaitlist --> ConnA2((A))
+
+    %% ─────────────────────────────────────────────────────────────
+    %% RIGHT BRANCH (Yes) - MOBILE SCAN & TRANSACTION
+    %% ─────────────────────────────────────────────────────────────
+    PurchaseCheck -- "Yes" --> SendRequest["Send Query to Central DB"]
+    SendRequest --> ResVerified{"Franchise Verified<br/>in DB?"}
+
+    %% Sub-branch No
+    ResVerified -- "No" --> ResError["Return Unregistered / Colorum Error"]
+    ResError --> ConnA3((A))
+
+    %% Sub-branch Yes
+    ResVerified -- "Yes" --> StockDown["Display Verified Driver & Route"]
+    StockDown --> LogStockDec["Log QR Verification Scan"]
+    LogStockDec --> SchedDelivery["Display Official TRD Fare Rates"]
+    SchedDelivery --> TamtPaid["Input Actual Fare Charged & Proof"]
+    TamtPaid --> TransComplete["Report Status = 'Under Investigation'"]
+    TransComplete --> ReturnDispute{"Adjudication / Settle<br/>Requested?"}
+
+    %% Dispute No -> to B
+    ReturnDispute -- "No" --> ConnB1((B))
+
+    %% Dispute Yes -> Condition Check
+    ReturnDispute -- "Yes" --> ItemCondition{"Penalty Paid &<br/>Settled?"}
+
+    %% Condition Yes (Settled / Cleared)
+    ItemCondition -- "Yes" --> StockReturn["TAMT PAID = AMT PAID + FINE"]
+    StockReturn --> LogStockInc["Update Status = 'Resolved / Cleared'"]
+    LogStockInc --> NotifyClients["Notify Complainant & Close Case"]
+    NotifyClients --> ConnA4((A))
+
+    %% Condition No (Unresolved / Summon)
+    ItemCondition -- "No" --> WarrantyAssess["Issue Driver Summon & TRD Hearing<br/>DEACTIVATE_MTOP = TRUE"]
+    WarrantyAssess --> MergeB
+
+    %% ─────────────────────────────────────────────────────────────
+    %% CONNECTOR B PIPELINE (REPORTING & EXPORT)
+    %% ─────────────────────────────────────────────────────────────
+    ConnB2((B)) --> MergeB(( ))
+    MergeB --> UpdateSales["Update CITATION, FRANCHISE & REVENUE count"]
+    UpdateSales --> GenReport["Generate Official TRD Report"]
+    GenReport --> RetrieveData["Retrieve Filtered Database Records"]
+
+    RetrieveData --> ExportExcel{"Print / Save Official<br/>PDF Report?"}
+
+    ExportExcel -- "No" --> PrintData["Print Summary Data Sheet"]
+    ExportExcel -- "Yes" --> AutoExport["Generate & Print Official PDF Report<br/>& Download QR Inspection Certificate"]
+

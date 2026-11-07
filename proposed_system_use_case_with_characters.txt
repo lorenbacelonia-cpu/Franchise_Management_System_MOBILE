@@ -1,0 +1,103 @@
+flowchart LR
+    %% ─────────────────────────────────────────────────────────────
+    %% UML ACTOR CHARACTERS (Stick Figures / Persona Characters)
+    %% ─────────────────────────────────────────────────────────────
+    subgraph Actors ["👥 System Characters (Actors)"]
+        direction TB
+
+        Passenger["웃<br/><b>Passenger</b><br/><i>(Commuter)</i>"]
+        Enforcer["👮<br/><b>Traffic Enforcer</b><br/><i>(Field Officer)</i>"]
+        Driver["🧑‍✈️<br/><b>Driver / Operator</b><br/><i>(Transport Provider)</i>"]
+        Admin["👨‍💼<br/><b>TRD Administrator</b><br/><i>(Office Head)</i>"]
+    end
+
+    %% ─────────────────────────────────────────────────────────────
+    %% SYSTEM BOUNDARY
+    %% ─────────────────────────────────────────────────────────────
+    subgraph SystemBoundary ["🏛️ Tabaco City TRD Franchise Management & Enforcement System"]
+
+        %% ── PASSENGER USE CASES (Mobile Web) ──
+        subgraph MobilePassenger ["📱 Mobile Passenger Module"]
+            UC_Fare(["UC-01: Check Official Fare Matrix"])
+            UC_Scan(["UC-02: Scan Vehicle QR Code"])
+            UC_Verify(["UC-03: Verify Driver & Route Legitimacy"])
+            UC_Report(["UC-04: Report Overcharging / Misconduct"])
+            UC_AttachProof(["UC-05: Attach Photo Evidence / Receipt"])
+            UC_TrackNotif(["UC-06: Track Complaint Resolution Status"])
+        end
+
+        %% ── TRAFFIC ENFORCER USE CASES (Mobile Web) ──
+        subgraph MobileEnforcer ["👮 Mobile Enforcer Module"]
+            UC_EnfLogin(["UC-07: Login as Traffic Enforcer"])
+            UC_EnfInspect(["UC-08: On-Street Franchise QR Inspection"])
+            UC_SelectiveViol(["UC-09: Issue Selective Violation Citation"])
+            UC_CalcFine(["UC-10: Auto-Calculate Cumulative Fine"])
+            UC_AttachEvidence(["UC-11: Snap On-Scene Photo Evidence"])
+        end
+
+        %% ── TRD ADMIN USE CASES (Web Admin Portal) ──
+        subgraph AdminOffice ["💻 Web Admin Portal (TRD Headquarters)"]
+            UC_AdminAuth(["UC-12: Authenticate with Master Passcode"])
+            UC_ManageFranchise(["UC-13: Manage Franchise Records"])
+            UC_RenewFranchise(["UC-14: Process Renewal (Set Next Expiry & App No.)"])
+            UC_DriverRegistry(["UC-15: Manage Driver & Operator Registry"])
+            UC_ConfirmRegistry(["UC-16: Review & Confirm Personnel Changes"])
+            UC_Adjudicate(["UC-17: Adjudicate Citations & Complaints"])
+            UC_SettleSummon(["UC-18: Issue Summons / Settle Penalties"])
+            UC_PrintReport(["UC-19: Generate & Print Official PDF & QR Certificates"])
+        end
+
+    end
+
+    %% ─────────────────────────────────────────────────────────────
+    %% ACTOR CHARACTER ASSOCIATIONS
+    %% ─────────────────────────────────────────────────────────────
+
+    %% 1. Passenger Associations
+    Passenger --- UC_Fare
+    Passenger --- UC_Scan
+    Passenger --- UC_TrackNotif
+
+    %% 2. Traffic Enforcer Associations
+    Enforcer --- UC_EnfLogin
+    Enforcer --- UC_EnfInspect
+    Enforcer --- UC_SelectiveViol
+
+    %% 3. Driver / Operator Associations
+    Driver --- UC_Verify
+    Driver --- UC_EnfInspect
+    Driver --- UC_SettleSummon
+
+    %% 4. TRD Admin Associations
+    Admin --- UC_AdminAuth
+    Admin --- UC_ManageFranchise
+    Admin --- UC_DriverRegistry
+    Admin --- UC_Adjudicate
+    Admin --- UC_PrintReport
+
+    %% ─────────────────────────────────────────────────────────────
+    %% RELATIONSHIPS: <<include>> & <<extend>>
+    %% ─────────────────────────────────────────────────────────────
+
+    %% Passenger relationships
+    UC_Scan -.->|"<<include>>"| UC_Verify
+    UC_Verify -.->|"<<extend>>"| UC_Report
+    UC_Report -.->|"<<include>>"| UC_AttachProof
+
+    %% Enforcer relationships
+    UC_SelectiveViol -.->|"<<include>>"| UC_CalcFine
+    UC_SelectiveViol -.->|"<<extend>>"| UC_AttachEvidence
+
+    %% Admin relationships
+    UC_ManageFranchise -.->|"<<extend>>"| UC_RenewFranchise
+    UC_DriverRegistry -.->|"<<include>>"| UC_ConfirmRegistry
+    UC_Adjudicate -.->|"<<include>>"| UC_SettleSummon
+
+    %% ─────────────────────────────────────────────────────────────
+    %% STYLING FOR CHARACTERS AND BOUNDARIES
+    %% ─────────────────────────────────────────────────────────────
+    style Passenger fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
+    style Enforcer fill:#fef3c7,stroke:#d97706,stroke-width:2px
+    style Driver fill:#ecfdf5,stroke:#059669,stroke-width:2px
+    style Admin fill:#f1f5f9,stroke:#475569,stroke-width:2px
+

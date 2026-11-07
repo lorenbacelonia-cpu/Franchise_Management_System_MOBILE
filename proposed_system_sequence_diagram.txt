@@ -1,0 +1,77 @@
+sequenceDiagram
+    autonumber
+
+    actor Passenger as 👤 Commuter / Passenger
+    actor Enforcer as 👮 Traffic Enforcer
+    actor Admin as 🖥️ TRD Administrator
+    participant MobileApp as 📱 Mobile Web App
+    participant Database as 🗄️ Supabase Central DB
+    participant AdminPortal as 💻 Web Admin Portal
+
+    %% 1. FRANCHISE MANAGEMENT & RENEWAL (ADMIN)
+    Note over Admin, AdminPortal: 1. Franchise Registration & Renewal
+    Admin->>AdminPortal: Log in with Admin Credentials & Passcode
+    AdminPortal->>Database: Authenticate Admin Account
+    Database-->>AdminPortal: Access Granted (TRD Dashboard)
+
+    Admin->>AdminPortal: Open Franchise Renewal Modal
+    Admin->>AdminPortal: Input Application No. & Select Next Expiration Date
+    AdminPortal->>Database: Update Franchise Expiry & Status = "Active"
+    AdminPortal->>AdminPortal: Regenerate Verified Vehicle QR Code
+    AdminPortal-->>Admin: Display Updated Record & Printable Certificate
+
+    %% 2. COMMUTER QR VERIFICATION & FARE CHECK
+    Note over Passenger, MobileApp: 2. Passenger Verification & Overcharging Report
+    Passenger->>MobileApp: Check Standard Fare Matrix
+    MobileApp-->>Passenger: Display Authorized Rates (Base + Per-KM)
+
+    Passenger->>MobileApp: Scan Vehicle QR Sticker via Camera
+    MobileApp->>Database: Query Franchise Record by Plate/MTOP
+    Database-->>MobileApp: Return Driver Name, Operator, Route & Validity
+
+    alt Unit is Unregistered or Expired
+        MobileApp-->>Passenger: Warning: Unregistered / Expired Unit
+    else Unit is Active
+        MobileApp-->>Passenger: Verified Unit (Legitimate Driver & Route)
+    end
+
+    opt Passenger Overcharged by Driver
+        Passenger->>MobileApp: File Overcharging Report (Enter Fare & Photo Proof)
+        MobileApp->>Database: Insert Record into passenger_complaints (Status: "Under Investigation")
+        Database-->>MobileApp: Confirmation & Complaint Ticket ID
+        MobileApp-->>Passenger: Complaint Registered & Sent to TRD Office
+    end
+
+    %% 3. ENFORCER SELECTIVE VIOLATION CITATION
+    Note over Enforcer, MobileApp: 3. On-Street Enforcer Selective Violation Citation
+    Enforcer->>MobileApp: Log in as Traffic Enforcer
+    Enforcer->>MobileApp: Scan Vehicle QR Code on Street
+    MobileApp->>Database: Query Vehicle Status & Records
+    Database-->>MobileApp: Return Unit Franchise Details
+
+    Enforcer->>MobileApp: Open Selective Violation Panel
+    Enforcer->>MobileApp: Multi-Select Infractions (Route, Overcharging, Obstruction, License)
+    MobileApp->>MobileApp: Auto-Calculate Cumulative Fine (P500 Tri / P300 Pedi)
+    Enforcer->>MobileApp: Snap Evidence Photo & Tap "Issue Citation"
+    MobileApp->>Database: Insert Citation into violations_admin (Status: "Pending Review")
+    Database-->>MobileApp: Success Event (CIT-XXXXXX Generated)
+    MobileApp-->>Enforcer: Official Citation Ticket Recorded
+
+    %% 4. ADMIN ADJUDICATION & SETTLEMENT
+    Note over Admin, AdminPortal: 4. Complaint Adjudication & Official Reporting
+    Database-->>AdminPortal: Real-Time Sync: New Citations & Passenger Complaints
+    Admin->>AdminPortal: Inspect Case Details, Location & Photo Evidence
+
+    alt Case Settled & Fine Paid
+        Admin->>AdminPortal: Settle Case (TAMT_PAID = AMT_PAID + TOTAL_FINE)
+        AdminPortal->>Database: Update Status = "Resolved / Cleared"
+    else Case Escalated / Unresolved
+        Admin->>AdminPortal: Issue Driver Summon for TRD Hearing / Revoke MTOP
+        AdminPortal->>Database: Update Status = "Driver Summoned" or "Revoked"
+    end
+
+    Admin->>AdminPortal: Request Official TRD Monthly Summary
+    AdminPortal->>Database: Fetch Filtered Statistics (Active Units, Citations, Revenue)
+    Database-->>AdminPortal: Return Aggregated Metrics
+    AdminPortal->>Admin: Generate & Print Official TRD PDF Report & QR Certificates
+

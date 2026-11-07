@@ -1,0 +1,144 @@
+<mxfile host="app.diagrams.net" modified="2026-11-02T14:25:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="authentic-trd-package-diagram" name="Authentic TRD Package Diagram">
+    <mxGraphModel dx="1200" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="950" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================= 1. USER INTERFACE (TOP-LEFT) ================= -->
+        <mxCell id="pkg_ui" value="User Interface" style="shape=folder;fontStyle=1;tabWidth=120;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="40" width="310" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ui_mobile" value="Passenger &amp; Enforcer&#xa;Mobile App&#xa;(PWA)" style="shape=folder;fontStyle=0;tabWidth=60;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_ui">
+          <mxGeometry x="25" y="45" width="125" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="ui_admin" value="TRD Admin&#xa;Web Dashboard" style="shape=folder;fontStyle=0;tabWidth=60;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_ui">
+          <mxGeometry x="165" y="45" width="120" height="95" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= 2. USER MANAGEMENT (TOP-RIGHT) ================= -->
+        <mxCell id="pkg_usermgmt" value="User Management" style="shape=folder;fontStyle=1;tabWidth=140;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="420" y="40" width="480" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="u_passenger" value="Passenger&#xa;(Commuter)" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_usermgmt">
+          <mxGeometry x="20" y="55" width="100" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="u_enforcer" value="Traffic&#xa;Enforcer" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_usermgmt">
+          <mxGeometry x="130" y="55" width="100" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="u_driver" value="Driver / Operator&#xa;(Franchise Owner)" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_usermgmt">
+          <mxGeometry x="240" y="55" width="105" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="u_admin" value="TRD&#xa;Admin" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_usermgmt">
+          <mxGeometry x="355" y="55" width="105" height="75" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= 3. CORE OPERATIONS & VERIFICATION (MIDDLE) ================= -->
+        <mxCell id="pkg_operation" value="Core Operations and Verification" style="shape=folder;fontStyle=1;tabWidth=200;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="280" y="280" width="620" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="op_scanner" value="QR Scanner &amp;&#xa;Camera Parser" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_operation">
+          <mxGeometry x="15" y="50" width="105" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="op_verify" value="Franchise Record&#xa;Verification" style="shape=folder;fontStyle=0;tabWidth=55;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_operation">
+          <mxGeometry x="135" y="50" width="105" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="op_fare" value="Fare Matrix &amp;&#xa;Discount Calculator" style="shape=folder;fontStyle=0;tabWidth=55;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_operation">
+          <mxGeometry x="255" y="50" width="110" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="op_citation" value="Enforcer Selective&#xa;Citation &amp; Fine" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_operation">
+          <mxGeometry x="380" y="50" width="110" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="op_complaint" value="Passenger Excess&#xa;Fare Complaint" style="shape=folder;fontStyle=0;tabWidth=55;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_operation">
+          <mxGeometry x="500" y="50" width="105" height="75" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= 4. EVIDENCE & ATTACHMENT STORAGE (BOTTOM-LEFT) ================= -->
+        <mxCell id="pkg_evidence" value="Evidence and Media Storage" style="shape=folder;fontStyle=1;tabWidth=180;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="510" width="480" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ev_camera" value="Ticket Photo&#xa;Camera Capture" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_evidence">
+          <mxGeometry x="15" y="55" width="100" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="ev_upload" value="Evidence Image&#xa;Uploader" style="shape=folder;fontStyle=0;tabWidth=55;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_evidence">
+          <mxGeometry x="125" y="55" width="105" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="ev_viol_store" value="Violation&#xa;Attachments Store" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_evidence">
+          <mxGeometry x="240" y="55" width="105" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="ev_comp_store" value="Complaint&#xa;Attachments Store" style="shape=folder;fontStyle=0;tabWidth=60;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_evidence">
+          <mxGeometry x="355" y="55" width="110" height="75" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= 5. NOTIFICATIONS & HISTORY (BOTTOM-RIGHT) ================= -->
+        <mxCell id="pkg_notifs" value="Notifications and Scan History" style="shape=folder;fontStyle=1;tabWidth=190;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="560" y="530" width="350" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="nt_realtime" value="Realtime Status&#xa;Subscriptions" style="shape=folder;fontStyle=0;tabWidth=45;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_notifs">
+          <mxGeometry x="15" y="55" width="95" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="nt_role" value="Role-Based&#xa;Notifications" style="shape=folder;fontStyle=0;tabWidth=50;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_notifs">
+          <mxGeometry x="120" y="55" width="100" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="nt_history" value="Local History &amp;&#xa;CSV Export" style="shape=folder;fontStyle=0;tabWidth=55;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_notifs">
+          <mxGeometry x="230" y="55" width="105" height="75" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= 6. DATABASE (BOTTOM-CENTER) ================= -->
+        <mxCell id="pkg_db" value="Database" style="shape=folder;fontStyle=1;tabWidth=90;tabHeight=20;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;align=center;fontSize=12;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="370" y="770" width="260" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db_engine" value="PostgreSQL 15+&#xa;(Supabase Backend)" style="shape=folder;fontStyle=0;tabWidth=60;tabHeight=14;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;recursiveResize=0;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;align=center;fontSize=10;fontColor=#000000;" vertex="1" parent="pkg_db">
+          <mxGeometry x="30" y="45" width="200" height="70" as="geometry" />
+        </mxCell>
+
+
+        <!-- ================= CONNECTORS (MATCHING SAMPLE LAYOUT EXACTLY) ================= -->
+        <!-- User Interface -> User Management -->
+        <mxCell id="conn_ui_user" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=1;exitY=0.45;entryX=0;entryY=0.45;" edge="1" parent="1" source="pkg_ui" target="pkg_usermgmt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- User Interface -> Core Operations -->
+        <mxCell id="conn_ui_op" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.5;exitY=1;entryX=0;entryY=0.45;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_ui" target="pkg_operation">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="205" y="357" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User Management -> Core Operations -->
+        <mxCell id="conn_user_op" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.5;exitY=1;entryX=0.6;entryY=0;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_usermgmt" target="pkg_operation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Core Operations -> Evidence and Media Storage -->
+        <mxCell id="conn_op_ev" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.35;exitY=1;entryX=0.5;entryY=0;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_operation" target="pkg_evidence">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Core Operations -> Notifications and Scan History -->
+        <mxCell id="conn_op_nt" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_operation" target="pkg_notifs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Evidence and Media Storage -> Database -->
+        <mxCell id="conn_ev_db" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_evidence" target="pkg_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Notifications and Scan History -> Database -->
+        <mxCell id="conn_nt_db" style="endArrow=block;html=1;strokeColor=#000000;strokeWidth=1.5;endFill=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="1" source="pkg_notifs" target="pkg_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

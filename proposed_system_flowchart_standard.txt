@@ -1,0 +1,70 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% 1. START TERMINATOR
+    %% ─────────────────────────────────────────────────────────────
+    Start(["Start"]) --> InputPortal[/"Select System Portal (Admin or Passenger)"/]
+    InputPortal --> IsAdmin{"Is Admin Portal?"}
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 2. ADMIN SYSTEM WORKFLOW (TRD Office)
+    %% ─────────────────────────────────────────────────────────────
+    IsAdmin -- "Yes" --> AdminCred[/"Input Admin Username & Passcode"/]
+    AdminCred --> AuthCheck{"Credentials Valid?"}
+
+    AuthCheck -- "No" --> AdminCred
+    AuthCheck -- "Yes" --> ShowAdminDash[/"Display Admin Dashboard"/]
+
+    ShowAdminDash --> RenewCheck{"Process Franchise Renewal?"}
+
+    RenewCheck -- "Yes" --> InputRenew[/"Input Application No. & Expiration Date"/]
+    InputRenew --> SaveRenew["Update Expiration in Database &<br/>Regenerate Verified QR Code"]
+    SaveRenew --> AdminDone
+
+    RenewCheck -- "No" --> RegistryCheck{"Update Driver/Operator Registry?"}
+
+    RegistryCheck -- "Yes" --> InputNames[/"Input New Operator / Driver Names"/]
+    InputNames --> SaveNames["Confirm Agreement Checkbox &<br/>Save Registry to Database"]
+    SaveNames --> AdminDone
+
+    RegistryCheck -- "No" --> AdjudicateCheck{"Review Filed Complaints?"}
+
+    AdjudicateCheck -- "Yes" --> ReviewCase["Adjudicate Case & Update Status<br/>(Summon Driver / Settle Paid)"]
+    ReviewCase --> AdminDone
+
+    AdjudicateCheck -- "No" --> PrintReport["Generate & Print Official PDF Report"]
+    PrintReport --> AdminDone
+
+    AdminDone["Admin Process Completed"] --> EndNode(["End"])
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 3. MOBILE SYSTEM WORKFLOW (Passenger / Commuter)
+    %% ─────────────────────────────────────────────────────────────
+    IsAdmin -- "No" --> ShowPassHome[/"Display Passenger Mobile Interface"/]
+
+    ShowPassHome --> FareCheck{"Check Standard Fare Matrix?"}
+
+    FareCheck -- "Yes" --> ShowFare[/"Display Authorized Fare Rates per KM"/]
+    ShowFare --> PassDone
+
+    FareCheck -- "No" --> ScanCheck{"Scan Vehicle QR Code?"}
+
+    ScanCheck -- "Yes" --> ScanQR[/"Scan QR Code via Mobile Camera"/]
+    ScanQR --> QueryDB["Query Vehicle in Central Database"]
+    QueryDB --> IsReg{"Is Vehicle Registered?"}
+
+    IsReg -- "No" --> ShowUnreg[/"Display Alert: Unregistered Unit"/]
+    ShowUnreg --> ReportCheck{"Report Overcharging / Misconduct?"}
+
+    IsReg -- "Yes" --> ShowDriver[/"Display Verified Driver, Plate & Route"/]
+    ShowDriver --> ReportCheck
+
+    ScanCheck -- "No" --> ReportCheck
+
+    ReportCheck -- "Yes" --> InputReport[/"Input Fare Charged & Attach Photo Proof"/]
+    InputReport --> SaveReport["Save Complaint to Database with Status 'Under Investigation'"]
+    SaveReport --> PassDone
+
+    ReportCheck -- "No" --> PassDone
+
+    PassDone["Passenger Process Completed"] --> EndNode
+

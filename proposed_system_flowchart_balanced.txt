@@ -1,0 +1,59 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% 1. START TERMINATOR
+    %% ─────────────────────────────────────────────────────────────
+    Start(["Start"]) --> AccessType{"Is access from Mobile Passenger?"}
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 2. MOBILE WEB PASSENGER WORKFLOW (Yes branch)
+    %% ─────────────────────────────────────────────────────────────
+    AccessType -- "Yes" --> ShowMobileHome[/"Open Mobile Web App"/]
+    ShowMobileHome --> CheckFare{"Check Standard Fare Matrix first?"}
+
+    CheckFare -- "Yes" --> DisplayFare[/"Display Authorized Base & Per-KM Rates"/] --> ScanQRStep
+    CheckFare -- "No" --> ScanQRStep[/"Passenger scans vehicle QR code via Camera"/]
+
+    ScanQRStep --> QueryDB["Query Central Database for Vehicle Record"]
+    QueryDB --> IsValid{"Is Vehicle Registered & Active?"}
+
+    IsValid -- "No" --> UnregWarning[/"Display Alert: Unregistered / Expired Unit"/] --> ViolCheck
+    IsValid -- "Yes" --> ShowDriverInfo[/"Display Verified Operator, Driver, Plate & Route"/] --> ViolCheck
+
+    ViolCheck{"Report Overcharging or Misconduct?"}
+
+    ViolCheck -- "No" --> TripComplete[/"Passenger completes trip safely with verified fare"/] --> EndNode(["End"])
+
+    ViolCheck -- "Yes" --> EnterComplaint[/"Input Actual Fare Charged, Remarks & Attach Photo Receipt"/]
+    EnterComplaint --> SaveComplaint["Insert into passenger_complaints DB (Status: 'Under Investigation')"]
+    SaveComplaint --> ConfirmSent[/"Display Notice: Report Forwarded to TRD Office"/] --> EndNode
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 3. WEB ADMIN WORKFLOW (No branch - TRD Office Administrator)
+    %% ─────────────────────────────────────────────────────────────
+    AccessType -- "No" --> AdminLogin[/"Admin Login: Enter Username & Confidential Passcode"/]
+    AdminLogin --> AuthValid{"Are Credentials Valid?"}
+
+    AuthValid -- "No" --> AdminLogin
+    AuthValid -- "Yes" --> AdminDash[/"Display TRD Executive Web Dashboard"/]
+
+    AdminDash --> RenewTask{"Process Franchise Renewal or Registry?"}
+
+    RenewTask -- "Yes" --> ProcessRenewal["Update Expiration Date, Application No., or Driver Names<br/>Regenerate Verified Vehicle QR Code"]
+    ProcessRenewal --> SaveAdminDB["Commit Updates to Central Database"]
+    SaveAdminDB --> ReviewTask
+
+    RenewTask -- "No" --> ReviewTask{"Review Filed Passenger Complaints?"}
+
+    ReviewTask -- "Yes" --> FetchComplaints["Retrieve Passenger Reports & Photo Evidence from Database"]
+    FetchComplaints --> SettleDecision{"Is Complaint Settled / Paid?"}
+
+    SettleDecision -- "Yes" --> CaseCleared["Record Penalty Settlement & Mark Status = 'Resolved / Cleared'"]
+    SettleDecision -- "No" --> IssueSummons["Update Status = 'Driver Summoned' & Schedule TRD Hearing"]
+    CaseCleared --> ReportTask
+    IssueSummons --> ReportTask
+
+    ReviewTask -- "No" --> ReportTask{"Generate & Print Official Reports?"}
+
+    ReportTask -- "Yes" --> PrintPDF[/"Generate & Print Official Summary PDF & QR Vehicle Certificates"/] --> EndNode
+    ReportTask -- "No" --> EndNode
+

@@ -511,6 +511,15 @@
             </ul>
           </div>
 
+          <!-- Enforcer Quick Test Plate (Enforcer Only) -->
+          <div id="enforcer-empty-quick-test" class="enforcer-empty-quick-test hidden">
+            <span class="quick-test-label">👮 Officer Quick Test / Demo Records:</span>
+            <div class="quick-test-btns">
+              <button type="button" class="btn-test-plate" data-plate="P-101">🚲 Pedicab P-101</button>
+              <button type="button" class="btn-test-plate" data-plate="T-1136">🛺 Tricycle T-1136</button>
+            </div>
+          </div>
+
           <button id="btn-empty-start-scan" type="button" class="stack-btn btn-emerald">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -634,6 +643,68 @@
             <div class="mint-row">
               <span class="row-label">Availability</span>
               <span id="val-availability" class="row-val font-bold">—</span>
+            </div>
+          </div>
+
+          <!-- Enforcer Selective Violation Section (Visible when logged in as Traffic Enforcer) -->
+          <div id="enforcer-selective-violations-card" class="enforcer-selective-violations-card hidden">
+            <div class="enforcer-card-header">
+              <div class="header-left">
+                <span class="enforcer-badge-icon">⚖️</span>
+                <div>
+                  <h3 class="enforcer-card-title">Selective Violation Citation</h3>
+                  <p class="enforcer-card-sub">Select one or multiple TRD infractions to cite this unit</p>
+                </div>
+              </div>
+              <span class="enforcer-badge-tag">OFFICIAL CITATION</span>
+            </div>
+
+            <!-- Selective Violation Grid -->
+            <div class="selective-violation-grid" id="onpage-selective-violation-grid">
+              <!-- Populated dynamically by JS -->
+            </div>
+
+            <!-- Citation Summary & Fine Total -->
+            <div class="citation-summary-panel" id="onpage-citation-summary">
+              <div class="summary-top-row">
+                <div class="summary-stat-item">
+                  <span class="stat-label">Infractions</span>
+                  <span class="stat-count" id="onpage-selected-count">0 selected</span>
+                </div>
+                <div class="summary-stat-item text-right">
+                  <span class="stat-label">Total Fine</span>
+                  <span class="stat-fine" id="onpage-total-fine">₱0.00</span>
+                </div>
+              </div>
+              <div class="selected-violations-pills" id="onpage-selected-pills"></div>
+            </div>
+
+            <!-- Quick Remarks & Citation Location -->
+            <div class="enforcer-inputs-card">
+              <div class="input-pill mt-2">
+                <input id="onpage-enforcer-location" type="text" placeholder="Location (e.g. Ziga Ave. Commercial Center)" />
+              </div>
+              <div class="input-pill mt-2">
+                <input id="onpage-enforcer-remarks" type="text" placeholder="Officer Remarks / Ticket No. (Optional)" />
+              </div>
+            </div>
+
+            <!-- Action Buttons for Enforcer Citation -->
+            <div class="enforcer-citation-btn-row">
+              <button id="btn-onpage-issue-citation" type="button" class="btn-enforcer-action-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="M9 12l2 2 4-4"></path>
+                </svg>
+                <span>Issue Selective Citation</span>
+              </button>
+              <button id="btn-onpage-open-modal" type="button" class="btn-enforcer-action-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>Attach Photo</span>
+              </button>
             </div>
           </div>
 
@@ -873,11 +944,23 @@
           </div>
 
           <form id="report-form">
-            <div class="input-pill mt-2">
+            <!-- Passenger Single Dropdown -->
+            <div id="field-passenger-report-type-wrap" class="input-pill mt-2">
               <label class="form-field-label" id="report-type-label">Select Violation / Issue Type:</label>
               <select id="report-type">
-                <!-- Dynamically populated by JS based on Passenger vs Traffic Enforcer role -->
+                <!-- Dynamically populated by JS based on Passenger role -->
               </select>
+            </div>
+
+            <!-- Enforcer Selective Violation Component inside Modal -->
+            <div id="field-enforcer-modal-selective-wrap" class="enforcer-modal-selective-wrap hidden">
+              <div class="modal-section-title-row">
+                <label class="form-field-label">Selective TRD Infractions (Tap to select):</label>
+                <span class="modal-fine-total-badge" id="modal-total-fine-badge">Total Fine: ₱0</span>
+              </div>
+              <div class="selective-violation-grid modal-grid" id="modal-selective-violation-grid">
+                <!-- Populated dynamically by JS -->
+              </div>
             </div>
 
             <!-- Dynamic Fields -->

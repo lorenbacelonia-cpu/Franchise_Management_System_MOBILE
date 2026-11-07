@@ -1,0 +1,79 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% 1. MOBILE WEB SYSTEM (PASSENGER CLIENT ON SMARTPHONE)
+    %% ─────────────────────────────────────────────────────────────
+    subgraph MobileSystem ["📱 Mobile Web App (Passenger / Commuter)"]
+        StartMobile(["Start Mobile App"]) --> ShowHome[/"Display Passenger Home Interface"/]
+
+        ShowHome --> CheckFare{"Check Standard Fare Matrix?"}
+
+        CheckFare -- "Yes" --> ShowFare[/"Display Authorized Fare Rates per KM"/]
+        ShowFare --> ScanCheck
+
+        CheckFare -- "No" --> ScanCheck{"Scan Vehicle QR Code?"}
+
+        ScanCheck -- "Yes" --> ScanQR[/"Scan QR Sticker on Tricycle / Pedicab"/]
+        ScanQR --> QueryDB["Send Query to Central Database"]
+
+        QueryDB --> IsReg{"Is Vehicle Registered & Active?"}
+
+        IsReg -- "No" --> ShowUnreg[/"Display Alert: Unregistered / Colorum Unit"/]
+        ShowUnreg --> ReportCheck
+
+        IsReg -- "Yes" --> ShowDriver[/"Display Verified Driver, Plate & Route"/]
+        ShowDriver --> ReportCheck
+
+        ScanCheck -- "No" --> ReportCheck{"File Overcharging / Misconduct Report?"}
+
+        ReportCheck -- "Yes" --> InputComplaint[/"Input Actual Fare Charged & Attach Photo Receipt"/]
+        InputComplaint --> SendReport["Save Complaint to Database (Status: 'Under Investigation')"]
+        SendReport --> EndMobile(["End Mobile Session"])
+
+        ReportCheck -- "No" --> EndMobile
+    end
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 2. CENTRAL DATA LAYER (BRIDGING MOBILE & ADMIN)
+    %% ─────────────────────────────────────────────────────────────
+    CentralDB[("Supabase Central Database")]
+    QueryDB <--> CentralDB
+    SendReport --> CentralDB
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 3. WEB ADMIN SYSTEM (TRD HEADQUARTERS ON DESKTOP)
+    %% ─────────────────────────────────────────────────────────────
+    subgraph AdminSystem ["🖥️ Web Admin System (TRD Office Administrator)"]
+        StartAdmin(["Start Admin System"]) --> AdminLogin[/"Input Admin Username & Confidential Passcode"/]
+
+        AdminLogin --> AdminAuth{"Admin Credentials Valid?"}
+
+        AdminAuth -- "No" --> AdminLogin
+        AdminAuth -- "Yes" --> AdminDash[/"Display TRD Executive Dashboard"/]
+
+        AdminDash --> ActionCheck{"Review Filed Passenger Reports?"}
+
+        %% Reviewing Mobile User's Reports
+        ActionCheck -- "Yes" --> FetchReports["Fetch Passenger Complaints from Database"]
+        FetchReports --> SettleCheck{"Is Complaint Resolved / Paid?"}
+
+        SettleCheck -- "Yes" --> SettleRecord["Update Status = 'Resolved / Cleared'"]
+        SettleRecord --> SaveDB
+
+        SettleCheck -- "No" --> SummonDriver["Update Status = 'Driver Summoned'<br/>Schedule TRD Hearing"]
+        SummonDriver --> SaveDB
+
+        %% Franchise Management & Renewal
+        ActionCheck -- "No" --> RenewCheck{"Process Franchise Renewal?"}
+
+        RenewCheck -- "Yes" --> InputRenew[/"Input Next Application No. & Expiration Date"/]
+        InputRenew --> GenQR["Update Status = 'Active' &<br/>Regenerate Official Vehicle QR Code"]
+        GenQR --> SaveDB
+
+        %% Printing Official Reports
+        RenewCheck -- "No" --> PrintPDF[/"Generate & Print Official TRD Summary PDF &<br/>Download Official Vehicle QR Certificate"/]
+        PrintPDF --> EndAdmin(["End Admin Session"])
+
+        SaveDB["Commit Updates to Central Database"] --> CentralDB
+        SaveDB --> EndAdmin
+    end
+

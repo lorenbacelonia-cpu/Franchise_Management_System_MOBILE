@@ -392,7 +392,7 @@ export async function submitEnforcerViolation(reportData) {
       driver_name: reportData.driver_name || 'Apprehended Driver',
       violation_type: violationType,
       location: reportData.location || 'Tabaco City Commercial Center',
-      fine_amount: category === 'Pedicab' ? 300 : 500,
+      fine_amount: Number(reportData.fine_amount) || (category === 'Pedicab' ? 300 : 500),
       enforcer_name: enforcerName,
       reported_by: reportData.reporter_username || enforcerName,
       remarks: reportData.description || fullDescription,

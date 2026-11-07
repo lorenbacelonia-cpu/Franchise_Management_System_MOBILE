@@ -1,0 +1,125 @@
+flowchart TD
+    %% ─────────────────────────────────────────────────────────────
+    %% 1. START & SYSTEM INITIALIZATION
+    %% ─────────────────────────────────────────────────────────────
+    Start(["START"]) --> Init
+
+    Init{{"ACTIVE_FRANCHISES = ACTIVE_FRANCHISES ± QTY<br/>CITATIONS_COUNT = CITATIONS_COUNT + 1<br/>TOTAL_REVENUE = REVENUE + FINE_AMT<br/>PENDING_CASES = CASES ± 1"}}
+
+    Init --> PortalCheck{"User Access Point?"}
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 2. WEB ADMIN OFFICE WORKFLOW (TRD HEADQUARTERS)
+    %% ─────────────────────────────────────────────────────────────
+    PortalCheck -- "Web Admin Portal" --> AdminLogin[/"Input Admin Credentials & Authorization Passcode"/]
+    AdminLogin --> AdminAuth{"Credentials Valid?"}
+
+    AdminAuth -- "No" --> AdminLogin
+    AdminAuth -- "Yes" --> AdminDash[/"Display TRD Master Dashboard"/]
+    AdminDash --> A1((A))
+
+    A1 --> AdminAction{"Select Administrative Task?"}
+
+    %% Task 1: Franchise Renewal
+    AdminAction -- "Franchise Renewal" --> SelectUnit[/"Select Franchise Record"/]
+    SelectUnit --> InputRenewal[/"Input Next Application Number &<br/>Set Next Expiration Date (1-3 Years)"/]
+    InputRenewal --> SaveRenewal["Update Expiration Date in Database &<br/>Regenerate Encrypted QR Signature"]
+    SaveRenewal --> CentralDB[("Supabase Central Database")]
+    SaveRenewal --> TaskDone{"Perform Another Admin Task?"}
+
+    %% Task 2: Driver & Operator Registry
+    AdminAction -- "Personnel Registry" --> EditRegistry[/"Input Updated Driver / Operator Names"/]
+    EditRegistry --> ConfirmRegistry{"Admin Confirmed Agreement Checkbox?"}
+    ConfirmRegistry -- "Yes" --> SaveRegistry["Commit Personnel Change to Database &<br/>Log Administrative Audit Trail"]
+    ConfirmRegistry -- "No" --> EditRegistry
+    SaveRegistry --> CentralDB
+    SaveRegistry --> TaskDone
+
+    %% Task 3: Violations Adjudication & Settlement
+    AdminAction -- "Adjudicate Violations" --> FetchCases[("Retrieve Pending Citations & Complaints")]
+    FetchCases --> CaseDecision{"Case Resolution?"}
+
+    CaseDecision -- "Settled / Paid" --> SettleFine["TAMT_PAID = AMT_PAID + TOTAL_FINE<br/>Status = 'Resolved / Cleared'"]
+    CaseDecision -- "Summon Driver" --> IssueSummon["Status = 'Driver Summoned'<br/>Schedule TRD Adjudication Hearing"]
+    CaseDecision -- "Revoke MTOP" --> RevokeFranchise["Status = 'Franchise Revoked'<br/>Deactivate Vehicle MTOP"]
+
+    SettleFine --> CentralDB
+    IssueSummon --> CentralDB
+    RevokeFranchise --> CentralDB
+    SettleFine --> TaskDone
+    IssueSummon --> TaskDone
+    RevokeFranchise --> TaskDone
+
+    %% Task 4: Reports & Printing
+    AdminAction -- "Official Reports" --> GenReports["Compile System Metrics & Audit Stats"]
+    GenReports --> PrintChoice{"Print / Export Format?"}
+    PrintChoice -- "PDF Report" --> PrintPDF[/"Generate & Print Official Summary PDF"/]
+    PrintChoice -- "QR Certificate" --> PrintQR[/"Download & Print Official Vehicle QR Certificate"/]
+    PrintPDF --> TaskDone
+    PrintQR --> TaskDone
+
+    TaskDone -- "Yes" --> A1
+    TaskDone -- "No" --> EndAdmin(["End Admin Session"])
+
+    %% ─────────────────────────────────────────────────────────────
+    %% 3. MOBILE WEB APP WORKFLOW (ON-THE-ROAD USERS)
+    %% ─────────────────────────────────────────────────────────────
+    PortalCheck -- "Mobile Web App" --> MobileHome[/"Launch Mobile Client Interface"/]
+    MobileHome --> MobileRole{"User Role?"}
+
+    %% Role A: Commuter / Passenger
+    MobileRole -- "Passenger" --> PassAction{"Passenger Action?"}
+
+    PassAction -- "Check Fare" --> ViewFare[/"Display Official TRD Fare Matrix Rates"/]
+    ViewFare --> ScanPrompt{"Scan Vehicle QR Code?"}
+
+    PassAction -- "Verify Vehicle" --> ScanPrompt
+    ScanPrompt -- "Yes" --> ScanQR[/"Scan Vehicle QR Sticker via Camera"/]
+    ScanPrompt -- "No" --> PassDone{"Exit Mobile App?"}
+
+    ScanQR --> QueryDB["Query Vehicle in Central Database"]
+    QueryDB <--> CentralDB
+
+    QueryDB --> RegCheck{"Franchise Registered & Valid?"}
+
+    RegCheck -- "No" --> UnregAlert[/"Display Warning: Unregistered / Expired Unit"/]
+    UnregAlert --> ReportPrompt{"File Overcharging / Misconduct Report?"}
+
+    RegCheck -- "Yes" --> ShowDetails[/"Display Verified Operator, Driver, Plate & Route"/]
+    ShowDetails --> ReportPrompt
+
+    ReportPrompt -- "Yes" --> InputComplaint[/"Input Actual Fare Charged & Attach Photo Proof"/]
+    InputComplaint --> SubmitComplaint["Set Status = 'Under Investigation'<br/>Insert Record into passenger_complaints DB"]
+    SubmitComplaint --> CentralDB
+    SubmitComplaint --> ShowSuccess[/"Display Confirmation: Complaint Sent to TRD Office"/]
+    ShowSuccess --> PassDone
+
+    ReportPrompt -- "No" --> PassDone
+    PassDone -- "No" --> MobileHome
+    PassDone -- "Yes" --> EndMobile(["End Mobile Session"])
+
+    %% Role B: Traffic Enforcer
+    MobileRole -- "Traffic Enforcer" --> EnfLogin[/"Enforcer Login: Credentials"/]
+    EnfLogin --> EnfScan[/"Scan Vehicle QR Code on Duty"/]
+    EnfScan --> QueryDB
+
+    ShowDetails --> EnfCheck{"Issue Traffic Citation Ticket?"}
+    UnregAlert --> EnfCheck
+
+    EnfCheck -- "Yes" --> SelectViolations[/"Selective Violation Engine:<br/>Select Observed Infractions (Route, Fare, License, Parking)"/]
+    SelectViolations --> AutoFine["Compute TOTAL_FINE = SUM(INFRACTION_FINES)<br/>(₱500 Tricycle / ₱300 Pedicab)"]
+    AutoFine --> EvidenceCheck{"Attach Evidence Photo?"}
+
+    EvidenceCheck -- "Yes" --> SnapEvidence[/"Capture On-Scene Physical Evidence"/]
+    EvidenceCheck -- "No" --> GenTicket["Generate Citation Ticket CIT_NO = CIT-YYYYMM-XXXX"]
+    SnapEvidence --> GenTicket
+
+    GenTicket --> SubmitCitation["Set Status = 'Pending TRD Review'<br/>Insert Record into violations_admin DB"]
+    SubmitCitation --> CentralDB
+    SubmitCitation --> EnfSuccess[/"Display: Citation Registered Successfully"/]
+    EnfSuccess --> EnfNext{"Scan Another Vehicle?"}
+
+    EnfNext -- "Yes" --> EnfScan
+    EnfNext -- "No" --> EndEnforcer(["End Enforcer Duty"])
+    EnfCheck -- "No" --> EnfNext
+
