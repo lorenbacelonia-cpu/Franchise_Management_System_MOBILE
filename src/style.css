@@ -1871,6 +1871,11 @@ img {
   margin-bottom: 10px;
 }
 
+.fare-buttons-row.has-single-btn,
+.fare-buttons-row:has(#btn-fare-violation.hidden) {
+  grid-template-columns: 1fr;
+}
+
 .fare-action-btn {
   width: 100%;
   padding: 12px 14px;

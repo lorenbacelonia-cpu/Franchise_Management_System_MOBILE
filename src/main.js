@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     localStorage.removeItem('trd_submitted_reports');
     localStorage.removeItem('trd_read_notifications_ids');
-  } catch {}
+  } catch { }
 
   setupNavigation();
   setupSoundToggle();
@@ -458,7 +458,7 @@ function forceLoginScreen() {
 
 function showLoggedInState(user) {
   const isEnforcer = user?.role === 'Traffic Enforcer';
-  
+
   // Apply theme class to document body and app container
   document.body.classList.toggle('user-role-enforcer', isEnforcer);
   const appEl = document.getElementById('app');
@@ -528,6 +528,9 @@ function showLoggedInState(user) {
 
   // Refresh notifications and badge counter for the logged-in role
   loadAndRenderNotifications();
+
+  // Update fare matrix buttons (hide Violation button if logged in as Passenger)
+  updateFareMatrixButtonsUI();
 }
 
 /* ==========================================================================
@@ -641,6 +644,7 @@ function setupLogout() {
 
     currentRoleNotifications = [];
     updateNotificationBadges(0);
+    updateFareMatrixButtonsUI();
 
     showToast('Logged out successfully.');
     switchView('view-login');
@@ -1475,7 +1479,7 @@ function setupVerificationActions() {
     sendReportBtn.addEventListener('click', () => {
       const user = getCurrentUser();
       const isEnforcer = user?.role === 'Traffic Enforcer';
-      openReportModalForCurrentUser(isEnforcer ? 'violation' : 'overcharging', isEnforcer ? 'Official Overcharging Citation' : 'Report Overcharging');
+      openReportModalForCurrentUser(isEnforcer ? 'violation' : 'passenger');
     });
   }
 
@@ -1503,7 +1507,24 @@ const tricycleFareData = [
   { col1: '', regular: '', student: '', senior: '' },
 ];
 
+export function updateFareMatrixButtonsUI() {
+  const violationBtn = document.getElementById('btn-fare-violation');
+  const buttonsRow = document.querySelector('.fare-buttons-row');
+  const user = getCurrentUser();
+  const loggedIn = isLoggedIn();
+  // Remove the violation button if logged in as Passenger; if not logged in (or logged in as Enforcer), do not remove it
+  const isPassenger = loggedIn && (user?.role === 'Passenger' || (user?.role && user.role !== 'Traffic Enforcer'));
+
+  if (violationBtn) {
+    violationBtn.classList.toggle('hidden', Boolean(isPassenger));
+  }
+  if (buttonsRow) {
+    buttonsRow.classList.toggle('has-single-btn', Boolean(isPassenger));
+  }
+}
+
 function renderFareMatrixPage(vehicleTypeMode, searchQuery = '') {
+  updateFareMatrixButtonsUI();
   const mode = vehicleTypeMode || currentVerifiedRecord?.vehicleType || 'Pedicab';
   const isPedicab = (mode || 'pedicab').toString().toLowerCase().includes('pedicab');
 
@@ -1570,6 +1591,8 @@ function renderFareMatrixPage(vehicleTypeMode, searchQuery = '') {
 }
 
 function setupFareMatrixView() {
+  updateFareMatrixButtonsUI();
+
   const backBtn = document.getElementById('btn-fare-back');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
@@ -1601,7 +1624,7 @@ function setupFareMatrixView() {
   const overchargingBtn = document.getElementById('btn-fare-overcharging');
   if (overchargingBtn) {
     overchargingBtn.addEventListener('click', () => {
-      openReportModalForCurrentUser('overcharging', 'Report Overcharging');
+      openReportModalForCurrentUser('overcharging', 'Overcharging (Excess Fare)');
     });
   }
 
@@ -1758,7 +1781,45 @@ function clearReportAttachment() {
 /* ==========================================================================
    ROLE-BASED VIOLATION REPORTING MODAL PERMISSIONS
    ========================================================================== */
-function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultType = null) {
+export const PASSENGER_REPORT_TYPES = [
+  'Over speeding',
+  'Abusive language/cursing (nangmumura)',
+  'Drunk Driving',
+  'Dropping off passenger at the wrong destination',
+  'Harassment',
+  'Overcharging (Excess Fare)'
+];
+
+function updatePassengerFareInputVisibility() {
+  const fareWrap = document.getElementById('field-fare-wrap');
+  const actualFareInput = document.getElementById('report-actual-fare');
+  const reportTypeSelect = document.getElementById('report-type');
+  const user = getCurrentUser();
+  const isEnforcer = user?.role === 'Traffic Enforcer';
+
+  if (!fareWrap || !actualFareInput) return;
+
+  if (isEnforcer) {
+    fareWrap.classList.add('hidden');
+    actualFareInput.required = false;
+    actualFareInput.value = '';
+    return;
+  }
+
+  const selectedVal = (reportTypeSelect?.value || '').toLowerCase();
+  const isOvercharging = selectedVal.includes('overcharging');
+
+  if (isOvercharging) {
+    fareWrap.classList.remove('hidden');
+    actualFareInput.required = true;
+  } else {
+    fareWrap.classList.add('hidden');
+    actualFareInput.required = false;
+    actualFareInput.value = '';
+  }
+}
+
+function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType = null) {
   const isViolationCategory = reportCategory === 'violation';
 
   // 1. MANDATORY LOGIN CHECK
@@ -1800,7 +1861,7 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
     if (isEnforcer) {
       titleEl.textContent = isViolationCategory ? 'Official TRD Traffic Citation' : 'Official TRD Overcharging Citation';
     } else {
-      titleEl.textContent = 'Submit Passenger Overcharging Report';
+      titleEl.textContent = 'Submit Passenger Report';
     }
   }
 
@@ -1847,26 +1908,25 @@ function openReportModalForCurrentUser(reportCategory = 'overcharging', defaultT
     if (isEnforcer) {
       reportTypeSelect.innerHTML = TRD_VIOLATIONS.map(v => '<option value="' + v.title + '">' + v.title + '</option>').join('\n        ');
     } else {
-      reportTypeSelect.innerHTML = `
-        <option value="Over Speeding">Over Speeding</option>
-        <option value="Abusive Language/Cursing">Abusive language/cursing</option>
-        <option value="Drunk Driving">Drunk Driving</option>
-        <option value="Harassment">Harassment</option>
-        <option value="Dropping off passenger at the wrong destination">Dropping off passenger at the wrong destination</option>
-        <option value="Overcharging (Excess Fare)">Overcharging (Excess Fare)</option>
-      `;
+      reportTypeSelect.innerHTML = PASSENGER_REPORT_TYPES.map(opt => `<option value="${opt}">${opt}</option>`).join('\n        ');
+      if (defaultType && PASSENGER_REPORT_TYPES.includes(defaultType)) {
+        reportTypeSelect.value = defaultType;
+      } else if (reportCategory === 'overcharging') {
+        reportTypeSelect.value = 'Overcharging (Excess Fare)';
+      }
     }
   }
 
   const enforcerBadgeWrap = document.getElementById('field-enforcer-badge-wrap');
   const citationWrap = document.getElementById('field-citation-wrap');
-  const fareWrap = document.getElementById('field-fare-wrap');
   const submitBtn = document.getElementById('btn-report-submit');
 
   // Enforcer does NOT need manual badge or manual driver input (already scanned)
   if (enforcerBadgeWrap) enforcerBadgeWrap.classList.add('hidden');
   if (citationWrap) citationWrap.classList.add('hidden');
-  if (fareWrap) fareWrap.classList.toggle('hidden', isEnforcer);
+
+  // Show actual fare input ONLY if passenger chooses Overcharging report
+  updatePassengerFareInputVisibility();
 
   if (submitBtn) {
     submitBtn.classList.toggle('modal-enforcer-btn', isEnforcer);
@@ -1925,6 +1985,13 @@ function setupModals() {
     });
   }
 
+  const reportTypeSelect = document.getElementById('report-type');
+  if (reportTypeSelect) {
+    reportTypeSelect.addEventListener('change', () => {
+      updatePassengerFareInputVisibility();
+    });
+  }
+
   const reportForm = document.getElementById('report-form');
   if (reportForm) reportForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1932,7 +1999,7 @@ function setupModals() {
     const roleName = user?.role || 'Passenger';
     const isEnforcer = roleName === 'Traffic Enforcer';
 
-    const reportType = document.getElementById('report-type')?.value || (isEnforcer ? 'Official Violation Citation' : 'Overcharging / Excess Fare');
+    const reportType = document.getElementById('report-type')?.value || (isEnforcer ? 'Official Violation Citation' : 'Over speeding');
     const actualFare = parseFloat(document.getElementById('report-actual-fare')?.value) || null;
     const enforcerBadge = document.getElementById('report-enforcer-id')?.value || '';
     const citationNo = document.getElementById('report-citation-no')?.value || '';
@@ -2128,7 +2195,7 @@ function closeNotificationsModal() {
  */
 async function loadAndRenderNotifications(notifyIfNew = false) {
   const user = getCurrentUser() || { role: selectedLoginRole || 'Passenger', username: 'Guest' };
-  
+
   try {
     const list = await fetchRoleNotifications(user);
     const previousUnread = currentRoleNotifications.filter(n => !n.isRead).length;
@@ -2206,9 +2273,9 @@ function renderNotificationsList() {
         <div class="notif-empty-icon">${isEnforcer ? '🛡️' : '📋'}</div>
         <div class="notif-empty-title">No ${currentNotifFilter === 'all' ? '' : currentNotifFilter} Status Updates</div>
         <div class="notif-empty-desc">
-          ${isEnforcer 
-            ? `No citations found for Officer ${accountName}. When you issue official violation citations, their TRD review, hearing, and settlement statuses will be tracked here.` 
-            : `No reports submitted by ${accountName} yet. When you submit an overcharging report or fare complaint, its official TRD investigation status will appear here.`}
+          ${isEnforcer
+        ? `No citations found for Officer ${accountName}. When you issue official violation citations, their TRD review, hearing, and settlement statuses will be tracked here.`
+        : `No reports submitted by ${accountName} yet. When you submit an overcharging report or fare complaint, its official TRD investigation status will appear here.`}
         </div>
       </div>
     `;

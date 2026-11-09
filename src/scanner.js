@@ -31,7 +31,7 @@ export function playBeep() {
     const audioCtx = new AudioCtxClass();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    
+
     osc.type = 'sine';
     osc.frequency.setValueAtTime(880, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
@@ -84,8 +84,8 @@ async function cleanupScannerInstance() {
       console.warn('Instance stop notice:', e);
     }
     try {
-      await inst.clear().catch(() => {});
-    } catch (_) {}
+      await inst.clear().catch(() => { });
+    } catch (_) { }
   }
 }
 
@@ -394,7 +394,7 @@ export async function startScanner(onScanSuccessCallback) {
         (decodedText, decodedResult) => {
           handleSuccessfulScan(decodedText, decodedResult);
         },
-        () => {} // scan frame error (quiet)
+        () => { } // scan frame error (quiet)
       );
 
       isScanning = true;
@@ -425,9 +425,7 @@ export async function stopScanner() {
   if (promptWrap) promptWrap.classList.add('hidden');
 }
 
-/**
- * Switch to next available camera lens
- */
+
 export async function switchNextCamera() {
   if (availableCameras.length <= 1) return;
   currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
@@ -558,8 +556,8 @@ export async function scanImageFile(file) {
   } finally {
     if (fileScanner) {
       try {
-        await fileScanner.clear().catch(() => {});
-      } catch (_) {}
+        await fileScanner.clear().catch(() => { });
+      } catch (_) { }
     }
   }
 }
