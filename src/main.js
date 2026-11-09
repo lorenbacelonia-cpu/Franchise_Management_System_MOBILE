@@ -1128,7 +1128,101 @@ export const TRD_VIOLATIONS = [
   }
 ];
 
+/* ==========================================================================
+   OFFICIAL PASSENGER COMPLAINT & VIOLATION TYPES (MULTI-SELECT CHECKLIST)
+   ========================================================================== */
+export const PASSENGER_VIOLATIONS = [
+  {
+    id: 'pass_overcharging',
+    title: 'Overcharging (Excess Fare)',
+    shortTitle: 'Overcharging',
+    desc: 'Demanded or collected fare higher than official TRD fare matrix rate',
+    icon: '🚨',
+    isFareRelated: true
+  },
+  {
+    id: 'pass_refusal_discount',
+    title: 'Refusal to Give 20% Discount',
+    shortTitle: 'Refusal of Discount',
+    desc: 'Denied mandatory 20% discount to Students, Senior Citizens, or PWDs',
+    icon: '🎫',
+    isFareRelated: true
+  },
+  {
+    id: 'pass_over_speeding',
+    title: 'Over Speeding / Fast Driving',
+    shortTitle: 'Over Speeding',
+    desc: 'Driving dangerously fast or racing above local city speed limit',
+    icon: '⚡'
+  },
+  {
+    id: 'pass_abusive_language',
+    title: 'Abusive Language / Cursing / Arrogance',
+    shortTitle: 'Abusive Language',
+    desc: 'Rude, shouting, profane, or disrespectful behavior towards passengers',
+    icon: '🤬'
+  },
+  {
+    id: 'pass_drunk_driving',
+    title: 'Drunk Driving / Intoxication',
+    shortTitle: 'Drunk Driving',
+    desc: 'Suspected driving while under the influence of alcohol or substances',
+    icon: '🍺'
+  },
+  {
+    id: 'pass_harassment',
+    title: 'Harassment / Threatening Conduct',
+    shortTitle: 'Harassment',
+    desc: 'Physical, verbal, or sexual harassment, intimidation, or coercion',
+    icon: '⚠️'
+  },
+  {
+    id: 'pass_wrong_destination',
+    title: 'Wrong Destination / Refusal to Convey',
+    shortTitle: 'Wrong Destination',
+    desc: 'Refused route, left before destination, or dropped off at wrong place',
+    icon: '📍'
+  },
+  {
+    id: 'pass_reckless_driving',
+    title: 'Reckless / Careless Driving',
+    shortTitle: 'Reckless Driving',
+    desc: 'Sudden swerving, beating red lights, or endangering passenger safety',
+    icon: '🚸'
+  },
+  {
+    id: 'pass_overloading',
+    title: 'Overloading of Passengers',
+    shortTitle: 'Overloading',
+    desc: 'Carrying more passengers than authorized vehicle seating capacity',
+    icon: '👥'
+  },
+  {
+    id: 'pass_colorum',
+    title: 'No City Franchise / Colorum Unit',
+    shortTitle: 'Colorum Unit',
+    desc: 'Operating without valid Tabaco City franchise permit or body plate',
+    icon: '⛔'
+  },
+  {
+    id: 'pass_no_tariff',
+    title: 'No Fare Matrix Displayed',
+    shortTitle: 'No Tariff Displayed',
+    desc: 'Failure to visibly display official TRD fare matrix inside vehicle',
+    icon: '📋'
+  },
+  {
+    id: 'pass_out_of_line',
+    title: 'Operating Out of Line',
+    shortTitle: 'Out of Line',
+    desc: 'Operating beyond authorized barangay route or terminal boundaries',
+    icon: '🔄'
+  }
+];
+
 const selectedViolationIds = new Set();
+const modalCheckedViolationIds = new Set();
+let modalViolationSearchQuery = '';
 
 function getFineForViolation(violationId, isPedicab) {
   const v = TRD_VIOLATIONS.find(item => item.id === violationId);
@@ -1187,8 +1281,7 @@ function updateSelectiveViolationUI() {
       pillsWrap.innerHTML = Array.from(selectedViolationIds).map(id => {
         const v = TRD_VIOLATIONS.find(item => item.id === id);
         if (!v) return '';
-        const fine = isPedicab ? v.pedicabFine : v.tricycleFine;
-        return `<span class="violation-tag-pill">${v.icon} ${v.shortTitle} (₱${fine}) <button type="button" class="pill-remove-btn" data-remove="${id}">&times;</button></span>`;
+        return `<span class="violation-tag-pill">${v.shortTitle || v.title} <button type="button" class="pill-remove-btn" data-remove="${id}">&times;</button></span>`;
       }).join('');
 
       pillsWrap.querySelectorAll('.pill-remove-btn').forEach(btn => {
@@ -1206,14 +1299,11 @@ function updateSelectiveViolationUI() {
 }
 
 function renderSelectiveViolationGrids() {
-  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
-
   const onpageGrid = document.getElementById('onpage-selective-violation-grid');
   const modalGrid = document.getElementById('modal-selective-violation-grid');
 
   const generateChipsHtml = () => {
     return TRD_VIOLATIONS.map(v => {
-      const fine = isPedicab ? v.pedicabFine : v.tricycleFine;
       const isSelected = selectedViolationIds.has(v.id);
       return `
         <div class="violation-chip ${isSelected ? 'selected' : ''}" data-id="${v.id}">
@@ -1222,8 +1312,7 @@ function renderSelectiveViolationGrids() {
           </div>
           <div class="chip-info">
             <div class="chip-title-row">
-              <span class="chip-title">${v.icon} ${v.title}</span>
-              <span class="chip-fine-tag">₱${fine}</span>
+              <span class="chip-title">${v.title}</span>
             </div>
             <div class="chip-desc">${v.desc}</div>
           </div>
@@ -1253,6 +1342,168 @@ function renderSelectiveViolationGrids() {
   }
 
   updateSelectiveViolationUI();
+}
+
+/* ==========================================================================
+   MULTI-VIOLATION CHECKLIST CONTROLLER (FOR MODAL SUBMISSION)
+   ========================================================================== */
+function getActiveModalViolationsList() {
+  return TRD_VIOLATIONS;
+}
+
+function updateModalChecklistUI() {
+  const user = getCurrentUser();
+  const isEnforcer = user?.role === 'Traffic Enforcer';
+  const sourceList = getActiveModalViolationsList();
+  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
+  const count = modalCheckedViolationIds.size;
+
+  // 1. Update Counter Badge & Clear Button
+  const countBadge = document.getElementById('checklist-selected-counter');
+  const clearBtn = document.getElementById('btn-checklist-clear');
+  if (countBadge) {
+    countBadge.textContent = count === 1 ? '1 selected' : `${count} selected`;
+    countBadge.classList.toggle('has-count', count > 0);
+  }
+  if (clearBtn) {
+    clearBtn.classList.toggle('hidden', count === 0);
+  }
+
+  // 2. Update Checklist Cards Active State
+  document.querySelectorAll('#violation-checklist-grid .checklist-item-card[data-id]').forEach(card => {
+    const id = card.getAttribute('data-id');
+    const isChecked = modalCheckedViolationIds.has(id);
+    card.classList.toggle('is-checked', isChecked);
+    card.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+  });
+
+  // 3. Update Selected Summary Tag Pills
+  const pillsRow = document.getElementById('checklist-selected-pills');
+  if (pillsRow) {
+    if (count === 0) {
+      pillsRow.innerHTML = '<span class="empty-pills-placeholder">No violations checked yet. Check one or more above.</span>';
+    } else {
+      const themeClass = isEnforcer ? 'theme-enforcer' : 'theme-passenger';
+      pillsRow.innerHTML = Array.from(modalCheckedViolationIds).map(id => {
+        const item = sourceList.find(v => v.id === id);
+        if (!item) return '';
+        return `
+          <span class="checklist-tag-chip ${themeClass}">
+            <span>${item.shortTitle || item.title}</span>
+            <button type="button" class="tag-chip-remove" data-remove="${id}" title="Remove violation">&times;</button>
+          </span>
+        `;
+      }).join('');
+
+      pillsRow.querySelectorAll('.tag-chip-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const removeId = btn.getAttribute('data-remove');
+          if (removeId) {
+            modalCheckedViolationIds.delete(removeId);
+            updateModalChecklistUI();
+          }
+        });
+      });
+    }
+  }
+
+  // 4. Dynamic Fare Wrap Display
+  const fareWrap = document.getElementById('field-fare-wrap');
+  if (fareWrap && !isEnforcer) {
+    const hasFareIssue = Array.from(modalCheckedViolationIds).some(id => {
+      const item = sourceList.find(v => v.id === id);
+      return Boolean(item?.isFareRelated);
+    });
+    fareWrap.classList.toggle('hidden', !hasFareIssue && count > 0);
+  }
+}
+
+function renderModalViolationChecklist(searchQuery = '') {
+  const user = getCurrentUser();
+  const isEnforcer = user?.role === 'Traffic Enforcer';
+  const sourceList = getActiveModalViolationsList();
+  const gridEl = document.getElementById('violation-checklist-grid');
+  if (!gridEl) return;
+
+  const q = (searchQuery || '').trim().toLowerCase();
+  const filtered = q
+    ? sourceList.filter(v => (v.title && v.title.toLowerCase().includes(q)) || (v.desc && v.desc.toLowerCase().includes(q)) || (v.shortTitle && v.shortTitle.toLowerCase().includes(q)))
+    : sourceList;
+
+  if (filtered.length === 0) {
+    gridEl.innerHTML = `<div style="text-align:center; padding:18px 10px; color:#94a3b8; font-size:0.75rem;">No matching violations found for "${searchQuery}".</div>`;
+    return;
+  }
+
+  gridEl.innerHTML = filtered.map(v => {
+    const isChecked = modalCheckedViolationIds.has(v.id);
+    return `
+      <div class="checklist-item-card ${isChecked ? 'is-checked' : ''}" data-id="${v.id}" role="checkbox" aria-checked="${isChecked}">
+        <div class="checklist-checkbox-box">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div class="checklist-item-body">
+          <div class="checklist-item-title-row">
+            <span class="checklist-item-title">${v.title}</span>
+          </div>
+          <div class="checklist-item-desc">${v.desc || ''}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  gridEl.querySelectorAll('.checklist-item-card[data-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.getAttribute('data-id');
+      if (!id) return;
+      if (modalCheckedViolationIds.has(id)) {
+        modalCheckedViolationIds.delete(id);
+      } else {
+        modalCheckedViolationIds.add(id);
+        const sectionEl = document.getElementById('violation-checklist-section');
+        if (sectionEl) sectionEl.classList.remove('has-error');
+      }
+      updateModalChecklistUI();
+    });
+  });
+
+  updateModalChecklistUI();
+}
+
+function setupModalChecklistControls() {
+  const searchInput = document.getElementById('checklist-search-input');
+  const searchClearBtn = document.getElementById('btn-checklist-search-clear');
+  const clearAllBtn = document.getElementById('btn-checklist-clear');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      modalViolationSearchQuery = e.target.value;
+      if (searchClearBtn) searchClearBtn.classList.toggle('hidden', !modalViolationSearchQuery);
+      renderModalViolationChecklist(modalViolationSearchQuery);
+    });
+  }
+
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        modalViolationSearchQuery = '';
+        searchClearBtn.classList.add('hidden');
+        renderModalViolationChecklist('');
+      }
+    });
+  }
+
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+      modalCheckedViolationIds.clear();
+      updateModalChecklistUI();
+      showToast('Checklist cleared.');
+    });
+  }
 }
 
 async function handleEnforcerIssueCitation(openModalForEvidence = false) {
@@ -1332,7 +1583,7 @@ async function handleEnforcerIssueCitation(openModalForEvidence = false) {
 
   if (successTitle) successTitle.textContent = 'Citation Registered';
   if (successSub) {
-    successSub.textContent = `Official TRD citation registered for ${payload.vehicle_type} Plate #${payload.plate_no}. Infractions: ${violationTitles}. Total Fine: ₱${totalFine.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`;
+    successSub.textContent = `Official TRD citation registered for ${payload.vehicle_type} Plate #${payload.plate_no}. Infractions: ${violationTitles}.`;
   }
   if (successAttachInfo) successAttachInfo.classList.add('hidden');
   if (successModal) successModal.classList.remove('hidden');
@@ -1480,6 +1731,20 @@ function setupVerificationActions() {
       const user = getCurrentUser();
       const isEnforcer = user?.role === 'Traffic Enforcer';
       openReportModalForCurrentUser(isEnforcer ? 'violation' : 'passenger');
+    });
+  }
+
+  const onpageIssueBtn = document.getElementById('btn-onpage-issue-citation');
+  if (onpageIssueBtn) {
+    onpageIssueBtn.addEventListener('click', () => {
+      handleEnforcerIssueCitation(false);
+    });
+  }
+
+  const onpageOpenModalBtn = document.getElementById('btn-onpage-open-modal');
+  if (onpageOpenModalBtn) {
+    onpageOpenModalBtn.addEventListener('click', () => {
+      handleEnforcerIssueCitation(true);
     });
   }
 
@@ -1851,7 +2116,7 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
   const titleEl = document.getElementById('report-modal-title');
   const userRoleText = document.getElementById('report-user-role');
   const reportRoleBadge = document.getElementById('report-role-badge');
-  const reportTypeSelect = document.getElementById('report-type');
+  const checklistLabel = document.getElementById('checklist-main-label');
 
   if (modalEl) {
     modalEl.classList.toggle('theme-enforcer-modal', isEnforcer);
@@ -1863,6 +2128,13 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
     } else {
       titleEl.textContent = 'Submit Passenger Report';
     }
+  }
+
+  if (checklistLabel) {
+    const titleSpan = checklistLabel.querySelector('.label-title');
+    const hintSpan = checklistLabel.querySelector('.label-hint');
+    if (titleSpan) titleSpan.textContent = isEnforcer ? 'Select TRD Infractions' : 'Select Violations';
+    if (hintSpan) hintSpan.textContent = isEnforcer ? 'Check one or multiple official TRD infractions to cite this unit' : 'Check all violations / issues that occurred (multiple choice)';
   }
 
   if (userRoleText) {
@@ -1904,10 +2176,43 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
     uploadBtnText.textContent = isEnforcer ? '📁 Upload Photo Evidence' : 'Upload Receipt / File';
   }
 
-  if (reportTypeSelect) {
-    if (isEnforcer) {
-      reportTypeSelect.innerHTML = TRD_VIOLATIONS.map(v => '<option value="' + v.title + '">' + v.title + '</option>').join('\n        ');
-    } else {
+  // Toggle views between Enforcer (Multi-Violation Checklist) and Passenger (Single Issue Dropdown)
+  const passengerWrap = document.getElementById('field-passenger-report-type-wrap');
+  const checklistSection = document.getElementById('violation-checklist-section');
+
+  if (isEnforcer) {
+    if (passengerWrap) passengerWrap.classList.add('hidden');
+    if (checklistSection) checklistSection.classList.remove('hidden');
+
+    // Reset & Populate Enforcer Multi-Violation Checklist
+    modalCheckedViolationIds.clear();
+    modalViolationSearchQuery = '';
+    const searchInput = document.getElementById('checklist-search-input');
+    const searchClearBtn = document.getElementById('btn-checklist-search-clear');
+    if (searchInput) searchInput.value = '';
+    if (searchClearBtn) searchClearBtn.classList.add('hidden');
+
+    // Pre-populate if violations were selected on-page
+    if (selectedViolationIds.size > 0) {
+      selectedViolationIds.forEach(id => modalCheckedViolationIds.add(id));
+    } else if (reportCategory === 'overcharging') {
+      modalCheckedViolationIds.add('excess_fare');
+    }
+
+    if (defaultType) {
+      const match = TRD_VIOLATIONS.find(v => v.title === defaultType || v.shortTitle === defaultType || v.id === defaultType);
+      if (match) modalCheckedViolationIds.add(match.id);
+    }
+
+    renderModalViolationChecklist('');
+    updateModalChecklistUI();
+  } else {
+    // Passenger Mode: Hide checklist, show standard complaint dropdown
+    if (passengerWrap) passengerWrap.classList.remove('hidden');
+    if (checklistSection) checklistSection.classList.add('hidden');
+
+    const reportTypeSelect = document.getElementById('report-type');
+    if (reportTypeSelect) {
       reportTypeSelect.innerHTML = PASSENGER_REPORT_TYPES.map(opt => `<option value="${opt}">${opt}</option>`).join('\n        ');
       if (defaultType && PASSENGER_REPORT_TYPES.includes(defaultType)) {
         reportTypeSelect.value = defaultType;
@@ -1940,6 +2245,8 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
    Modals
    ========================================================================== */
 function setupModals() {
+  setupModalChecklistControls();
+
   const closeFareBtn = document.getElementById('btn-close-fare');
   if (closeFareBtn) closeFareBtn.addEventListener('click', () => {
     document.getElementById('fare-modal').classList.add('hidden');
@@ -1999,24 +2306,47 @@ function setupModals() {
     const roleName = user?.role || 'Passenger';
     const isEnforcer = roleName === 'Traffic Enforcer';
 
-    const reportType = document.getElementById('report-type')?.value || (isEnforcer ? 'Official Violation Citation' : 'Over speeding');
+    let violationTitles = '';
+
+    if (isEnforcer) {
+      // Validate that at least one violation is checked for Enforcers
+      if (modalCheckedViolationIds.size === 0) {
+        showToast('⚠️ Please check at least one violation from the checklist.');
+        const checklistSection = document.getElementById('violation-checklist-section');
+        if (checklistSection) {
+          checklistSection.classList.add('has-error');
+          checklistSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => checklistSection.classList.remove('has-error'), 1800);
+        }
+        return;
+      }
+
+      const selectedItems = Array.from(modalCheckedViolationIds).map(id => TRD_VIOLATIONS.find(v => v.id === id)).filter(Boolean);
+      violationTitles = selectedItems.map(v => v.title).join(', ');
+    } else {
+      // Passenger selected issue from dropdown
+      violationTitles = document.getElementById('report-type')?.value || 'Over speeding';
+    }
+
+    const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
     const actualFare = parseFloat(document.getElementById('report-actual-fare')?.value) || null;
     const enforcerBadge = document.getElementById('report-enforcer-id')?.value || '';
-    const citationNo = document.getElementById('report-citation-no')?.value || '';
+    const citationNo = document.getElementById('report-citation-no')?.value || ('CIT-' + Date.now().toString().slice(-6));
     const remarks = document.getElementById('report-remarks')?.value || '';
 
     const payload = {
-      report_type: reportType,
-      plate_no: currentVerifiedRecord?.plateNo || '1243',
-      driver_name: currentVerifiedRecord?.driver || 'Salvador B. Bacelonia',
-      vehicle_type: currentVerifiedRecord?.vehicleType || 'Pedicab',
+      report_type: violationTitles,
+      plate_no: currentVerifiedRecord?.plateNo || '—',
+      driver_name: currentVerifiedRecord?.driver || 'Official Driver',
+      operator_name: currentVerifiedRecord?.operator || 'Registered Operator',
+      vehicle_type: currentVerifiedRecord?.vehicleType || (isPedicab ? 'Pedicab' : 'Tricycle'),
       reporter_name: user?.full_name || user?.username || (isEnforcer ? 'TRD Enforcer' : 'Passenger'),
       reporter_username: user?.username || '',
       reporter_role: roleName,
       fare_charged: actualFare,
       enforcer_badge: enforcerBadge || (isEnforcer ? (user?.username ? `TRD-ENF-${user.username}` : 'TRD-ENF-001') : ''),
       citation_no: citationNo,
-      description: remarks,
+      description: remarks ? `${remarks} | ${isEnforcer ? 'Cited Violations' : 'Reported Issue'}: ${violationTitles}` : `${isEnforcer ? 'Cited Violations' : 'Reported Issue'}: ${violationTitles}`,
       attachment: currentReportAttachment
     };
 
@@ -2038,8 +2368,8 @@ function setupModals() {
     }
     if (successSub) {
       successSub.textContent = isEnforcer
-        ? `Traffic citation ticket recorded for ${payload.vehicle_type} Plate #${payload.plate_no}.`
-        : `Your complaint has been registered with Tabaco City TRD Office.`;
+        ? `Official TRD citation registered for ${payload.vehicle_type} Plate #${payload.plate_no}. Infractions: ${violationTitles}.`
+        : `Your complaint for ${payload.vehicle_type} Plate #${payload.plate_no} has been registered with TRD Office. Issue: ${violationTitles}.`;
     }
 
     if (successAttachInfo && successAttachText) {
@@ -2055,8 +2385,11 @@ function setupModals() {
     document.getElementById('report-modal').classList.add('hidden');
     if (successModal) successModal.classList.remove('hidden');
 
-    showToast(`✅ ${roleName} report submitted with attachment.`);
+    showToast(isEnforcer ? `✅ Traffic citation registered with ${modalCheckedViolationIds.size} infractions.` : `✅ Passenger report submitted.`);
     clearReportAttachment();
+    modalCheckedViolationIds.clear();
+    selectedViolationIds.clear();
+    updateSelectiveViolationUI();
 
     // Immediately refresh status notifications for this user
     loadAndRenderNotifications(true);

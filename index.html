@@ -674,16 +674,12 @@
               <!-- Populated dynamically by JS -->
             </div>
 
-            <!-- Citation Summary & Fine Total -->
+            <!-- Citation Summary -->
             <div class="citation-summary-panel" id="onpage-citation-summary">
               <div class="summary-top-row">
                 <div class="summary-stat-item">
                   <span class="stat-label">Infractions</span>
                   <span class="stat-count" id="onpage-selected-count">0 selected</span>
-                </div>
-                <div class="summary-stat-item text-right">
-                  <span class="stat-label">Total Fine</span>
-                  <span class="stat-fine" id="onpage-total-fine">₱0.00</span>
                 </div>
               </div>
               <div class="selected-violations-pills" id="onpage-selected-pills"></div>
@@ -949,22 +945,62 @@
           </div>
 
           <form id="report-form">
-            <!-- Passenger Single Dropdown -->
+            <!-- Passenger Single Issue Dropdown (Visible ONLY for Passengers) -->
             <div id="field-passenger-report-type-wrap" class="input-pill mt-2">
-              <label class="form-field-label" id="report-type-label">Select Violation / Issue Type:</label>
+              <label class="form-field-label" id="report-type-label">Select Issue / Complaint Type:</label>
               <select id="report-type">
-                <!-- Dynamically populated by JS based on Passenger role -->
+                <option value="Overcharging (Excess Fare)">Overcharging (Excess Fare)</option>
+                <option value="Refusal to Give 20% Discount">Refusal to Give 20% Discount</option>
+                <option value="Over Speeding">Over Speeding</option>
+                <option value="Abusive Language/Cursing">Abusive Language / Cursing</option>
+                <option value="Drunk Driving">Drunk Driving</option>
+                <option value="Harassment">Harassment</option>
+                <option value="Dropping off passenger at the wrong destination">Dropping off passenger at the wrong destination</option>
+                <option value="Reckless Driving">Reckless Driving</option>
+                <option value="Overloading">Overloading</option>
+                <option value="No Franchise / Colorum Unit">No Franchise / Colorum Unit</option>
+                <option value="Other Complaint">Other Complaint</option>
               </select>
             </div>
 
-            <!-- Enforcer Selective Violation Component inside Modal -->
-            <div id="field-enforcer-modal-selective-wrap" class="enforcer-modal-selective-wrap hidden">
-              <div class="modal-section-title-row">
-                <label class="form-field-label">Selective TRD Infractions (Tap to select):</label>
-                <span class="modal-fine-total-badge" id="modal-total-fine-badge">Total Fine: ₱0</span>
+            <!-- Enforcer Multi-Violation Checklist (Visible ONLY for Traffic Enforcers) -->
+            <div id="violation-checklist-section" class="violation-checklist-section hidden">
+              <div class="checklist-header-row">
+                <div class="checklist-title-col">
+                  <label class="checklist-main-label" id="checklist-main-label">
+                    <span class="label-title">Select Violations / Infractions</span>
+                    <span class="label-hint">Check all infractions that apply (multiple choice)</span>
+                  </label>
+                </div>
+                <div class="checklist-header-actions">
+                  <span id="checklist-selected-counter" class="checklist-count-pill">0 selected</span>
+                  <button type="button" id="btn-checklist-clear" class="btn-checklist-clear hidden">Clear All</button>
+                </div>
               </div>
-              <div class="selective-violation-grid modal-grid" id="modal-selective-violation-grid">
-                <!-- Populated dynamically by JS -->
+
+              <!-- Quick Search / Filter Input -->
+              <div class="checklist-search-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="checklist-search-input" type="text" placeholder="Search violations (e.g. fare, speed, rude, colorum)..." autocomplete="off" />
+                <button type="button" id="btn-checklist-search-clear" class="search-clear-btn hidden">&times;</button>
+              </div>
+
+              <!-- Scrollable Interactive Checklist -->
+              <div class="violation-checklist-grid" id="violation-checklist-grid">
+                <!-- Checkboxes populated dynamically by JS for Enforcer -->
+              </div>
+
+              <!-- Selected Violations Pills -->
+              <div class="checklist-selected-summary" id="checklist-selected-summary">
+                <div class="summary-top-tag-row">
+                  <span class="summary-tag-label">Selected Violations:</span>
+                </div>
+                <div class="summary-pills-row" id="checklist-selected-pills">
+                  <span class="empty-pills-placeholder">No violations checked yet. Check one or more above.</span>
+                </div>
               </div>
             </div>
 
