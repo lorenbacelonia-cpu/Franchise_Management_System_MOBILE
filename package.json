@@ -5,10 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "dev:admin": "npm --prefix admin run dev",
     "tunnel": "node tunnel-start.mjs",
     "build": "vite build",
-    "build:admin": "npm --prefix admin run build",
     "preview": "vite preview"
   },
   "dependencies": {
