@@ -1415,15 +1415,6 @@ function renderVerificationDashboard(record) {
   const tourEl = document.getElementById('val-tourist');
   if (tourEl) tourEl.innerHTML = `<span style="color:#059669; font-weight:bold;">•</span> ${record.touristGuide || 'Yes'}`;
 
-  const availEl = document.getElementById('val-availability');
-  if (availEl) {
-    const isExpired = /expired/i.test(rawStatus);
-    availEl.textContent = isExpired
-      ? 'Expired (Renewal Required)'
-      : (record.availability || 'Available');
-    availEl.style.color = (isActiveRegistered && !isExpired) ? '#059669' : '#dc2626';
-  }
-
   const user = getCurrentUser();
   const isEnforcer = user?.role === 'Traffic Enforcer';
   const enforcerBanner = document.getElementById('enforcer-verify-banner');
