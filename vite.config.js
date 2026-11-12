@@ -1,8 +1,6 @@
-import { defineConfig } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import nodemailer from 'nodemailer';
 
-function emailDispatchPlugin() {
 function emailDispatchPlugin(env = {}) {
   return {
     name: 'email-dispatch-plugin',
@@ -34,7 +32,6 @@ function emailDispatchPlugin(env = {}) {
             }
 
             const senderEmail = 'lorenbacelonia@gmail.com';
-            const appPassword = process.env.GMAIL_APP_PASSWORD || process.env.VITE_GMAIL_APP_PASSWORD;
             const appPassword = (
               env.GMAIL_APP_PASSWORD || 
               env.VITE_GMAIL_APP_PASSWORD || 
@@ -71,10 +68,8 @@ function emailDispatchPlugin(env = {}) {
               const boxBorder = isEnforcer ? '#3b82f6' : '#22c55e';
 
               await transporter.sendMail({
-                from: `"TRD Tabaco Mobile Verifier (${role})" <${senderEmail}>`,
                 from: `"TRD Tabaco City Mobile Verifier" <${senderEmail}>`,
                 to: toEmail,
-                subject: `TRD ${role} Verification Code: ${code}`,
                 subject: `TRD ${role} Security Verification Code: ${code}`,
                 html: `
                   <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
@@ -83,7 +78,6 @@ function emailDispatchPlugin(env = {}) {
                       <p style="margin: 4px 0 0; font-size: 12px; color: #e2e8f0;">${role} Account Email Verification</p>
                     </div>
                     <div style="padding: 24px 8px; text-align: center;">
-                      <p style="font-size: 14px; color: #334155;">You requested a ${role} email verification code for:</p>
                       <p style="font-size: 14px; color: #334155;">You requested an email verification code for:</p>
                       <p style="font-weight: bold; color: #0f172a; font-size: 15px;">${toEmail}</p>
                       <div style="margin: 20px auto; padding: 16px; background: ${boxBg}; border: 2px dashed ${boxBorder}; border-radius: 8px; font-size: 32px; font-weight: 900; letter-spacing: 6px; color: ${badgeColor}; font-family: monospace;">
@@ -124,13 +118,6 @@ function emailDispatchPlugin(env = {}) {
   };
 }
 
-export default defineConfig({
-  base: './',
-  plugins: [emailDispatchPlugin()],
-  server: {
-    host: true,
-    allowedHosts: true, // Allow any external tunnel (Cloudflare, ngrok, etc.)
-  }
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
