@@ -3,7 +3,20 @@ import { parseQRCode } from './parser.js';
 import { initScanner, stopScanner, setSoundEnabled, isSoundActive, switchNextCamera, toggleTorch, scanImageFile } from './scanner.js';
 import { saveScanToHistory } from './history.js';
 import { fetchFranchiseByPlate, dbRowToRecord, submitViolationReport, fetchRoleNotifications, markNotificationAsRead, markAllNotificationsRead, subscribeToRealtimeStatusUpdates, deleteReportRecord, deleteFranchiseRecord } from './db.js';
-import { loginUser, logoutUser, getCurrentUser, isLoggedIn, registerUser, formatFormalName, formatFormalUsername } from './auth.js';
+import { 
+  loginUser, 
+  logoutUser, 
+  getCurrentUser, 
+  isLoggedIn, 
+  registerUser, 
+  formatFormalName, 
+  formatFormalUsername,
+  isValidEmail,
+  generateVerificationOtp,
+  verifyEmailOtp,
+  checkAccountAvailability,
+  loginWithEmailVerification
+} from './auth.js';
 
 let activeView = 'view-scan';
 let currentVerifiedRecord = null;
@@ -75,7 +88,7 @@ export function applySignupRoleTheme(role) {
   if (signupPassTab) signupPassTab.classList.toggle('active', !isEnforcer);
   if (signupEnfTab) signupEnfTab.classList.toggle('active', isEnforcer);
   if (signupSubmitBtn) {
-    signupSubmitBtn.textContent = isEnforcer ? 'CREATE TRAFFIC ENFORCER ACCOUNT' : 'CREATE PASSENGER ACCOUNT';
+    signupSubmitBtn.textContent = isEnforcer ? 'VERIFY EMAIL & REGISTER AS ENFORCER' : 'VERIFY EMAIL & REGISTER AS PASSENGER';
   }
   if (signupGiantIcon) {
     signupGiantIcon.innerHTML = `
@@ -382,6 +395,20 @@ function setupLoginView() {
 
   const usernameInput = document.getElementById('input-username');
   const passwordInput = document.getElementById('input-password');
+  const loginEmailVerifyBtn = document.getElementById('btn-login-email-verify');
+
+  if (loginEmailVerifyBtn) {
+    loginEmailVerifyBtn.addEventListener('click', () => {
+      const usernameVal = usernameInput?.value.trim() || '';
+      const emailToUse = isValidEmail(usernameVal) ? usernameVal : '';
+      openEmailVerificationModal({
+        email: emailToUse,
+        role: selectedLoginRole,
+        isLoginMode: true
+      });
+    });
+  }
+
   if (usernameInput) {
     attachAutoCapitalize(usernameInput, 'first-letter');
     usernameInput.addEventListener('input', hideLoginError);
@@ -412,8 +439,10 @@ function attachAutoCapitalize(inputElement, mode = 'first-letter') {
       // Capitalize first letter of each word (e.g. Maria Santos)
       formatted = val.replace(/(?:^|\s)\S/g, (char) => char.toUpperCase());
     } else {
-      // Capitalize very first letter of string (e.g. Juan)
-      formatted = val.charAt(0).toUpperCase() + val.slice(1);
+      // Capitalize very first letter of string (e.g. Juan), unless user is typing an email
+      if (!val.includes('@')) {
+        formatted = val.charAt(0).toUpperCase() + val.slice(1);
+      }
     }
 
     if (val !== formatted) {
@@ -428,7 +457,9 @@ function attachAutoCapitalize(inputElement, mode = 'first-letter') {
     if (mode === 'words') {
       inputElement.value = formatFormalName(inputElement.value);
     } else {
-      inputElement.value = formatFormalUsername(inputElement.value);
+      if (!inputElement.value.includes('@')) {
+        inputElement.value = formatFormalUsername(inputElement.value);
+      }
     }
   });
 }
@@ -534,8 +565,12 @@ function showLoggedInState(user) {
 }
 
 /* ==========================================================================
-   Sign Up View — Role-aware Registration
+   Sign Up View — Role-aware Registration with Email Verification
    ========================================================================== */
+let pendingEmailRegistration = null;
+let otpResendTimer = null;
+let otpCountdownSec = 60;
+
 function setupSignupView() {
   const form = document.getElementById('signup-form');
   const submitBtn = document.getElementById('btn-signup-submit');
@@ -550,6 +585,7 @@ function setupSignupView() {
     if (e) e.preventDefault();
 
     const fullName = document.getElementById('signup-fullname')?.value.trim();
+    const email = document.getElementById('signup-email')?.value.trim();
     const username = document.getElementById('signup-username')?.value.trim();
     const password = document.getElementById('signup-password')?.value;
     const confirm = document.getElementById('signup-confirm')?.value;
@@ -560,6 +596,24 @@ function setupSignupView() {
     errorEl.classList.add('hidden');
     successEl.classList.add('hidden');
 
+    if (!fullName || !email || !username || !password) {
+      errorEl.textContent = 'All fields (Full Name, Email, Username, Password) are required.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      errorEl.textContent = 'Please enter a valid email address (e.g. name@gmail.com).';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    if (password.length < 4) {
+      errorEl.textContent = 'Password must be at least 4 characters long.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
     if (password !== confirm) {
       errorEl.textContent = 'Passwords do not match.';
       errorEl.classList.remove('hidden');
@@ -567,28 +621,39 @@ function setupSignupView() {
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'CREATING ACCOUNT...';
+    submitBtn.textContent = 'CHECKING AVAILABILITY...';
 
-    const result = await registerUser(fullName, username, password, selectedSignupRole);
+    // Verify username and email availability before opening OTP verification modal
+    const avail = await checkAccountAvailability(username, email, selectedSignupRole);
 
     submitBtn.disabled = false;
-    submitBtn.textContent = `CREATE ${selectedSignupRole.toUpperCase()} ACCOUNT`;
+    submitBtn.textContent = selectedSignupRole === 'Traffic Enforcer' 
+      ? 'VERIFY EMAIL & REGISTER AS ENFORCER' 
+      : 'VERIFY EMAIL & REGISTER AS PASSENGER';
 
-    if (!result.success) {
-      errorEl.textContent = result.error;
+    if (!avail.available) {
+      errorEl.textContent = avail.error;
       errorEl.classList.remove('hidden');
       return;
     }
 
-    successEl.textContent = `✅ ${selectedSignupRole} account created! Welcome, ${result.user.full_name}. Please log in.`;
-    successEl.classList.remove('hidden');
+    // Generate and dispatch 6-digit verification code to user's Gmail
+    const otpRes = generateVerificationOtp(email, selectedSignupRole);
+    if (!otpRes.success) {
+      errorEl.textContent = otpRes.error || 'Failed to generate verification code.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
 
-    ['signup-fullname', 'signup-username', 'signup-password', 'signup-confirm'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
+    // Launch email verification modal in registration mode
+    openEmailVerificationModal({
+      fullName,
+      username,
+      email,
+      password,
+      role: selectedSignupRole,
+      isLoginMode: false
     });
-
-    setTimeout(() => switchView('view-login'), 1500);
   };
 
   const fullnameInput = document.getElementById('signup-fullname');
@@ -602,7 +667,418 @@ function setupSignupView() {
   }
 
   if (form) form.addEventListener('submit', doRegister);
-  // submit handled by form
+}
+
+/* ==========================================================================
+   Email Verification OTP Modal Logic (Both Passenger & Enforcer)
+   Dispatched from lorenbacelonia@gmail.com to User's Gmail
+   ========================================================================== */
+function openEmailVerificationModal(data) {
+  pendingEmailRegistration = data;
+  const modal = document.getElementById('modal-email-verification');
+  if (!modal) return;
+
+  const isEnforcer = data.role === 'Traffic Enforcer';
+  const sheet = modal.querySelector('.otp-bottom-sheet');
+  const iconWrap = document.getElementById('otp-header-icon-wrap');
+  const badge = document.getElementById('otp-portal-badge');
+  const targetEmailDisplay = document.getElementById('otp-target-email-display');
+  const receiverInput = document.getElementById('otp-receiver-email-input');
+  const dispatchedNotice = document.getElementById('otp-dispatched-notice');
+  const errorMsg = document.getElementById('otp-error-msg');
+  const verifyBtn = document.getElementById('btn-verify-otp');
+  const modalTitle = document.getElementById('otp-modal-title');
+
+  if (sheet) sheet.classList.toggle('theme-enforcer', isEnforcer);
+  if (iconWrap) iconWrap.classList.toggle('theme-enforcer', isEnforcer);
+
+  if (badge) {
+    badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
+    badge.textContent = isEnforcer ? '👮 Traffic Enforcer Email Verification' : '👤 Passenger Email Verification';
+  }
+
+  if (modalTitle) {
+    modalTitle.textContent = data.isLoginMode ? 'Security Email Verification' : 'Verify Your Email Address';
+  }
+
+  const emailToSet = data.email || '';
+  if (receiverInput) {
+    receiverInput.value = emailToSet;
+    receiverInput.disabled = !data.isLoginMode && !!emailToSet;
+  }
+
+  if (targetEmailDisplay) {
+    targetEmailDisplay.textContent = emailToSet || 'your Gmail';
+  }
+
+  // Show dispatched notice if email already provided
+  if (dispatchedNotice) {
+    dispatchedNotice.classList.toggle('hidden', !emailToSet);
+  }
+
+  if (errorMsg) {
+    errorMsg.textContent = '';
+    errorMsg.classList.add('hidden');
+  }
+
+  if (verifyBtn) {
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = data.isLoginMode ? 'VERIFY & SIGN IN' : 'VERIFY & ACTIVATE ACCOUNT';
+  }
+
+  // Clear OTP input digits
+  const digits = modal.querySelectorAll('.otp-digit');
+  digits.forEach(d => {
+    d.value = '';
+    d.classList.remove('filled');
+  });
+
+  if (emailToSet) {
+    startOtpResendCountdown();
+  }
+
+  modal.classList.remove('hidden');
+
+  setTimeout(() => {
+    if (emailToSet) {
+      const firstDigit = modal.querySelector('.otp-digit[data-index="0"]');
+      if (firstDigit) firstDigit.focus();
+    } else if (receiverInput) {
+      receiverInput.focus();
+    }
+  }, 100);
+}
+
+function closeEmailVerificationModal() {
+  const modal = document.getElementById('modal-email-verification');
+  if (modal) modal.classList.add('hidden');
+  if (otpResendTimer) {
+    clearInterval(otpResendTimer);
+    otpResendTimer = null;
+  }
+}
+
+function startOtpResendCountdown() {
+  if (otpResendTimer) {
+    clearInterval(otpResendTimer);
+    otpResendTimer = null;
+  }
+
+  otpCountdownSec = 60;
+  const resendBtn = document.getElementById('btn-resend-otp');
+  const sendCodeBtn = document.getElementById('btn-otp-send-code');
+
+  if (resendBtn) {
+    resendBtn.disabled = true;
+    resendBtn.innerHTML = `Resend Code (<span id="otp-timer-count">${otpCountdownSec}</span>s)`;
+  }
+  if (sendCodeBtn) {
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = `Sent (${otpCountdownSec}s)`;
+  }
+
+  otpResendTimer = setInterval(() => {
+    otpCountdownSec--;
+    const currentCount = document.getElementById('otp-timer-count');
+    if (currentCount) currentCount.textContent = otpCountdownSec;
+
+    const currentSendBtn = document.getElementById('btn-otp-send-code');
+    if (currentSendBtn && currentSendBtn.disabled) {
+      currentSendBtn.textContent = `Wait ${otpCountdownSec}s`;
+    }
+
+    if (otpCountdownSec <= 0) {
+      clearInterval(otpResendTimer);
+      otpResendTimer = null;
+      if (resendBtn) {
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Verification Code';
+      }
+      if (currentSendBtn) {
+        currentSendBtn.disabled = false;
+        currentSendBtn.textContent = 'Send Code';
+      }
+    }
+  }, 1000);
+}
+
+function setupEmailVerificationModal() {
+  const modal = document.getElementById('modal-email-verification');
+  if (!modal) return;
+
+  const digits = modal.querySelectorAll('.otp-digit');
+  const verifyBtn = document.getElementById('btn-verify-otp');
+  const resendBtn = document.getElementById('btn-resend-otp');
+  const cancelBtn = document.getElementById('btn-cancel-otp');
+  const sendCodeBtn = document.getElementById('btn-otp-send-code');
+  const receiverInput = document.getElementById('otp-receiver-email-input');
+  const dispatchedNotice = document.getElementById('otp-dispatched-notice');
+  const targetEmailDisplay = document.getElementById('otp-target-email-display');
+  const errorEl = document.getElementById('otp-error-msg');
+
+  // Send Code button action (for login mode or manual dispatch)
+  if (sendCodeBtn) {
+    sendCodeBtn.addEventListener('click', () => {
+      const emailVal = receiverInput?.value.trim().toLowerCase();
+      if (!emailVal || !isValidEmail(emailVal)) {
+        if (errorEl) {
+          errorEl.textContent = 'Please enter a valid Gmail address (e.g. name@gmail.com).';
+          errorEl.classList.remove('hidden');
+        }
+        if (receiverInput) receiverInput.focus();
+        return;
+      }
+
+      if (errorEl) errorEl.classList.add('hidden');
+
+      const role = pendingEmailRegistration?.role || selectedLoginRole;
+      const res = generateVerificationOtp(emailVal, role);
+
+      if (!res.success) {
+        if (errorEl) {
+          errorEl.textContent = res.error || 'Failed to dispatch verification code.';
+          errorEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!pendingEmailRegistration) {
+        pendingEmailRegistration = { isLoginMode: true, role };
+      }
+      pendingEmailRegistration.email = emailVal;
+
+      if (targetEmailDisplay) targetEmailDisplay.textContent = emailVal;
+      if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
+
+      // Clear digits & focus
+      digits.forEach(d => {
+        d.value = '';
+        d.classList.remove('filled');
+      });
+      if (digits[0]) digits[0].focus();
+
+      startOtpResendCountdown();
+      showToast(`📧 Verification code sent to ${emailVal}! Check your inbox.`);
+    });
+  }
+
+  // Setup digit inputs keyboard navigation and paste handling
+  digits.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      const val = input.value.replace(/\D/g, '');
+      input.value = val ? val.slice(-1) : '';
+
+      input.classList.toggle('filled', !!input.value);
+      if (errorEl) errorEl.classList.add('hidden');
+
+      if (input.value && idx < digits.length - 1) {
+        digits[idx + 1].focus();
+      }
+
+      const currentCode = Array.from(digits).map(d => d.value).join('');
+      if (currentCode.length === 6) {
+        if (verifyBtn) verifyBtn.focus();
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        if (!input.value && idx > 0) {
+          digits[idx - 1].focus();
+          digits[idx - 1].value = '';
+          digits[idx - 1].classList.remove('filled');
+        } else {
+          input.value = '';
+          input.classList.remove('filled');
+        }
+      } else if (e.key === 'ArrowLeft' && idx > 0) {
+        digits[idx - 1].focus();
+      } else if (e.key === 'ArrowRight' && idx < digits.length - 1) {
+        digits[idx + 1].focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        doVerifyOtp();
+      }
+    });
+
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteText = (e.clipboardData || window.clipboardData).getData('text');
+      const numericDigits = pasteText.replace(/\D/g, '').slice(0, 6);
+      if (numericDigits.length > 0) {
+        digits.forEach((d, i) => {
+          if (i < numericDigits.length) {
+            d.value = numericDigits[i];
+            d.classList.add('filled');
+          } else {
+            d.value = '';
+            d.classList.remove('filled');
+          }
+        });
+        const nextIdx = Math.min(numericDigits.length, digits.length - 1);
+        digits[nextIdx].focus();
+        if (numericDigits.length === 6) {
+          if (verifyBtn) verifyBtn.focus();
+        }
+      }
+    });
+  });
+
+  // Cancel / back button
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      closeEmailVerificationModal();
+    });
+  }
+
+  // Resend OTP button
+  if (resendBtn) {
+    resendBtn.addEventListener('click', () => {
+      const emailToResend = pendingEmailRegistration?.email || receiverInput?.value.trim().toLowerCase();
+      if (!emailToResend || !isValidEmail(emailToResend)) {
+        if (errorEl) {
+          errorEl.textContent = 'Please provide a valid Gmail address to resend.';
+          errorEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const role = pendingEmailRegistration?.role || selectedLoginRole;
+      const newOtp = generateVerificationOtp(emailToResend, role);
+      if (newOtp.success) {
+        if (pendingEmailRegistration) pendingEmailRegistration.email = emailToResend;
+        if (targetEmailDisplay) targetEmailDisplay.textContent = emailToResend;
+        if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
+
+        digits.forEach(d => {
+          d.value = '';
+          d.classList.remove('filled');
+        });
+        if (digits[0]) digits[0].focus();
+
+        startOtpResendCountdown();
+        showToast(`📧 New code sent to ${emailToResend}! Check your inbox.`);
+      }
+    });
+  }
+
+  // Do verify OTP logic
+  const doVerifyOtp = async () => {
+    const targetEmail = (pendingEmailRegistration?.email || receiverInput?.value.trim() || '').toLowerCase();
+    if (!targetEmail || !isValidEmail(targetEmail)) {
+      if (errorEl) {
+        errorEl.textContent = 'Please enter your Gmail address and click "Send Code".';
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    const enteredCode = Array.from(digits).map(d => d.value).join('');
+    if (enteredCode.length < 6) {
+      if (errorEl) {
+        errorEl.textContent = 'Please enter the complete 6-digit verification code sent to your Gmail.';
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (verifyBtn) {
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'VERIFYING CODE...';
+    }
+
+    const verifyResult = await verifyEmailOtp(targetEmail, enteredCode);
+    if (!verifyResult.success) {
+      if (verifyBtn) {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = pendingEmailRegistration?.isLoginMode ? 'VERIFY & SIGN IN' : 'VERIFY & ACTIVATE ACCOUNT';
+      }
+      if (errorEl) {
+        errorEl.textContent = verifyResult.error;
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    // 1. If LOGIN MODE: Authenticate account directly
+    if (pendingEmailRegistration?.isLoginMode) {
+      if (verifyBtn) verifyBtn.textContent = 'SIGNING IN...';
+      const roleToUse = pendingEmailRegistration.role || selectedLoginRole;
+      const loginRes = await loginWithEmailVerification(targetEmail, roleToUse);
+
+      if (verifyBtn) {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'VERIFY & SIGN IN';
+      }
+
+      if (!loginRes.success) {
+        if (errorEl) {
+          errorEl.textContent = loginRes.error;
+          errorEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      closeEmailVerificationModal();
+      showLoggedInState(loginRes.user);
+      showToast(`✅ Welcome, ${loginRes.user.full_name || loginRes.user.username} (${loginRes.user.role})!`);
+      switchView('view-scan');
+      return;
+    }
+
+    // 2. If REGISTRATION MODE: Persist new account
+    if (verifyBtn) verifyBtn.textContent = 'ACTIVATING ACCOUNT...';
+
+    const regResult = await registerUser(
+      pendingEmailRegistration.fullName,
+      pendingEmailRegistration.username,
+      pendingEmailRegistration.password,
+      targetEmail,
+      pendingEmailRegistration.role
+    );
+
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'VERIFY & ACTIVATE ACCOUNT';
+    }
+
+    if (!regResult.success) {
+      if (errorEl) {
+        errorEl.textContent = regResult.error;
+        errorEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    // Registration Success
+    const roleName = pendingEmailRegistration.role;
+    const userName = pendingEmailRegistration.username;
+    closeEmailVerificationModal();
+
+    showToast(`🎉 Email verified! ${roleName} account created successfully.`);
+
+    // Clear signup form
+    ['signup-fullname', 'signup-email', 'signup-username', 'signup-password', 'signup-confirm'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    // Auto-fill login screen and switch to login
+    const loginUserField = document.getElementById('input-username');
+    if (loginUserField) loginUserField.value = userName;
+    applyLoginRoleTheme(roleName);
+
+    switchView('view-login');
+
+    const loginPwdField = document.getElementById('input-password');
+    if (loginPwdField) {
+      setTimeout(() => loginPwdField.focus(), 300);
+    }
+  };
+
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', doVerifyOtp);
+  }
 }
 
 /* ==========================================================================
@@ -2246,6 +2722,7 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
    ========================================================================== */
 function setupModals() {
   setupModalChecklistControls();
+  setupEmailVerificationModal();
 
   const closeFareBtn = document.getElementById('btn-close-fare');
   if (closeFareBtn) closeFareBtn.addEventListener('click', () => {

@@ -88,8 +88,7 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
-              <input id="input-username" type="text" placeholder="Username" autocomplete="username"
-                autocapitalize="words" />
+              <input id="input-username" type="text" placeholder="Username or Email" autocomplete="username" />
             </div>
 
             <div class="input-pill input-password-wrap">
@@ -116,12 +115,18 @@
               </button>
             </div>
 
+            <div class="login-auth-options">
+              <button type="button" id="btn-login-email-verify" class="btn-email-verify-link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>Email Verification</span>
+              </button>
+            </div>
+
             <button id="btn-login-submit" type="submit" class="figma-emerald-btn">
               LOG IN AS PASSENGER
-            </button>
-
-            <button id="btn-goto-signup" type="button" class="figma-secondary-btn mt-2">
-              Create New Account
             </button>
           </form>
 
@@ -181,8 +186,17 @@
             <div class="input-pill">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <input id="signup-email" type="email" placeholder="Email Address (e.g. name@gmail.com)" autocomplete="email" />
+            </div>
+
+            <div class="input-pill">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path>
               </svg>
               <input id="signup-username" type="text" placeholder="Username" autocomplete="username"
                 autocapitalize="words" />
@@ -237,11 +251,7 @@
             </div>
 
             <button id="btn-signup-submit" type="submit" class="figma-emerald-btn">
-              CREATE PASSENGER ACCOUNT
-            </button>
-
-            <button id="btn-goto-login" type="button" class="figma-secondary-btn mt-2">
-              Already have an account? Log In
+              VERIFY EMAIL & REGISTER
             </button>
           </form>
 
@@ -1171,6 +1181,92 @@
 
         <div class="notif-footer-actions">
           <button type="button" id="btn-dismiss-notifs" class="figma-emerald-btn compact">Close Status Center</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 5: Email Verification OTP Dialog (Both Passenger and Traffic Enforcer) -->
+    <div id="modal-email-verification" class="modal-overlay hidden">
+      <div class="bottom-sheet otp-bottom-sheet text-center">
+        <div class="sheet-drag-handle"></div>
+
+        <div class="otp-icon-wrap" id="otp-header-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+        </div>
+
+        <div id="otp-portal-badge" class="passenger-portal-badge">👤 Passenger Email Verification</div>
+        <h3 id="otp-modal-title">Security Email Verification</h3>
+        <p class="otp-sub-desc">
+          Enter your email address. The system will dispatch a 6-digit verification code to your inbox to verify your account.
+        </p>
+
+        <!-- Receiver Gmail Input & Send Code Action -->
+        <div class="otp-receiver-box">
+          <label class="otp-box-label" for="otp-receiver-email-input">Your Email Address (Receiver)</label>
+          <div class="otp-receiver-row">
+            <input
+              id="otp-receiver-email-input"
+              type="email"
+              class="otp-receiver-input"
+              placeholder="Enter your email (e.g. name@gmail.com)"
+              autocomplete="email"
+            />
+            <button type="button" id="btn-otp-send-code" class="btn-otp-send-code">
+              Send Code
+            </button>
+          </div>
+          <p class="otp-receiver-hint">
+            The 6-digit verification code will be sent directly to your email inbox.
+          </p>
+        </div>
+
+        <!-- Email Dispatched Confirmation Notice (No code shown on screen) -->
+        <div id="otp-dispatched-notice" class="otp-dispatched-notice hidden">
+          <div class="otp-dispatched-title">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span>Verification Code Dispatched!</span>
+          </div>
+          <p class="otp-dispatched-text">
+            A 6-digit verification code has been dispatched to <strong id="otp-target-email-display">user@gmail.com</strong>. Please check your inbox (and Spam/Junk folder) and enter the code below.
+          </p>
+          <p class="otp-dispatched-note">
+            Note: The code is only accessible in your email inbox for enhanced account protection.
+          </p>
+        </div>
+
+        <!-- 6-digit OTP input boxes -->
+        <label class="otp-code-input-label">Enter 6-Digit Code (from your Gmail)</label>
+        <div class="otp-digits-container" id="otp-digits-container">
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0" autocomplete="one-time-code" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1" autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="2" autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3" autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4" autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="5" autocomplete="off" />
+        </div>
+
+        <!-- Error Message Banner -->
+        <div id="otp-error-msg" class="login-error hidden" style="margin: 10px 0 6px;"></div>
+
+        <!-- Confirm Button -->
+        <button id="btn-verify-otp" type="button" class="figma-emerald-btn mt-2">
+          VERIFY & ACTIVATE ACCOUNT
+        </button>
+
+        <!-- Resend and Back Controls -->
+        <div class="otp-footer-controls">
+          <button type="button" id="btn-resend-otp" class="btn-resend-otp" disabled>
+            Resend Code (<span id="otp-timer-count">60</span>s)
+          </button>
+          <button type="button" id="btn-cancel-otp" class="figma-secondary-btn mt-2">
+            Back
+          </button>
         </div>
       </div>
     </div>

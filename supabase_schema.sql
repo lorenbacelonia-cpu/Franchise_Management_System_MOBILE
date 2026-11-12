@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS public.account_enforcer_mobile (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
+  email TEXT,
+  email_verified BOOLEAN DEFAULT FALSE,
   password TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -20,6 +22,8 @@ CREATE TABLE IF NOT EXISTS public.account_passenger_mobile (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
+  email TEXT,
+  email_verified BOOLEAN DEFAULT FALSE,
   password TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );

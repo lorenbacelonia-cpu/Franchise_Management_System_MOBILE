@@ -3955,3 +3955,289 @@ img {
 .tag-chip-remove:hover {
   opacity: 1;
 }
+
+/* ==========================================================================
+   Email Verification OTP Dialog (Both Passenger and Traffic Enforcer)
+   ========================================================================== */
+.login-auth-options {
+  display: flex;
+  justify-content: flex-end;
+  margin: -2px 0 8px;
+}
+
+.btn-email-verify-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #059669;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-email-verify-link:hover {
+  text-decoration: underline;
+}
+
+.login-card.theme-enforcer .btn-email-verify-link {
+  color: #1e3a8a !important;
+}
+
+.otp-bottom-sheet {
+  max-width: 440px;
+  margin: 0 auto;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 18px 18px 26px;
+  background: #ffffff;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.22);
+}
+
+.otp-icon-wrap {
+  width: 54px;
+  height: 54px;
+  margin: 4px auto 10px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+  transition: all 0.3s ease;
+}
+
+.otp-icon-wrap.theme-enforcer {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+  box-shadow: 0 8px 20px rgba(30, 58, 138, 0.45) !important;
+}
+
+.otp-sub-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 4px 0 12px;
+  line-height: 1.45;
+}
+
+.otp-receiver-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.otp-box-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+}
+
+.otp-receiver-row {
+  display: flex;
+  gap: 6px;
+}
+
+.otp-receiver-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  font-size: 0.82rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.otp-receiver-input:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+}
+
+.otp-bottom-sheet.theme-enforcer .otp-receiver-input:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2);
+}
+
+.btn-otp-send-code {
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-otp-send-code:hover:not(:disabled) {
+  background: #047857;
+}
+
+.btn-otp-send-code:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.otp-bottom-sheet.theme-enforcer .btn-otp-send-code:not(:disabled) {
+  background: #1e3a8a !important;
+}
+
+.otp-bottom-sheet.theme-enforcer .btn-otp-send-code:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+}
+
+.otp-receiver-hint {
+  font-size: 0.68rem;
+  color: #64748b;
+  margin: 6px 0 0;
+}
+
+.otp-dispatched-notice {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: left;
+  color: #14532d;
+}
+
+.otp-bottom-sheet.theme-enforcer .otp-dispatched-notice {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+.otp-dispatched-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.otp-dispatched-text {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+
+.otp-dispatched-note {
+  font-size: 0.66rem;
+  font-style: italic;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.otp-code-input-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 6px 0 6px;
+}
+
+.otp-digits-container {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 14px;
+}
+
+.otp-digit {
+  width: 44px;
+  height: 52px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  text-align: center;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  font-family: inherit;
+}
+
+.otp-digit:focus {
+  border-color: #059669;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25);
+  transform: translateY(-2px);
+}
+
+.otp-bottom-sheet.theme-enforcer .otp-digit:focus {
+  border-color: #1e3a8a !important;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.25) !important;
+}
+
+.otp-digit.filled {
+  border-color: #059669;
+  background: #f0fdf4;
+}
+
+.otp-bottom-sheet.theme-enforcer .otp-digit.filled {
+  border-color: #1e3a8a !important;
+  background: #eff6ff !important;
+}
+
+.otp-bottom-sheet.theme-enforcer #btn-verify-otp {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 8px 22px rgba(30, 58, 138, 0.45) !important;
+}
+
+.otp-bottom-sheet.theme-enforcer #btn-verify-otp:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+}
+
+.otp-footer-controls {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-resend-otp {
+  background: none;
+  border: none;
+  color: #059669;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: all 0.15s ease;
+}
+
+.btn-resend-otp:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.otp-bottom-sheet.theme-enforcer .btn-resend-otp {
+  color: #1e3a8a !important;
+}
+
+.otp-bottom-sheet.theme-enforcer .btn-resend-otp:disabled {
+  color: #94a3b8 !important;
+}
