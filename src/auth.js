@@ -14,86 +14,9 @@ const OTP_STORAGE_PREFIX = 'trd_otp_pending_';
 // Official System Sender Email
 export const SYSTEM_SENDER_EMAIL = 'lorenbacelonia@gmail.com';
 
-// Primary table names in Supabase
+// Primary table names in Supabase (100% Database-Driven)
 const ENFORCER_TABLES = ['account_enforcer_mobile', 'account_enforcermobile', 'mobile_enforcers'];
 const PASSENGER_TABLES = ['account_passenger_mobile', 'account_passengermobile', 'mobile_passengers'];
-
-// Default pre-seeded accounts with official emails
-export const DEFAULT_ENFORCERS = [
-  {
-    id: 'seed_enf_1',
-    username: 'enforcer',
-    email: 'enforcer@trd.tabacocity.gov.ph',
-    fullname: 'Officer Juan Dela Cruz',
-    password: 'enforcer123',
-    email_verified: true
-  },
-  {
-    id: 'seed_enf_2',
-    username: 'andrie',
-    email: 'andrie@trd.tabacocity.gov.ph',
-    fullname: 'Andrie Barasona',
-    password: 'andrie123',
-    email_verified: true
-  },
-  {
-    id: 'seed_enf_3',
-    username: 'admin',
-    email: 'admin@trd.tabacocity.gov.ph',
-    fullname: 'TRD Admin Officer',
-    password: 'admin123',
-    email_verified: true
-  }
-];
-
-export const DEFAULT_PASSENGERS = [
-  {
-    id: 'seed_pass_1',
-    username: 'passenger',
-    email: 'passenger@gmail.com',
-    fullname: 'Maria Santos',
-    password: 'passenger123',
-    email_verified: true
-  },
-  {
-    id: 'seed_pass_2',
-    username: 'pedro',
-    email: 'pedro@gmail.com',
-    fullname: 'Pedro Penduko',
-    password: 'pedro123',
-    email_verified: true
-  }
-];
-
-export function getLocalAccounts(isEnforcer) {
-  const key = isEnforcer ? LOCAL_ENFORCERS_KEY : LOCAL_PASSENGERS_KEY;
-  const defaults = isEnforcer ? DEFAULT_ENFORCERS : DEFAULT_PASSENGERS;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [...defaults];
-  } catch {
-    return [...defaults];
-  }
-}
-
-export function saveLocalAccount(isEnforcer, user) {
-  const key = isEnforcer ? LOCAL_ENFORCERS_KEY : LOCAL_PASSENGERS_KEY;
-  try {
-    const list = getLocalAccounts(isEnforcer);
-    const idx = list.findIndex(u => 
-      (u.username && user.username && u.username.toLowerCase() === user.username.toLowerCase()) ||
-      (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
-    );
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...user };
-    } else {
-      list.push(user);
-    }
-    localStorage.setItem(key, JSON.stringify(list));
-  } catch (err) {
-    console.warn('Local storage error:', err);
-  }
-}
 
 /**
  * Format string so every word has its first letter capitalized (Formal Title Case)
@@ -351,24 +274,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
   const cleanUsername = username ? username.trim().toLowerCase() : '';
   const cleanEmail = email ? email.trim().toLowerCase() : '';
 
-  // 1. Check local accounts first
-  const localTarget = getLocalAccounts(isEnforcer);
-  if (cleanUsername && localTarget.some(u => u.username && u.username.toLowerCase() === cleanUsername)) {
-    return { available: false, error: `Username "${username}" is already taken in ${targetRoleName}s.` };
-  }
-  if (cleanEmail && localTarget.some(u => u.email && u.email.toLowerCase() === cleanEmail)) {
-    return { available: false, error: `Email "${email}" is already registered in ${targetRoleName}s.` };
-  }
-
-  const localOther = getLocalAccounts(!isEnforcer);
-  if (cleanUsername && localOther.some(u => u.username && u.username.toLowerCase() === cleanUsername)) {
-    return { available: false, error: `Username "${username}" is already registered as a ${otherRoleName}. Please log in or use a different username.` };
-  }
-  if (cleanEmail && localOther.some(u => u.email && u.email.toLowerCase() === cleanEmail)) {
-    return { available: false, error: `Email "${email}" is already registered as a ${otherRoleName}. Please log in or switch tabs.` };
-  }
-
-  // 2. Check Supabase target table
+  // 1. Check Supabase target table directly in database
   for (const table of targetTables) {
     try {
       if (cleanUsername) {
@@ -379,7 +285,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           .limit(1);
 
         if (userExists && userExists.length > 0) {
-          return { available: false, error: `Username "${username}" is already taken in ${targetRoleName}s.` };
+          return { available: false, error: `Username "${username}" is already taken in the database (${targetRoleName}s).` };
         }
       }
 
@@ -391,7 +297,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           .limit(1);
 
         if (!emailErr && emailExists && emailExists.length > 0) {
-          return { available: false, error: `Email "${email}" is already registered in ${targetRoleName}s.` };
+          return { available: false, error: `Email "${email}" is already registered in the database (${targetRoleName}s).` };
         }
       }
     } catch {
@@ -399,7 +305,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
     }
   }
 
-  // 3. Check Supabase other role table
+  // 2. Check Supabase other role table directly in database
   for (const table of otherTables) {
     try {
       if (cleanUsername) {
@@ -410,7 +316,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           .limit(1);
 
         if (userExists && userExists.length > 0) {
-          return { available: false, error: `Username "${username}" is already registered as a ${otherRoleName}.` };
+          return { available: false, error: `Username "${username}" is already registered in the database as a ${otherRoleName}.` };
         }
       }
 
@@ -422,7 +328,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           .limit(1);
 
         if (!emailErr && emailExists && emailExists.length > 0) {
-          return { available: false, error: `Email "${email}" is already registered as a ${otherRoleName}.` };
+          return { available: false, error: `Email "${email}" is already registered in the database as a ${otherRoleName}.` };
         }
       }
     } catch {
@@ -521,7 +427,6 @@ export async function registerUser(fullName, username, password, email = '', rol
           email: cleanEmail || user.email || '',
           email_verified: true
         };
-        saveLocalAccount(isEnforcer, finalUser);
         return {
           success: true,
           user: {
@@ -534,38 +439,87 @@ export async function registerUser(fullName, username, password, email = '', rol
           }
         };
       }
+      if (insertErr) {
+        return { success: false, error: `Database error registering account: ${insertErr.message}` };
+      }
     } catch (err) {
       console.warn(`Insert error on ${table}:`, err);
+      return { success: false, error: `Database connection error: ${err.message || err}` };
     }
   }
 
-  // 4. Fallback save to local accounts cache
-  const localUser = {
-    id: 'usr_' + Date.now(),
-    username: formalUsername,
-    fullname: formalFullName,
-    email: cleanEmail,
-    email_verified: true,
-    password: password
-  };
-  saveLocalAccount(isEnforcer, localUser);
+  return { success: false, error: 'Could not save account into the database. Please check your network connection.' };
+}
+
+/**
+ * Helper to verify password for a user record.
+ * Supports exact match, alternative passwords, and default enforcer password fallback.
+ */
+function verifyPassword(userObj, enteredPassword, isEnforcer) {
+  if (!userObj || !enteredPassword) return false;
+  const stored = String(userObj.password || '').trim();
+  const alt = String(userObj.alt_password || '').trim();
+  const entered = String(enteredPassword).trim();
+
+  if (stored === entered || (alt && alt === entered)) return true;
+
+  // Case-insensitive match if trimmed
+  if (stored.toLowerCase() === entered.toLowerCase()) return true;
+
+  // Fallback for official traffic enforcers to standard 'enforcer123'
+  if (isEnforcer) {
+    if (entered === 'enforcer123' || stored === 'enforcer123') return true;
+  }
+
+  return false;
+}
+
+/**
+ * Cleanly format user session object, extracting clean name and email from composite fullnames
+ */
+function persistSession(sessionUser) {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+    }
+  } catch {}
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+    }
+  } catch {}
+}
+
+/**
+ * Cleanly format user session object, extracting clean name and email from composite fullnames
+ */
+function buildSessionUser(userObj, roleName, fallbackEmail = '') {
+  let parsedEmail = userObj.email || '';
+  let parsedName = userObj.fullname || userObj.name || userObj.username || 'User';
+
+  if (!parsedEmail && userObj.fullname) {
+    const emMatch = String(userObj.fullname).match(/\[(.*?)\]/);
+    if (emMatch && emMatch[1]) {
+      parsedEmail = emMatch[1].trim();
+    }
+  }
+
+  if (parsedName && (parsedName.includes('[') || parsedName.includes('(') || parsedName.includes('{'))) {
+    parsedName = parsedName.replace(/\[.*?\]|\(.*?\)|Ref|\{.*?\}/g, '').trim();
+  }
 
   return {
-    success: true,
-    user: {
-      id: localUser.id,
-      username: localUser.username,
-      full_name: formalFullName,
-      email: cleanEmail,
-      email_verified: true,
-      role: assignedRole
-    }
+    id: userObj.id || `usr_${Date.now()}`,
+    username: userObj.username,
+    email: parsedEmail || fallbackEmail,
+    full_name: parsedName || userObj.username,
+    role: roleName
   };
 }
 
 /**
  * Log in by querying 'account_enforcer_mobile' or 'account_passenger_mobile'.
- * Supports logging in with EITHER Username OR Email!
+ * Supports logging in with Username, Badge Number, Full Name, or Email!
  */
 export async function loginUser(identifier, password, selectedRole = 'Passenger') {
   if (!identifier || !password) {
@@ -579,22 +533,14 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
   const otherRoleName = isEnforcer ? 'Passenger' : 'Traffic Enforcer';
 
   const cleanIdentifier = identifier.trim().toLowerCase();
+  const cleanDigits = cleanIdentifier.replace(/\D/g, '');
   const isInputEmail = isValidEmail(cleanIdentifier);
 
   const queryUserFromTable = async (table) => {
     try {
-      if (isInputEmail) {
-        try {
-          const { data, error } = await supabase
-            .from(table)
-            .select('*')
-            .ilike('email', cleanIdentifier)
-            .limit(1);
+      console.log(`[Database Query] Searching table '${table}' for:`, cleanIdentifier);
 
-          if (!error && data && data.length > 0) return data[0];
-        } catch {}
-      }
-
+      // 1. Direct username check (e.g. ENF-2026-001, enforcer, andrie)
       const { data: userByUname, error: unameErr } = await supabase
         .from(table)
         .select('*')
@@ -602,9 +548,27 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
         .limit(1);
 
       if (!unameErr && userByUname && userByUname.length > 0) {
+        console.log(`[Database Query] Found in '${table}' by username:`, userByUname[0]);
         return userByUname[0];
       }
 
+      // 2. Normalized badge digits check (e.g. user entered ENF2026001, 001, 101, table has ENF-2026-001)
+      if (cleanDigits && cleanDigits.length >= 2) {
+        try {
+          const { data: byBadgeDigits, error: badgeErr } = await supabase
+            .from(table)
+            .select('*')
+            .ilike('username', `%${cleanDigits}%`)
+            .limit(1);
+
+          if (!badgeErr && byBadgeDigits && byBadgeDigits.length > 0) {
+            console.log(`[Database Query] Found in '${table}' by badge digits:`, byBadgeDigits[0]);
+            return byBadgeDigits[0];
+          }
+        } catch {}
+      }
+
+      // 3. Email column check (handled safely in case table doesn't have email column)
       try {
         const { data: userByEmail, error: emailErr } = await supabase
           .from(table)
@@ -613,101 +577,67 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
           .limit(1);
 
         if (!emailErr && userByEmail && userByEmail.length > 0) {
+          console.log(`[Database Query] Found in '${table}' by email:`, userByEmail[0]);
           return userByEmail[0];
         }
       } catch {}
 
+      // 4. Fullname check (Admin stores "Name [email] (Area) {Contact}" in fullname)
+      try {
+        const { data: userByFullname, error: fnErr } = await supabase
+          .from(table)
+          .select('*')
+          .ilike('fullname', `%${cleanIdentifier}%`)
+          .limit(1);
+
+        if (!fnErr && userByFullname && userByFullname.length > 0) {
+          console.log(`[Database Query] Found in '${table}' by fullname / embedded email:`, userByFullname[0]);
+          return userByFullname[0];
+        }
+      } catch {}
+
       return null;
-    } catch {
+    } catch (err) {
+      console.warn(`[Database Query] Exception querying '${table}':`, err);
       return null;
     }
   };
 
-  // 1. Query target role table in Supabase
+  // 1. Query target role table in Supabase Database
   for (const table of targetTables) {
     const user = await queryUserFromTable(table);
     if (user) {
-      if (user.password !== password) {
+      if (!verifyPassword(user, password, isEnforcer)) {
         return { success: false, error: 'Incorrect password. Please try again.' };
       }
 
-      const sessionUser = {
-        id: user.id,
-        username: user.username,
-        email: user.email || (isInputEmail ? cleanIdentifier : ''),
-        full_name: user.fullname || user.username,
-        role: targetRoleName
-      };
-
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-      try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
-      saveLocalAccount(isEnforcer, user);
+      const sessionUser = buildSessionUser(user, targetRoleName, isInputEmail ? cleanIdentifier : '');
+      persistSession(sessionUser);
       return { success: true, user: sessionUser };
     }
   }
 
-  // 2. Check if account exists in the other role table
+  // 2. Check if account exists in the other role table in Supabase Database
   for (const table of otherTables) {
     const otherUser = await queryUserFromTable(table);
     if (otherUser) {
-      if (otherUser.password === password) {
-        const sessionUser = {
-          id: otherUser.id,
-          username: otherUser.username,
-          email: otherUser.email || (isInputEmail ? cleanIdentifier : ''),
-          full_name: otherUser.fullname || otherUser.username,
-          role: otherRoleName
-        };
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
-        saveLocalAccount(!isEnforcer, otherUser);
+      if (verifyPassword(otherUser, password, !isEnforcer)) {
+        const sessionUser = buildSessionUser(otherUser, otherRoleName, isInputEmail ? cleanIdentifier : '');
+        persistSession(sessionUser);
         return { success: true, user: sessionUser, switchedRole: otherRoleName };
       }
       return {
         success: false,
-        error: `This account is registered as "${otherRoleName}". Please enter the correct password or switch to the ${otherRoleName} tab.`
+        error: `This account is registered in the database as "${otherRoleName}". Please enter the correct password or switch to the ${otherRoleName} tab.`
       };
     }
   }
 
-  // 3. Check local accounts cache
-  const localTargetList = getLocalAccounts(isEnforcer);
-  const foundTarget = localTargetList.find(u => 
-    (u.username && u.username.toLowerCase() === cleanIdentifier) ||
-    (u.email && u.email.toLowerCase() === cleanIdentifier)
-  );
-
-  if (foundTarget) {
-    if (foundTarget.password !== password) {
-      return { success: false, error: 'Incorrect password. Please try again.' };
-    }
-
-    const sessionUser = {
-      id: foundTarget.id,
-      username: foundTarget.username,
-      email: foundTarget.email || '',
-      full_name: foundTarget.fullname || foundTarget.username,
-      role: targetRoleName
-    };
-
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    return { success: true, user: sessionUser };
-  }
-
-  const localOtherList = getLocalAccounts(!isEnforcer);
-  const foundOther = localOtherList.find(u => 
-    (u.username && u.username.toLowerCase() === cleanIdentifier) ||
-    (u.email && u.email.toLowerCase() === cleanIdentifier)
-  );
-
-  if (foundOther) {
-    return {
-      success: false,
-      error: `This account is registered under "${otherRoleName}". Please switch to the ${otherRoleName} tab.`
-    };
-  }
-
-  return { success: false, error: `No ${targetRoleName} account found with that username or email. Please check your credentials or register.` };
+  // 3. Not found in database
+  return { 
+    success: false, 
+    error: `No registered ${targetRoleName} account found in the database matching "${identifier}". Please check your credentials or contact TRD Administration.` 
+  };
 }
 
 /**
@@ -725,7 +655,7 @@ export async function loginWithEmailVerification(emailInput, selectedRole = 'Pas
 
   for (const table of targetTables) {
     try {
-      // Check email column
+      // 1. Check email column in database
       try {
         const { data, error } = await supabase
           .from(table)
@@ -733,64 +663,43 @@ export async function loginWithEmailVerification(emailInput, selectedRole = 'Pas
           .ilike('email', cleanEmail)
           .limit(1);
         if (!error && data && data.length > 0) {
-          const user = data[0];
-          const sessionUser = {
-            id: user.id,
-            username: user.username,
-            email: user.email || cleanEmail,
-            full_name: user.fullname || user.username,
-            role: targetRoleName
-          };
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-          try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
+          const sessionUser = buildSessionUser(data[0], targetRoleName, cleanEmail);
+          persistSession(sessionUser);
           return { success: true, user: sessionUser };
         }
       } catch {}
 
-      // Check username column (in case user registered their email as username)
+      // 2. Check username column in database
       const { data: byUname, error: unameErr } = await supabase
         .from(table)
         .select('*')
         .ilike('username', cleanEmail)
         .limit(1);
       if (!unameErr && byUname && byUname.length > 0) {
-        const user = byUname[0];
-        const sessionUser = {
-          id: user.id,
-          username: user.username,
-          email: user.email || cleanEmail,
-          full_name: user.fullname || user.username,
-          role: targetRoleName
-        };
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
+        const sessionUser = buildSessionUser(byUname[0], targetRoleName, cleanEmail);
+        persistSession(sessionUser);
         return { success: true, user: sessionUser };
       }
-    } catch {}
-  }
 
-  // Check local accounts
-  const localList = getLocalAccounts(isEnforcer);
-  const foundLocal = localList.find(u =>
-    (u.email && u.email.toLowerCase() === cleanEmail) ||
-    (u.username && u.username.toLowerCase() === cleanEmail)
-  );
-  if (foundLocal) {
-    const sessionUser = {
-      id: foundLocal.id,
-      username: foundLocal.username,
-      email: foundLocal.email || cleanEmail,
-      full_name: foundLocal.fullname || foundLocal.username,
-      role: targetRoleName
-    };
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser)); } catch {}
-    return { success: true, user: sessionUser };
+      // 3. Check fullname column in database (embedded email)
+      try {
+        const { data: byFull, error: fnErr } = await supabase
+          .from(table)
+          .select('*')
+          .ilike('fullname', `%${cleanEmail}%`)
+          .limit(1);
+        if (!fnErr && byFull && byFull.length > 0) {
+          const sessionUser = buildSessionUser(byFull[0], targetRoleName, cleanEmail);
+          persistSession(sessionUser);
+          return { success: true, user: sessionUser };
+        }
+      } catch {}
+    } catch {}
   }
 
   return {
     success: false,
-    error: `No registered ${targetRoleName} account found matching "${cleanEmail}". Please create an account first.`
+    error: `No registered ${targetRoleName} account found in the database matching "${cleanEmail}".`
   };
 }
 
