@@ -397,7 +397,9 @@ export async function submitEnforcerViolation(reportData) {
       reported_by: reportData.reporter_username || enforcerName,
       remarks: reportData.description || fullDescription,
       status: 'Pending',
-      date_submitted: new Date().toISOString().split('T')[0]
+      date_submitted: new Date().toISOString().split('T')[0],
+      evidence_image: evidenceImageUrl,
+      evidence_filename: evidenceFileName
     };
 
     const { data: vData, error: vErr } = await supabase
@@ -431,7 +433,9 @@ export async function submitEnforcerViolation(reportData) {
       reported_by: reportData.reporter_username || enforcerName,
       remarks: reportData.description || fullDescription,
       status: 'Pending',
-      date_submitted: new Date().toISOString().split('T')[0]
+      date_submitted: new Date().toISOString().split('T')[0],
+      evidence_image: evidenceImageUrl,
+      evidence_filename: evidenceFileName
     };
 
     const { data: uData, error: uErr } = await supabase
