@@ -130,49 +130,33 @@
             </button>
           </form>
 
-          <div class="register-footer">
-            <p>Don't have an account? <a id="link-go-signup" href="#" onclick="return false;">Register here!</a></p>
+          <div class="register-footer" id="login-register-footer">
+            <p id="login-register-text">Don't have an account? <a id="link-go-signup" href="#" onclick="return false;">Register here!</a></p>
+            <p id="login-enforcer-notice" class="login-enforcer-notice hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align: -2px; margin-right: 4px;">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Official Traffic Enforcer accounts are provisioned by TRD Administration. Public registration is disabled.
+            </p>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 1b: Sign Up Screen -->
+      <!-- VIEW 1b: Sign Up Screen (Passenger Only - Enforcer Sign Up Disabled) -->
       <section id="view-signup" class="view-panel">
         <div id="signup-card" class="figma-card login-card">
           <div id="signup-giant-icon" class="giant-lock-icon auth-seal-wrap">
             <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
           </div>
-          <div id="signup-portal-badge" class="passenger-portal-badge">Passenger Account Registration</div>
-          <h2 id="signup-title">Create Verifier Account</h2>
-          <p id="signup-sub" class="login-sub">Register to access the TRD franchise system</p>
+          <div id="signup-portal-badge" class="passenger-portal-badge">👤 Passenger Registration Portal</div>
+          <h2 id="signup-title">Create Passenger Account</h2>
+          <p id="signup-sub" class="login-sub">Register as a Passenger with email verification via Supabase</p>
 
           <div id="signup-error-msg" class="login-error hidden"></div>
           <div id="signup-success-msg" class="login-error hidden"
             style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"></div>
 
           <form id="signup-form" class="login-form" onsubmit="return false;">
-            <!-- Role Selection Segmented Control -->
-            <div class="role-selector-wrap">
-              <label class="role-group-label">Select Account Role:</label>
-              <div class="role-pill-tabs">
-                <button type="button" id="role-signup-passenger" class="role-tab active" data-role="Passenger">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" width="16" height="16">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  Passenger
-                </button>
-                <button type="button" id="role-signup-enforcer" class="role-tab" data-role="Traffic Enforcer">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" width="16" height="16">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                  Traffic Enforcer
-                </button>
-              </div>
-            </div>
-
             <div class="input-pill">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
@@ -251,7 +235,7 @@
             </div>
 
             <button id="btn-signup-submit" type="submit" class="figma-emerald-btn">
-              VERIFY EMAIL & REGISTER
+              VERIFY EMAIL & REGISTER AS PASSENGER
             </button>
           </form>
 
@@ -1185,7 +1169,7 @@
       </div>
     </div>
 
-    <!-- Modal 5: Email Verification OTP Dialog (Both Passenger and Traffic Enforcer) -->
+    <!-- Modal 5: Email Verification OTP Dialog (Passenger Supabase Authentication) -->
     <div id="modal-email-verification" class="modal-overlay hidden">
       <div class="bottom-sheet otp-bottom-sheet text-center">
         <div class="sheet-drag-handle"></div>
@@ -1197,15 +1181,15 @@
           </svg>
         </div>
 
-        <div id="otp-portal-badge" class="passenger-portal-badge">👤 Passenger Email Verification</div>
-        <h3 id="otp-modal-title">Security Email Verification</h3>
+        <div id="otp-portal-badge" class="passenger-portal-badge">👤 Passenger Supabase Verification</div>
+        <h3 id="otp-modal-title">Verify Passenger Email</h3>
         <p class="otp-sub-desc">
-          Enter your email address. The system will dispatch a 6-digit verification code to your inbox to verify your account.
+          A secure 6-digit verification code is dispatched to your email using <strong>Supabase Authentication</strong>.
         </p>
 
-        <!-- Receiver Gmail Input & Send Code Action -->
+        <!-- Receiver Email Input & Send Code Action -->
         <div class="otp-receiver-box">
-          <label class="otp-box-label" for="otp-receiver-email-input">Your Email Address (Receiver)</label>
+          <label class="otp-box-label" for="otp-receiver-email-input">Passenger Email Address</label>
           <div class="otp-receiver-row">
             <input
               id="otp-receiver-email-input"
@@ -1219,7 +1203,7 @@
             </button>
           </div>
           <p class="otp-receiver-hint">
-            The 6-digit verification code will be sent directly to your email inbox.
+            Official 6-digit verification code sent via Supabase Authentication.
           </p>
         </div>
 
@@ -1230,18 +1214,18 @@
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span>Verification Code Dispatched!</span>
+            <span>Supabase Verification Code Sent!</span>
           </div>
           <p class="otp-dispatched-text">
-            A 6-digit verification code has been dispatched to <strong id="otp-target-email-display">user@gmail.com</strong>. Please check your inbox (and Spam/Junk folder) and enter the code below.
+            A 6-digit verification code was sent via Supabase Authentication to <strong id="otp-target-email-display">user@gmail.com</strong>. Please check your inbox (and Spam/Junk folder) and enter the code below.
           </p>
           <p class="otp-dispatched-note">
-            Note: The code is only accessible in your email inbox for enhanced account protection.
+            Note: The code is only accessible in your email inbox for verified account protection.
           </p>
         </div>
 
         <!-- 6-digit OTP input boxes -->
-        <label class="otp-code-input-label">Enter 6-Digit Code (from your Gmail)</label>
+        <label class="otp-code-input-label">Enter 6-Digit Code (from your Email)</label>
         <div class="otp-digits-container" id="otp-digits-container">
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0" autocomplete="one-time-code" />
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1" autocomplete="off" />
@@ -1256,7 +1240,7 @@
 
         <!-- Confirm Button -->
         <button id="btn-verify-otp" type="button" class="figma-emerald-btn mt-2">
-          VERIFY & ACTIVATE ACCOUNT
+          VERIFY & ACTIVATE PASSENGER ACCOUNT
         </button>
 
         <!-- Resend and Back Controls -->

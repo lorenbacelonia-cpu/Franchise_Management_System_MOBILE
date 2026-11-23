@@ -449,6 +449,21 @@
       text-decoration: none;
     }
 
+    .login-enforcer-notice {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      color: #1e3a8a;
+      font-size: 0.76rem;
+      font-weight: 600;
+      line-height: 1.4;
+      text-align: left;
+    }
+
     /* Buttons */
     .figma-emerald-btn {
       width: 100%;

@@ -50,6 +50,10 @@ export function applyLoginRoleTheme(role) {
   const loginGiantIcon = document.getElementById('login-giant-icon');
   const loginPortalBadge = document.getElementById('login-portal-badge');
   const loginSub = document.getElementById('login-sub');
+  const loginRegText = document.getElementById('login-register-text');
+  const loginEnfNotice = document.getElementById('login-enforcer-notice');
+  const loginAuthOptions = document.querySelector('.login-auth-options');
+  const usernameInput = document.getElementById('input-username');
 
   if (loginCard) loginCard.classList.toggle('theme-enforcer', isEnforcer);
   if (loginPassTab) loginPassTab.classList.toggle('active', !isEnforcer);
@@ -68,40 +72,42 @@ export function applyLoginRoleTheme(role) {
     loginPortalBadge.textContent = isEnforcer ? '👮 TRD Law Enforcement Portal' : '👤 Passenger Verifier Portal';
   }
   if (loginSub) {
-    loginSub.textContent = isEnforcer ? 'Sign in to official TRD Law Enforcement account' : 'Sign in with your TRD verifier account';
+    loginSub.textContent = isEnforcer ? 'Sign in with your official TRD Enforcer account provided by Admin' : 'Sign in with your TRD verifier account';
   }
+  if (usernameInput) {
+    usernameInput.placeholder = isEnforcer ? 'Officer Username / ID' : 'Username or Email';
+  }
+  if (loginRegText) loginRegText.classList.toggle('hidden', isEnforcer);
+  if (loginEnfNotice) loginEnfNotice.classList.toggle('hidden', !isEnforcer);
+  // Email verification is for passengers only because admin provides enforcer accounts
+  if (loginAuthOptions) loginAuthOptions.classList.toggle('hidden', isEnforcer);
+
   hideLoginError();
 }
 
-export function applySignupRoleTheme(role) {
-  selectedSignupRole = role;
-  const isEnforcer = role === 'Traffic Enforcer';
+export function applySignupRoleTheme() {
+  selectedSignupRole = 'Passenger';
   const signupCard = document.getElementById('signup-card');
-  const signupPassTab = document.getElementById('role-signup-passenger');
-  const signupEnfTab = document.getElementById('role-signup-enforcer');
   const signupSubmitBtn = document.getElementById('btn-signup-submit');
   const signupGiantIcon = document.getElementById('signup-giant-icon');
   const signupPortalBadge = document.getElementById('signup-portal-badge');
   const signupSub = document.getElementById('signup-sub');
 
-  if (signupCard) signupCard.classList.toggle('theme-enforcer', isEnforcer);
-  if (signupPassTab) signupPassTab.classList.toggle('active', !isEnforcer);
-  if (signupEnfTab) signupEnfTab.classList.toggle('active', isEnforcer);
+  if (signupCard) signupCard.classList.remove('theme-enforcer');
   if (signupSubmitBtn) {
-    signupSubmitBtn.textContent = isEnforcer ? 'VERIFY EMAIL & REGISTER AS ENFORCER' : 'VERIFY EMAIL & REGISTER AS PASSENGER';
+    signupSubmitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
   }
   if (signupGiantIcon) {
     signupGiantIcon.innerHTML = `
       <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
-      ${isEnforcer ? '<span class="auth-enforcer-badge">👮</span>' : ''}
     `;
   }
   if (signupPortalBadge) {
-    signupPortalBadge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
-    signupPortalBadge.textContent = isEnforcer ? '👮 TRD Law Enforcement Registration' : '👤 Passenger Account Registration';
+    signupPortalBadge.className = 'passenger-portal-badge';
+    signupPortalBadge.textContent = '👤 Passenger Account Registration';
   }
   if (signupSub) {
-    signupSub.textContent = isEnforcer ? 'Register official TRD Law Enforcement Officer credentials' : 'Register to access the TRD franchise system';
+    signupSub.textContent = 'Register as a Passenger with email verification via Supabase';
   }
   const signupErr = document.getElementById('signup-error-msg');
   const signupSucc = document.getElementById('signup-success-msg');
@@ -207,7 +213,7 @@ function setupPasswordToggles() {
 }
 
 /* ==========================================================================
-   Role Tabs Setup (Passenger vs Traffic Enforcer)
+   Role Tabs Setup (Passenger vs Traffic Enforcer Login)
    ========================================================================== */
 function setupRoleTabs() {
   // Login Role Tabs
@@ -217,15 +223,6 @@ function setupRoleTabs() {
   if (loginPassTab && loginEnfTab) {
     loginPassTab.addEventListener('click', () => applyLoginRoleTheme('Passenger'));
     loginEnfTab.addEventListener('click', () => applyLoginRoleTheme('Traffic Enforcer'));
-  }
-
-  // Signup Role Tabs
-  const signupPassTab = document.getElementById('role-signup-passenger');
-  const signupEnfTab = document.getElementById('role-signup-enforcer');
-
-  if (signupPassTab && signupEnfTab) {
-    signupPassTab.addEventListener('click', () => applySignupRoleTheme('Passenger'));
-    signupEnfTab.addEventListener('click', () => applySignupRoleTheme('Traffic Enforcer'));
   }
 }
 
@@ -403,7 +400,7 @@ function setupLoginView() {
       const emailToUse = isValidEmail(usernameVal) ? usernameVal : '';
       openEmailVerificationModal({
         email: emailToUse,
-        role: selectedLoginRole,
+        role: 'Passenger',
         isLoginMode: true
       });
     });
@@ -624,23 +621,25 @@ function setupSignupView() {
     submitBtn.textContent = 'CHECKING AVAILABILITY...';
 
     // Verify username and email availability before opening OTP verification modal
-    const avail = await checkAccountAvailability(username, email, selectedSignupRole);
-
-    submitBtn.disabled = false;
-    submitBtn.textContent = selectedSignupRole === 'Traffic Enforcer' 
-      ? 'VERIFY EMAIL & REGISTER AS ENFORCER' 
-      : 'VERIFY EMAIL & REGISTER AS PASSENGER';
+    const avail = await checkAccountAvailability(username, email, 'Passenger');
 
     if (!avail.available) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
       errorEl.textContent = avail.error;
       errorEl.classList.remove('hidden');
       return;
     }
 
-    // Generate and dispatch 6-digit verification code to user's Gmail
-    const otpRes = generateVerificationOtp(email, selectedSignupRole);
+    submitBtn.textContent = 'SENDING VERIFICATION CODE VIA SUPABASE...';
+
+    // Dispatch 6-digit verification code to user's email via Supabase Authentication
+    const otpRes = await generateVerificationOtp(email, 'Passenger');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
+
     if (!otpRes.success) {
-      errorEl.textContent = otpRes.error || 'Failed to generate verification code.';
+      errorEl.textContent = otpRes.error || 'Failed to dispatch verification code via Supabase.';
       errorEl.classList.remove('hidden');
       return;
     }
@@ -651,7 +650,7 @@ function setupSignupView() {
       username,
       email,
       password,
-      role: selectedSignupRole,
+      role: 'Passenger',
       isLoginMode: false
     });
   };
@@ -816,13 +815,13 @@ function setupEmailVerificationModal() {
   const targetEmailDisplay = document.getElementById('otp-target-email-display');
   const errorEl = document.getElementById('otp-error-msg');
 
-  // Send Code button action (for login mode or manual dispatch)
+  // Send Code button action (for login mode or manual dispatch via Supabase)
   if (sendCodeBtn) {
-    sendCodeBtn.addEventListener('click', () => {
+    sendCodeBtn.addEventListener('click', async () => {
       const emailVal = receiverInput?.value.trim().toLowerCase();
       if (!emailVal || !isValidEmail(emailVal)) {
         if (errorEl) {
-          errorEl.textContent = 'Please enter a valid Gmail address (e.g. name@gmail.com).';
+          errorEl.textContent = 'Please enter a valid Gmail or email address (e.g. name@gmail.com).';
           errorEl.classList.remove('hidden');
         }
         if (receiverInput) receiverInput.focus();
@@ -831,12 +830,17 @@ function setupEmailVerificationModal() {
 
       if (errorEl) errorEl.classList.add('hidden');
 
+      sendCodeBtn.disabled = true;
+      sendCodeBtn.textContent = 'Sending...';
+
       const role = pendingEmailRegistration?.role || selectedLoginRole;
-      const res = generateVerificationOtp(emailVal, role);
+      const res = await generateVerificationOtp(emailVal, role);
 
       if (!res.success) {
+        sendCodeBtn.disabled = false;
+        sendCodeBtn.textContent = 'Send Code';
         if (errorEl) {
-          errorEl.textContent = res.error || 'Failed to dispatch verification code.';
+          errorEl.textContent = res.error || 'Failed to dispatch verification code via Supabase.';
           errorEl.classList.remove('hidden');
         }
         return;
@@ -858,7 +862,7 @@ function setupEmailVerificationModal() {
       if (digits[0]) digits[0].focus();
 
       startOtpResendCountdown();
-      showToast(`📧 Verification code sent to ${emailVal}! Check your inbox.`);
+      showToast(`📧 Supabase verification code sent to ${emailVal}! Check your inbox.`);
     });
   }
 
@@ -933,18 +937,21 @@ function setupEmailVerificationModal() {
 
   // Resend OTP button
   if (resendBtn) {
-    resendBtn.addEventListener('click', () => {
+    resendBtn.addEventListener('click', async () => {
       const emailToResend = pendingEmailRegistration?.email || receiverInput?.value.trim().toLowerCase();
       if (!emailToResend || !isValidEmail(emailToResend)) {
         if (errorEl) {
-          errorEl.textContent = 'Please provide a valid Gmail address to resend.';
+          errorEl.textContent = 'Please provide a valid Gmail or email address to resend.';
           errorEl.classList.remove('hidden');
         }
         return;
       }
 
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+
       const role = pendingEmailRegistration?.role || selectedLoginRole;
-      const newOtp = generateVerificationOtp(emailToResend, role);
+      const newOtp = await generateVerificationOtp(emailToResend, role);
       if (newOtp.success) {
         if (pendingEmailRegistration) pendingEmailRegistration.email = emailToResend;
         if (targetEmailDisplay) targetEmailDisplay.textContent = emailToResend;
@@ -957,7 +964,14 @@ function setupEmailVerificationModal() {
         if (digits[0]) digits[0].focus();
 
         startOtpResendCountdown();
-        showToast(`📧 New code sent to ${emailToResend}! Check your inbox.`);
+        showToast(`📧 New code sent via Supabase to ${emailToResend}! Check your inbox.`);
+      } else {
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Verification Code';
+        if (errorEl) {
+          errorEl.textContent = newOtp.error || 'Failed to resend code via Supabase.';
+          errorEl.classList.remove('hidden');
+        }
       }
     });
   }
@@ -1051,11 +1065,11 @@ function setupEmailVerificationModal() {
     }
 
     // Registration Success
-    const roleName = pendingEmailRegistration.role;
+    const roleName = pendingEmailRegistration.role || 'Passenger';
     const userName = pendingEmailRegistration.username;
     closeEmailVerificationModal();
 
-    showToast(`🎉 Email verified! ${roleName} account created successfully.`);
+    showToast(`🎉 Email verified via Supabase Authentication! ${roleName} account created successfully.`);
 
     // Clear signup form
     ['signup-fullname', 'signup-email', 'signup-username', 'signup-password', 'signup-confirm'].forEach(id => {

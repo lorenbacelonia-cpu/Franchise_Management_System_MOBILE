@@ -129,16 +129,16 @@ export function isValidEmail(email) {
 }
 
 /* ==========================================================================
-   Email Verification OTP Dispatch & Validation (Gmail Delivery)
+   Email Verification OTP Dispatch & Validation (Supabase Authentication)
    ========================================================================== */
 
 /**
- * Generate a 6-digit OTP code and dispatch it to the user's Gmail inbox
- * via local SMTP (/api/send-verification), FormSubmit relay, and Supabase Auth.
+ * Send a 6-digit verification OTP code using Supabase Authentication
+ * with automatic fallback and local session tracking.
  * @param {string} email
- * @param {string} role ('Passenger' | 'Traffic Enforcer')
+ * @param {string} role ('Passenger')
  */
-export function generateVerificationOtp(email, role = 'Passenger') {
+export async function generateVerificationOtp(email, role = 'Passenger') {
   if (!isValidEmail(email)) {
     return { success: false, error: 'Please enter a valid Gmail or email address.' };
   }
@@ -161,7 +161,42 @@ export function generateVerificationOtp(email, role = 'Passenger') {
     console.warn('Failed to store OTP in sessionStorage:', e);
   }
 
-  // 1. Dispatch via local Vite /api/send-verification (Nodemailer Gmail SMTP)
+  // 1. PRIMARY: Dispatch OTP via Supabase Authentication
+  let supabaseAuthSuccess = false;
+  let supabaseAuthError = null;
+  try {
+    const { data: supaData, error: supaErr } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        shouldCreateUser: true
+      }
+    });
+
+    if (supaErr) {
+      console.warn('Supabase Auth signInWithOtp error:', supaErr);
+      supabaseAuthError = supaErr;
+      if (supaErr.status === 429 || supaErr.code === 'over_email_send_rate_limit') {
+        return {
+          success: false,
+          error: supaErr.message || 'For security purposes, please wait a few seconds before requesting another code.'
+        };
+      }
+      if (supaErr.code === 'email_address_invalid') {
+        return {
+          success: false,
+          error: 'The entered email address is not recognized as valid by Supabase Authentication.'
+        };
+      }
+    } else {
+      supabaseAuthSuccess = true;
+      console.log('✅ Supabase Auth OTP email dispatched successfully to:', cleanEmail);
+    }
+  } catch (err) {
+    console.warn('Supabase Auth exception:', err);
+    supabaseAuthError = err;
+  }
+
+  // 2. Local Vite /api/send-verification (Nodemailer Gmail SMTP)
   fetch('/api/send-verification', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -173,7 +208,7 @@ export function generateVerificationOtp(email, role = 'Passenger') {
     })
   }).catch(() => {});
 
-  // 2. Dispatch via FormSubmit AJAX relay targeting the receiver's Gmail
+  // 3. Fallback: FormSubmit AJAX relay targeting the receiver's Gmail
   fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
     method: 'POST',
     headers: {
@@ -194,18 +229,19 @@ export function generateVerificationOtp(email, role = 'Passenger') {
     })
   }).catch(() => {});
 
-  // 3. Also trigger Supabase Auth OTP in background if configured
-  try {
-    supabase.auth.signInWithOtp({
-      email: cleanEmail,
-      options: { shouldCreateUser: true }
-    }).catch(() => {});
-  } catch {}
+  // If Supabase returned an error and no fallback succeeded
+  if (!supabaseAuthSuccess && supabaseAuthError && (supabaseAuthError.status === 400 && String(supabaseAuthError.message).includes('invalid'))) {
+    return {
+      success: false,
+      error: supabaseAuthError.message || 'Supabase could not dispatch email to this address.'
+    };
+  }
 
   return {
     success: true,
     email: cleanEmail,
     sender: SYSTEM_SENDER_EMAIL,
+    provider: 'supabase',
     expiresAt
   };
 }
@@ -231,45 +267,75 @@ export function getPendingOtp(email) {
 }
 
 /**
- * Verify entered 6-digit OTP code received in the user's Gmail
+ * Verify entered 6-digit OTP code using Supabase Authentication
  */
 export async function verifyEmailOtp(email, enteredCode) {
   if (!email || !enteredCode) {
-    return { success: false, error: 'Please enter the 6-digit verification code from your Gmail.' };
+    return { success: false, error: 'Please enter the 6-digit verification code from your email.' };
   }
 
   const cleanEmail = email.trim().toLowerCase();
   const cleanCode = String(enteredCode).trim().replace(/\s+/g, '');
-  const pending = getPendingOtp(cleanEmail);
 
-  // 1. Check against dispatched 6-digit code
-  if (pending && pending.code === cleanCode) {
-    try {
-      sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
-    } catch {}
-    return { success: true, email: cleanEmail };
+  if (cleanCode.length < 6) {
+    return { success: false, error: 'Please enter all 6 digits of the verification code.' };
   }
 
-  // 2. Fallback: Check if user entered a token generated directly by Supabase Auth email
+  // 1. PRIMARY: Verify directly with Supabase Authentication OTP
   try {
     const { data, error } = await supabase.auth.verifyOtp({
       email: cleanEmail,
       token: cleanCode,
       type: 'email'
     });
+
     if (!error && data?.user) {
       try {
         sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
       } catch {}
-      return { success: true, email: cleanEmail };
+      return { 
+        success: true, 
+        email: cleanEmail,
+        user: data.user,
+        session: data.session,
+        verifiedVia: 'supabase'
+      };
     }
-  } catch {}
+
+    if (error) {
+      console.warn('Supabase verifyOtp error notice:', error);
+      // Fallback check against local OTP before failing
+      const pending = getPendingOtp(cleanEmail);
+      if (pending && pending.code === cleanCode) {
+        try {
+          sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
+        } catch {}
+        return { success: true, email: cleanEmail, verifiedVia: 'local_otp' };
+      }
+
+      if (error.code === 'otp_expired' || error.message?.toLowerCase().includes('expired')) {
+        return { success: false, error: 'Verification code has expired. Please request a new code.' };
+      }
+      return { success: false, error: 'Incorrect verification code. Please check the code sent to your email and try again.' };
+    }
+  } catch (err) {
+    console.warn('Supabase verifyOtp exception:', err);
+  }
+
+  // 2. Check against dispatched fallback 6-digit code
+  const pending = getPendingOtp(cleanEmail);
+  if (pending && pending.code === cleanCode) {
+    try {
+      sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
+    } catch {}
+    return { success: true, email: cleanEmail, verifiedVia: 'local_otp' };
+  }
 
   if (!pending) {
     return { success: false, error: 'Verification code has expired or was not sent yet. Please click "Send Code" first.' };
   }
 
-  return { success: false, error: 'Incorrect verification code. Please check the 6-digit code sent to your Gmail inbox (or Spam folder) and try again.' };
+  return { success: false, error: 'Incorrect verification code. Please check the 6-digit code sent to your email inbox and try again.' };
 }
 
 /**
@@ -368,15 +434,23 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
 }
 
 /**
- * Register a new user into the corresponding mobile table.
- * Supports email address and verified flag with graceful fallback.
+ * Register a new Passenger into 'account_passenger_mobile'.
+ * Note: Traffic Enforcer registration is disabled as official officer accounts
+ * are strictly provisioned by TRD Administration.
  * @param {string} fullName
  * @param {string} username
  * @param {string} password
  * @param {string} email
- * @param {string} role ('Passenger' | 'Traffic Enforcer')
+ * @param {string} role ('Passenger')
  */
 export async function registerUser(fullName, username, password, email = '', role = 'Passenger') {
+  if (role === 'Traffic Enforcer') {
+    return {
+      success: false,
+      error: 'Self-registration is disabled for Traffic Enforcers. Official enforcer accounts are provisioned exclusively by TRD Administration.'
+    };
+  }
+
   if (!fullName || !username || !password) {
     return { success: false, error: 'Full name, username, and password are required.' };
   }
