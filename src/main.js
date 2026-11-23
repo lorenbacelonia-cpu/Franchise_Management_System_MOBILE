@@ -116,12 +116,7 @@ export function applySignupRoleTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Purge legacy test reports and notification caches
-  try {
-    localStorage.removeItem('trd_submitted_reports');
-    localStorage.removeItem('trd_read_notifications_ids');
-  } catch { }
-
+  // Setup all event handlers and views
   setupNavigation();
   setupSoundToggle();
   setupRoleTabs();
@@ -2085,6 +2080,9 @@ async function handleEnforcerIssueCitation(openModalForEvidence = false) {
   const remInput = document.getElementById('onpage-enforcer-remarks');
   if (locInput) locInput.value = '';
   if (remInput) remInput.value = '';
+
+  // Immediately refresh officer citation logs and status notifications
+  loadAndRenderNotifications(true);
 }
 
 /* ==========================================================================

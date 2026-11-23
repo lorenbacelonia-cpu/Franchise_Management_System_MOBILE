@@ -415,6 +415,38 @@ export async function submitEnforcerViolation(reportData) {
     console.warn('Admin violation table exception:', err);
   }
 
+  // 1b. Fallback to unified violations table
+  try {
+    const adminViolPayload = {
+      city_plate_number: plate,
+      mtop_number: plate,
+      plate_number: reportData.plate_no ? `${reportData.plate_no}-${category === 'Pedicab' ? 'PED' : 'TR'}` : plate,
+      vehicle_category: category,
+      operator_name: reportData.operator_name || 'Registered Operator',
+      driver_name: reportData.driver_name || 'Apprehended Driver',
+      violation_type: violationType,
+      location: reportData.location || 'Tabaco City Commercial Center',
+      fine_amount: Number(reportData.fine_amount) || (category === 'Pedicab' ? 300 : 500),
+      enforcer_name: enforcerName,
+      reported_by: reportData.reporter_username || enforcerName,
+      remarks: reportData.description || fullDescription,
+      status: 'Pending',
+      date_submitted: new Date().toISOString().split('T')[0]
+    };
+
+    const { data: uData, error: uErr } = await supabase
+      .from('violations')
+      .insert([adminViolPayload])
+      .select();
+
+    if (!uErr && uData && uData.length > 0) {
+      console.log('✅ Violation Citation saved to unified violations table:', uData[0]);
+      return { success: true, data: uData[0], table: 'violations' };
+    }
+  } catch (uExc) {
+    console.warn('Unified violations table insert note:', uExc);
+  }
+
   // 2. Try dedicated 'enforcer_violations' table if present
   try {
     const { data: enfData, error: enfErr } = await supabase
@@ -1017,18 +1049,16 @@ async function fetchPassengerNotifications(currentUser, readIds) {
     });
   });
 
-  // 2. Only merge local pending submissions if offline or submitted within the last 30 seconds
+  // 2. Merge all local pending/cached submissions strictly for this passenger
   try {
     const local = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
-    const nowMs = Date.now();
     const passLocals = local.filter(r => {
       const repUser = (r.reporter_username || '').trim().toLowerCase();
       const repName = (r.reporter_name || r.reporter_display || '').trim().toLowerCase();
       const role = (r.reporter_role || '').toLowerCase();
       if (role.includes('enforcer')) return false;
 
-      const isVeryRecent = r.submitted_at && (nowMs - new Date(r.submitted_at).getTime() < 30000);
-      return isVeryRecent && ((rawUsername && repUser === rawUsername) || (rawFullName && repName.includes(rawFullName)));
+      return (rawUsername && repUser === rawUsername) || (rawFullName && repName.includes(rawFullName)) || (!repUser && !repName);
     });
 
     passLocals.forEach((loc, idx) => {
@@ -1093,8 +1123,8 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
     });
   } catch {}
 
-  // 1. Fetch from 'violations_tricycle_admin' and 'violations_pedicab_admin' (The actual Admin tables)
-  const targetViolationTables = ['violations_tricycle_admin', 'violations_pedicab_admin'];
+  // 1. Fetch from 'violations_tricycle_admin', 'violations_pedicab_admin', 'enforcer_violations', 'violations'
+  const targetViolationTables = ['violations_tricycle_admin', 'violations_pedicab_admin', 'enforcer_violations', 'violations'];
   for (const tableName of targetViolationTables) {
     try {
       const { data: vData, error: vErr } = await supabase
@@ -1212,19 +1242,17 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
     console.warn('Enforcer fallback query note:', err);
   }
 
-  // 3. Only merge recent local citations if offline or submitted within the last 30 seconds
+  // 3. Merge all local citations for this officer that haven't been superseded
   try {
     const local = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('trd_submitted_reports') || '[]') : [];
-    const nowMs = Date.now();
     const enfLocals = local.filter(r => {
       const role = (r.reporter_role || '').toLowerCase();
       if (!role.includes('enforcer')) return false;
 
-      const isVeryRecent = r.submitted_at && (nowMs - new Date(r.submitted_at).getTime() < 30000);
       const repUser = (r.reporter_username || '').trim().toLowerCase();
       const repName = (r.reporter_name || r.reporter_display || '').trim().toLowerCase();
 
-      return isVeryRecent && ((rawUser && repUser === rawUser) || (rawFull && repName.includes(rawFull)));
+      return (rawUser && repUser === rawUser) || (rawFull && repName.includes(rawFull)) || (!repUser && !repName);
     });
 
     enfLocals.forEach((loc, idx) => {
