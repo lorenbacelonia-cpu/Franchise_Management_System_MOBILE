@@ -958,6 +958,112 @@ export async function loginWithEmailVerification(contactInput, selectedRole = 'P
 }
 
 /**
+ * Check if an account exists for Forgot Password recovery
+ */
+export async function findUserByIdentifier(identifier, selectedRole = 'Passenger') {
+  if (!identifier) return { success: false, error: 'Identifier is required.' };
+  const cleanIdentifier = identifier.trim().toLowerCase();
+  const cleanDigits = cleanIdentifier.replace(/\D/g, '');
+  const isEnforcer = selectedRole === 'Traffic Enforcer';
+  const tables = isEnforcer ? ENFORCER_TABLES : PASSENGER_TABLES;
+  const roleName = isEnforcer ? 'Traffic Enforcer' : 'Passenger';
+
+  for (const table of tables) {
+    try {
+      // 1. Check contact number
+      if (cleanDigits && cleanDigits.length >= 7) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .or(`contact_number.eq.${cleanIdentifier},contact_number.ilike.%${cleanDigits}%`)
+          .limit(1);
+        if (!error && data && data.length > 0) {
+          return { success: true, user: data[0], table, role: roleName };
+        }
+      }
+
+      // 2. Check email
+      if (cleanIdentifier.includes('@')) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .ilike('email', cleanIdentifier)
+          .limit(1);
+        if (!error && data && data.length > 0) {
+          return { success: true, user: data[0], table, role: roleName };
+        }
+      }
+
+      // 3. Check username
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .ilike('username', cleanIdentifier)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        return { success: true, user: data[0], table, role: roleName };
+      }
+    } catch {}
+  }
+
+  return { success: false, error: `No registered ${roleName} account found with that mobile number or email.` };
+}
+
+/**
+ * Reset / update user password in database after OTP verification
+ */
+export async function resetUserPassword(identifier, newPassword, selectedRole = 'Passenger') {
+  if (!identifier || !newPassword) {
+    return { success: false, error: 'Target identifier and new password are required.' };
+  }
+  if (newPassword.length < 4) {
+    return { success: false, error: 'Password must be at least 4 characters long.' };
+  }
+
+  const cleanIdentifier = identifier.trim().toLowerCase();
+  const cleanDigits = cleanIdentifier.replace(/\D/g, '');
+  const isEnforcer = selectedRole === 'Traffic Enforcer';
+  const tables = isEnforcer ? ENFORCER_TABLES : PASSENGER_TABLES;
+
+  for (const table of tables) {
+    try {
+      let query = supabase.from(table).select('id, username, email, contact_number').limit(1);
+      if (cleanDigits && cleanDigits.length >= 7) {
+        query = query.or(`contact_number.eq.${cleanIdentifier},contact_number.ilike.%${cleanDigits}%,email.ilike.${cleanIdentifier},username.ilike.${cleanIdentifier}`);
+      } else if (cleanIdentifier.includes('@')) {
+        query = query.ilike('email', cleanIdentifier);
+      } else {
+        query = query.ilike('username', cleanIdentifier);
+      }
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        const userRec = data[0];
+        const updatePayload = {
+          password: newPassword,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: updErr } = await supabase
+          .from(table)
+          .update(updatePayload)
+          .eq('id', userRec.id);
+
+        if (!updErr) {
+          return { success: true, user: userRec, username: userRec.username, role: selectedRole };
+        } else {
+          console.warn(`Update error in ${table}:`, updErr);
+        }
+      }
+    } catch (err) {
+      console.warn(`Exception during password reset in ${table}:`, err);
+    }
+  }
+
+  return { success: false, error: 'Failed to update password. Please ensure your account exists.' };
+}
+
+/**
  * Log out user & clear session
  */
 export function logoutUser() {

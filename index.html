@@ -116,11 +116,12 @@
             </div>
 
             <div class="login-auth-options">
-              <button type="button" id="btn-login-email-verify" class="btn-email-verify-link" title="Verify via SMS (TextBee) or Email (Gmail)">
+              <button type="button" id="btn-login-forgot-pwd" class="btn-email-verify-link" title="Forgot Password?">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
-                <span>SMS / Email Verification</span>
+                <span>Forgot Password?</span>
               </button>
             </div>
 
@@ -149,34 +150,13 @@
           </div>
           <div id="signup-portal-badge" class="passenger-portal-badge">👤 Passenger Registration Portal</div>
           <h2 id="signup-title">Create Passenger Account</h2>
-          <p id="signup-sub" class="login-sub">Register as a Passenger with SMS (TextBee) or Email (Gmail) verification</p>
+          <p id="signup-sub" class="login-sub">Register as a Passenger with instant SMS or Email verification</p>
 
           <div id="signup-error-msg" class="login-error hidden"></div>
           <div id="signup-success-msg" class="login-error hidden"
             style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"></div>
 
           <form id="signup-form" class="login-form" onsubmit="return false;">
-            <!-- Verification Method Selector (SMS via TextBee vs Email via Gmail SMTP) -->
-            <div class="verify-method-selector-wrap">
-              <label class="role-group-label">Choose Verification Method:</label>
-              <div class="role-pill-tabs verify-method-tabs">
-                <button type="button" id="tab-verify-sms" class="role-tab active" data-method="sms">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                  </svg>
-                  <span>SMS (TextBee)</span>
-                </button>
-                <button type="button" id="tab-verify-email" class="role-tab" data-method="email">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <span>Email (Gmail)</span>
-                </button>
-              </div>
-            </div>
-
             <div class="input-pill">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
@@ -187,27 +167,20 @@
                 autocapitalize="words" />
             </div>
 
-            <!-- Mobile Phone Input (Active when SMS selected) -->
-            <div class="input-pill" id="signup-phone-group">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                <line x1="12" y1="18" x2="12.01" y2="18"></line>
-              </svg>
-              <input id="signup-phone" type="tel" placeholder="Mobile Number (e.g. 0912 345 6789)" autocomplete="tel" />
-              <span class="verify-target-badge" id="signup-phone-badge">SMS Target</span>
+            <!-- Unified Mobile Number or Email Input (auto-detects 09... 11 digits vs Email) -->
+            <div class="input-pill" id="signup-contact-group">
+              <span id="signup-contact-icon" style="display:inline-flex; align-items:center; margin-right:8px; color:inherit;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </span>
+              <input id="signup-contact" type="text" placeholder="Mobile Number (09...) or Email" autocomplete="username" />
+              <span class="verify-target-badge hidden" id="signup-contact-badge">SMS</span>
             </div>
-
-            <!-- Email Address Input (Active when Email selected) -->
-            <div class="input-pill" id="signup-email-group">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
-              </svg>
-              <input id="signup-email" type="email" placeholder="Email Address (e.g. name@gmail.com)" autocomplete="email" />
-              <span class="verify-target-badge hidden" id="signup-email-badge">Email Target</span>
-            </div>
+            <!-- Hidden inputs to retain backward compatibility -->
+            <input type="hidden" id="signup-phone" value="" />
+            <input type="hidden" id="signup-email" value="" />
 
             <div class="input-pill">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1202,7 +1175,7 @@
       </div>
     </div>
 
-    <!-- Modal 5: SMS (TextBee) & Email (Gmail SMTP) Verification OTP Dialog -->
+    <!-- Modal 5: SMS & Email Verification OTP Dialog -->
     <div id="modal-email-verification" class="modal-overlay hidden">
       <div class="bottom-sheet otp-bottom-sheet text-center">
         <div class="sheet-drag-handle"></div>
@@ -1218,17 +1191,17 @@
           </svg>
         </div>
 
-        <div id="otp-portal-badge" class="passenger-portal-badge">📱 SMS Verification (TextBee)</div>
+        <div id="otp-portal-badge" class="passenger-portal-badge">📱 SMS Verification</div>
         <h3 id="otp-modal-title">Verify Mobile Number</h3>
         <p class="otp-sub-desc" id="otp-modal-desc">
-          A secure 6-digit verification code is dispatched via <strong>TextBee Android SMS Gateway</strong>.
+          A secure 6-digit verification code is dispatched via official SMS.
         </p>
 
         <!-- Method switch row inside modal -->
         <div class="otp-switch-bar">
-          <span id="otp-current-method-text">Active: SMS (TextBee)</span>
+          <span id="otp-current-method-text">Active: SMS</span>
           <button type="button" id="btn-otp-switch-method" class="btn-otp-switch-link">
-            Switch to Email (Gmail)
+            Switch to Email
           </button>
         </div>
 
@@ -1248,7 +1221,7 @@
             </button>
           </div>
           <p class="otp-receiver-hint" id="otp-receiver-hint">
-            Official 6-digit verification code sent via TextBee SMS Gateway.
+            Official 6-digit verification code sent via SMS.
           </p>
         </div>
 
@@ -1278,6 +1251,33 @@
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3" autocomplete="off" />
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4" autocomplete="off" />
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="5" autocomplete="off" />
+        </div>
+
+        <!-- Reset Password Fields (visible in Forgot Password mode after OTP verification) -->
+        <div id="otp-reset-password-section" class="otp-reset-password-section hidden">
+          <label class="otp-code-input-label" style="text-align:left; display:block; margin: 8px 0 4px;">Set New Password</label>
+          <div class="input-pill input-password-wrap" style="margin-top: 4px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input id="otp-new-password" type="password" placeholder="Enter New Password (min. 4 chars)" autocomplete="new-password" />
+            <button type="button" class="btn-toggle-pwd" data-target="otp-new-password" title="Toggle password visibility">
+              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+          <div class="input-pill input-password-wrap" style="margin-top: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input id="otp-confirm-password" type="password" placeholder="Confirm New Password" autocomplete="new-password" />
+            <button type="button" class="btn-toggle-pwd" data-target="otp-confirm-password" title="Toggle password visibility">
+              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
         </div>
 
         <!-- Error Message Banner -->

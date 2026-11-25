@@ -4258,7 +4258,7 @@ img {
 }
 
 /* ==========================================================================
-   Verification Method Selector & Dual OTP (SMS TextBee & Email Gmail SMTP)
+   Verification Method Selector & Dual OTP (SMS & Email)
    ========================================================================== */
 .verify-method-selector-wrap {
   margin-bottom: 12px;
@@ -4328,5 +4328,16 @@ img {
 
 .otp-bottom-sheet.theme-enforcer .btn-otp-switch-link {
   color: #1e3a8a;
+}
+
+.otp-reset-password-section {
+  text-align: left;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.otp-reset-password-section .input-pill {
+  margin-bottom: 8px;
 }
 
