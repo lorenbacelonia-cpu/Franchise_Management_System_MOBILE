@@ -574,12 +574,41 @@ let pendingEmailRegistration = null;
 let otpResendTimer = null;
 let otpCountdownSec = 60;
 
+let selectedSignupVerifyMethod = 'sms';
+
 function setupSignupView() {
   const form = document.getElementById('signup-form');
   const submitBtn = document.getElementById('btn-signup-submit');
 
   const gotoLoginBtn = document.getElementById('btn-goto-login');
   const linkGoLogin = document.getElementById('link-go-login');
+
+  const tabSms = document.getElementById('tab-verify-sms');
+  const tabEmail = document.getElementById('tab-verify-email');
+  const phoneBadge = document.getElementById('signup-phone-badge');
+  const emailBadge = document.getElementById('signup-email-badge');
+
+  const updateMethodUI = (method) => {
+    selectedSignupVerifyMethod = method;
+    if (tabSms && tabEmail) {
+      tabSms.classList.toggle('active', method === 'sms');
+      tabEmail.classList.toggle('active', method === 'email');
+    }
+    if (phoneBadge) phoneBadge.classList.toggle('hidden', method !== 'sms');
+    if (emailBadge) emailBadge.classList.toggle('hidden', method !== 'email');
+    if (submitBtn) {
+      submitBtn.textContent = method === 'sms' 
+        ? 'VERIFY VIA SMS & REGISTER AS PASSENGER' 
+        : 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
+    }
+  };
+
+  if (tabSms) {
+    tabSms.addEventListener('click', () => updateMethodUI('sms'));
+  }
+  if (tabEmail) {
+    tabEmail.addEventListener('click', () => updateMethodUI('email'));
+  }
 
   if (gotoLoginBtn) gotoLoginBtn.addEventListener('click', () => switchView('view-login'));
   if (linkGoLogin) linkGoLogin.addEventListener('click', (e) => { e.preventDefault(); switchView('view-login'); });
@@ -588,6 +617,7 @@ function setupSignupView() {
     if (e) e.preventDefault();
 
     const fullName = document.getElementById('signup-fullname')?.value.trim();
+    const phone = document.getElementById('signup-phone')?.value.trim();
     const email = document.getElementById('signup-email')?.value.trim();
     const username = document.getElementById('signup-username')?.value.trim();
     const password = document.getElementById('signup-password')?.value;
@@ -599,16 +629,46 @@ function setupSignupView() {
     errorEl.classList.add('hidden');
     successEl.classList.add('hidden');
 
-    if (!fullName || !email || !username || !password) {
-      errorEl.textContent = 'All fields (Full Name, Email, Username, Password) are required.';
+    if (!fullName || !username || !password) {
+      errorEl.textContent = 'Full Name, Username, and Password are required.';
       errorEl.classList.remove('hidden');
       return;
     }
 
-    if (!isValidEmail(email)) {
-      errorEl.textContent = 'Please enter a valid email address (e.g. name@gmail.com).';
-      errorEl.classList.remove('hidden');
-      return;
+    // Method-specific validations
+    if (selectedSignupVerifyMethod === 'sms') {
+      if (!phone) {
+        errorEl.textContent = 'Please enter your mobile number (e.g. 0912 345 6789) for TextBee SMS verification.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (!isValidPhone(phone)) {
+        errorEl.textContent = 'Please enter a valid mobile number (e.g. 0912 345 6789 or +639123456789).';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (email && !isValidEmail(email)) {
+        errorEl.textContent = 'Please enter a valid email address or leave the email field blank.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+    } else {
+      // Email method
+      if (!email) {
+        errorEl.textContent = 'Please enter your Gmail / email address for verification.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (!isValidEmail(email)) {
+        errorEl.textContent = 'Please enter a valid email address (e.g. name@gmail.com).';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (phone && !isValidPhone(phone)) {
+        errorEl.textContent = 'Please enter a valid mobile number or leave the phone field blank.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
     }
 
     if (password.length < 4) {
@@ -626,36 +686,49 @@ function setupSignupView() {
     submitBtn.disabled = true;
     submitBtn.textContent = 'CHECKING AVAILABILITY...';
 
-    // Verify username and email availability before opening OTP verification modal
-    const avail = await checkAccountAvailability(username, email, 'Passenger');
+    // Verify username, email, and phone availability
+    const avail = await checkAccountAvailability(username, email, 'Passenger', phone);
 
     if (!avail.available) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
+      submitBtn.textContent = selectedSignupVerifyMethod === 'sms' 
+        ? 'VERIFY VIA SMS & REGISTER AS PASSENGER' 
+        : 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
       errorEl.textContent = avail.error;
       errorEl.classList.remove('hidden');
       return;
     }
 
-    submitBtn.textContent = 'SENDING VERIFICATION CODE VIA SUPABASE...';
+    const verificationTarget = selectedSignupVerifyMethod === 'sms' ? formatPhoneNumber(phone) : email;
+    submitBtn.textContent = selectedSignupVerifyMethod === 'sms'
+      ? 'DISPATCHING SMS CODE VIA TEXTBEE...'
+      : 'DISPATCHING EMAIL CODE VIA GMAIL SMTP...';
 
-    // Dispatch 6-digit verification code to user's email via Supabase Authentication
-    const otpRes = await generateVerificationOtp(email, 'Passenger');
+    // Dispatch verification code via chosen method
+    const otpRes = selectedSignupVerifyMethod === 'sms'
+      ? await generateSmsVerificationOtp(phone, 'Passenger')
+      : await generateEmailVerificationOtp(email, 'Passenger');
+
     submitBtn.disabled = false;
-    submitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
+    submitBtn.textContent = selectedSignupVerifyMethod === 'sms' 
+      ? 'VERIFY VIA SMS & REGISTER AS PASSENGER' 
+      : 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
 
     if (!otpRes.success) {
-      errorEl.textContent = otpRes.error || 'Failed to dispatch verification code via Supabase.';
+      errorEl.textContent = otpRes.error || 'Failed to dispatch verification code.';
       errorEl.classList.remove('hidden');
       return;
     }
 
-    // Launch email verification modal in registration mode
+    // Launch verification modal in registration mode
     openEmailVerificationModal({
       fullName,
       username,
       email,
+      phone,
+      target: verificationTarget,
       password,
+      method: selectedSignupVerifyMethod,
       role: 'Passenger',
       isLoginMode: false
     });
@@ -684,41 +757,92 @@ function openEmailVerificationModal(data) {
   if (!modal) return;
 
   const isEnforcer = data.role === 'Traffic Enforcer';
+  const method = data.method || (data.phone ? 'sms' : (isValidEmail(data.target || data.email) ? 'email' : 'sms'));
+  pendingEmailRegistration.method = method;
+
   const sheet = modal.querySelector('.otp-bottom-sheet');
   const iconWrap = document.getElementById('otp-header-icon-wrap');
+  const iconSms = document.getElementById('otp-icon-sms');
+  const iconEmail = document.getElementById('otp-icon-email');
   const badge = document.getElementById('otp-portal-badge');
-  const targetEmailDisplay = document.getElementById('otp-target-email-display');
+  const targetDisplay = document.getElementById('otp-target-email-display');
   const receiverInput = document.getElementById('otp-receiver-email-input');
+  const receiverLabel = document.getElementById('otp-box-label');
+  const receiverHint = document.getElementById('otp-receiver-hint');
   const dispatchedNotice = document.getElementById('otp-dispatched-notice');
+  const dispatchedTitleText = document.getElementById('otp-dispatched-title-text');
+  const dispatchedNote = document.getElementById('otp-dispatched-note');
+  const digitsLabel = document.getElementById('otp-digits-label');
+  const currentMethodText = document.getElementById('otp-current-method-text');
+  const switchMethodBtn = document.getElementById('btn-otp-switch-method');
   const errorMsg = document.getElementById('otp-error-msg');
   const verifyBtn = document.getElementById('btn-verify-otp');
   const modalTitle = document.getElementById('otp-modal-title');
+  const modalDesc = document.getElementById('otp-modal-desc');
 
   if (sheet) sheet.classList.toggle('theme-enforcer', isEnforcer);
   if (iconWrap) iconWrap.classList.toggle('theme-enforcer', isEnforcer);
 
-  if (badge) {
-    badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
-    badge.textContent = isEnforcer ? '👮 Traffic Enforcer Email Verification' : '👤 Passenger Email Verification';
+  // Toggle method icons
+  if (iconSms) iconSms.classList.toggle('hidden', method !== 'sms');
+  if (iconEmail) iconEmail.classList.toggle('hidden', method !== 'email');
+
+  const currentTarget = method === 'sms' 
+    ? (data.phone || data.target || '') 
+    : (data.email || data.target || '');
+
+  // Dynamic titles and badges based on SMS vs Email
+  if (method === 'sms') {
+    if (badge) {
+      badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
+      badge.textContent = isEnforcer ? '👮 Enforcer SMS Verification' : '📱 SMS Verification (TextBee)';
+    }
+    if (modalTitle) {
+      modalTitle.textContent = data.isLoginMode ? 'Security SMS Verification' : 'Verify Mobile Number';
+    }
+    if (modalDesc) {
+      modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched via <strong>TextBee Android SMS Gateway</strong>.';
+    }
+    if (currentMethodText) currentMethodText.textContent = 'Active: SMS (TextBee)';
+    if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to Email (Gmail)';
+    if (receiverLabel) receiverLabel.textContent = 'Passenger Mobile Number';
+    if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via TextBee SMS Gateway.';
+    if (dispatchedTitleText) dispatchedTitleText.textContent = 'TextBee SMS Code Sent!';
+    if (dispatchedNote) dispatchedNote.textContent = 'Note: The code was dispatched directly to your mobile phone via SMS.';
+    if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your SMS)';
+  } else {
+    if (badge) {
+      badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
+      badge.textContent = isEnforcer ? '👮 Enforcer Email Verification' : '📧 Email Verification (Gmail SMTP)';
+    }
+    if (modalTitle) {
+      modalTitle.textContent = data.isLoginMode ? 'Security Email Verification' : 'Verify Email Address';
+    }
+    if (modalDesc) {
+      modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched via <strong>Gmail SMTP</strong>.';
+    }
+    if (currentMethodText) currentMethodText.textContent = 'Active: Email (Gmail SMTP)';
+    if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to SMS (TextBee)';
+    if (receiverLabel) receiverLabel.textContent = 'Passenger Email Address';
+    if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via Gmail SMTP.';
+    if (dispatchedTitleText) dispatchedTitleText.textContent = 'Gmail Verification Code Sent!';
+    if (dispatchedNote) dispatchedNote.textContent = 'Note: The code is accessible in your email inbox.';
+    if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your Email)';
   }
 
-  if (modalTitle) {
-    modalTitle.textContent = data.isLoginMode ? 'Security Email Verification' : 'Verify Your Email Address';
-  }
-
-  const emailToSet = data.email || '';
   if (receiverInput) {
-    receiverInput.value = emailToSet;
-    receiverInput.disabled = !data.isLoginMode && !!emailToSet;
+    receiverInput.type = method === 'sms' ? 'tel' : 'email';
+    receiverInput.placeholder = method === 'sms' ? 'Enter mobile number (e.g. 0912 345 6789)' : 'Enter email (e.g. name@gmail.com)';
+    receiverInput.value = currentTarget;
+    receiverInput.disabled = !data.isLoginMode && !!currentTarget;
   }
 
-  if (targetEmailDisplay) {
-    targetEmailDisplay.textContent = emailToSet || 'your Gmail';
+  if (targetDisplay) {
+    targetDisplay.textContent = currentTarget || (method === 'sms' ? 'your phone' : 'your Gmail');
   }
 
-  // Show dispatched notice if email already provided
   if (dispatchedNotice) {
-    dispatchedNotice.classList.toggle('hidden', !emailToSet);
+    dispatchedNotice.classList.toggle('hidden', !currentTarget);
   }
 
   if (errorMsg) {
@@ -738,14 +862,14 @@ function openEmailVerificationModal(data) {
     d.classList.remove('filled');
   });
 
-  if (emailToSet) {
+  if (currentTarget) {
     startOtpResendCountdown();
   }
 
   modal.classList.remove('hidden');
 
   setTimeout(() => {
-    if (emailToSet) {
+    if (currentTarget) {
       const firstDigit = modal.querySelector('.otp-digit[data-index="0"]');
       if (firstDigit) firstDigit.focus();
     } else if (receiverInput) {
@@ -816,22 +940,73 @@ function setupEmailVerificationModal() {
   const resendBtn = document.getElementById('btn-resend-otp');
   const cancelBtn = document.getElementById('btn-cancel-otp');
   const sendCodeBtn = document.getElementById('btn-otp-send-code');
+  const switchMethodBtn = document.getElementById('btn-otp-switch-method');
   const receiverInput = document.getElementById('otp-receiver-email-input');
   const dispatchedNotice = document.getElementById('otp-dispatched-notice');
   const targetEmailDisplay = document.getElementById('otp-target-email-display');
   const errorEl = document.getElementById('otp-error-msg');
 
-  // Send Code button action (for login mode or manual dispatch via Supabase)
+  // Switch between SMS and Email inside the modal
+  if (switchMethodBtn) {
+    switchMethodBtn.addEventListener('click', async () => {
+      if (!pendingEmailRegistration) {
+        pendingEmailRegistration = { isLoginMode: true, role: selectedLoginRole || 'Passenger', method: 'sms' };
+      }
+      const newMethod = pendingEmailRegistration.method === 'sms' ? 'email' : 'sms';
+      pendingEmailRegistration.method = newMethod;
+
+      const newTarget = newMethod === 'sms' 
+        ? (pendingEmailRegistration.phone || '') 
+        : (pendingEmailRegistration.email || '');
+
+      openEmailVerificationModal({
+        ...pendingEmailRegistration,
+        method: newMethod,
+        target: newTarget
+      });
+
+      // If target exists, automatically send code for the new method
+      if (newTarget) {
+        const role = pendingEmailRegistration.role || 'Passenger';
+        showToast(`🔄 Switching to ${newMethod === 'sms' ? 'SMS (TextBee)' : 'Email (Gmail SMTP)'}...`);
+        const res = newMethod === 'sms' 
+          ? await generateSmsVerificationOtp(newTarget, role)
+          : await generateEmailVerificationOtp(newTarget, role);
+
+        if (res.success) {
+          startOtpResendCountdown();
+          showToast(newMethod === 'sms' 
+            ? `📱 TextBee verification code sent to ${newTarget}!` 
+            : `📧 Gmail verification code sent to ${newTarget}!`);
+        }
+      }
+    });
+  }
+
+  // Send Code button action (for login mode or manual dispatch)
   if (sendCodeBtn) {
     sendCodeBtn.addEventListener('click', async () => {
-      const emailVal = receiverInput?.value.trim().toLowerCase();
-      if (!emailVal || !isValidEmail(emailVal)) {
-        if (errorEl) {
-          errorEl.textContent = 'Please enter a valid Gmail or email address (e.g. name@gmail.com).';
-          errorEl.classList.remove('hidden');
+      const inputVal = receiverInput?.value.trim() || '';
+      const method = pendingEmailRegistration?.method || (isValidEmail(inputVal) ? 'email' : 'sms');
+
+      if (method === 'sms') {
+        if (!inputVal || !isValidPhone(inputVal)) {
+          if (errorEl) {
+            errorEl.textContent = 'Please enter a valid mobile number (e.g. 0912 345 6789 or +639123456789).';
+            errorEl.classList.remove('hidden');
+          }
+          if (receiverInput) receiverInput.focus();
+          return;
         }
-        if (receiverInput) receiverInput.focus();
-        return;
+      } else {
+        if (!inputVal || !isValidEmail(inputVal)) {
+          if (errorEl) {
+            errorEl.textContent = 'Please enter a valid Gmail or email address (e.g. name@gmail.com).';
+            errorEl.classList.remove('hidden');
+          }
+          if (receiverInput) receiverInput.focus();
+          return;
+        }
       }
 
       if (errorEl) errorEl.classList.add('hidden');
@@ -840,24 +1015,32 @@ function setupEmailVerificationModal() {
       sendCodeBtn.textContent = 'Sending...';
 
       const role = pendingEmailRegistration?.role || selectedLoginRole;
-      const res = await generateVerificationOtp(emailVal, role);
+      const res = method === 'sms'
+        ? await generateSmsVerificationOtp(inputVal, role)
+        : await generateEmailVerificationOtp(inputVal, role);
 
       if (!res.success) {
         sendCodeBtn.disabled = false;
         sendCodeBtn.textContent = 'Send Code';
         if (errorEl) {
-          errorEl.textContent = res.error || 'Failed to dispatch verification code via Supabase.';
+          errorEl.textContent = res.error || 'Failed to dispatch verification code.';
           errorEl.classList.remove('hidden');
         }
         return;
       }
 
       if (!pendingEmailRegistration) {
-        pendingEmailRegistration = { isLoginMode: true, role };
+        pendingEmailRegistration = { isLoginMode: true, role, method };
       }
-      pendingEmailRegistration.email = emailVal;
+      if (method === 'sms') {
+        pendingEmailRegistration.phone = inputVal;
+        pendingEmailRegistration.target = inputVal;
+      } else {
+        pendingEmailRegistration.email = inputVal;
+        pendingEmailRegistration.target = inputVal;
+      }
 
-      if (targetEmailDisplay) targetEmailDisplay.textContent = emailVal;
+      if (targetEmailDisplay) targetEmailDisplay.textContent = inputVal;
       if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
 
       // Clear digits & focus
@@ -868,7 +1051,9 @@ function setupEmailVerificationModal() {
       if (digits[0]) digits[0].focus();
 
       startOtpResendCountdown();
-      showToast(`📧 Supabase verification code sent to ${emailVal}! Check your inbox.`);
+      showToast(method === 'sms' 
+        ? `📱 TextBee verification code sent to ${inputVal}!` 
+        : `📧 Gmail verification code sent to ${inputVal}!`);
     });
   }
 
@@ -944,10 +1129,14 @@ function setupEmailVerificationModal() {
   // Resend OTP button
   if (resendBtn) {
     resendBtn.addEventListener('click', async () => {
-      const emailToResend = pendingEmailRegistration?.email || receiverInput?.value.trim().toLowerCase();
-      if (!emailToResend || !isValidEmail(emailToResend)) {
+      const method = pendingEmailRegistration?.method || 'sms';
+      const targetToResend = method === 'sms'
+        ? (pendingEmailRegistration?.phone || receiverInput?.value.trim())
+        : (pendingEmailRegistration?.email || receiverInput?.value.trim());
+
+      if (!targetToResend) {
         if (errorEl) {
-          errorEl.textContent = 'Please provide a valid Gmail or email address to resend.';
+          errorEl.textContent = `Please provide a valid ${method === 'sms' ? 'mobile number' : 'email address'} to resend.`;
           errorEl.classList.remove('hidden');
         }
         return;
@@ -957,10 +1146,12 @@ function setupEmailVerificationModal() {
       resendBtn.textContent = 'Sending...';
 
       const role = pendingEmailRegistration?.role || selectedLoginRole;
-      const newOtp = await generateVerificationOtp(emailToResend, role);
+      const newOtp = method === 'sms'
+        ? await generateSmsVerificationOtp(targetToResend, role)
+        : await generateEmailVerificationOtp(targetToResend, role);
+
       if (newOtp.success) {
-        if (pendingEmailRegistration) pendingEmailRegistration.email = emailToResend;
-        if (targetEmailDisplay) targetEmailDisplay.textContent = emailToResend;
+        if (targetEmailDisplay) targetEmailDisplay.textContent = targetToResend;
         if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
 
         digits.forEach(d => {
@@ -970,12 +1161,14 @@ function setupEmailVerificationModal() {
         if (digits[0]) digits[0].focus();
 
         startOtpResendCountdown();
-        showToast(`📧 New code sent via Supabase to ${emailToResend}! Check your inbox.`);
+        showToast(method === 'sms' 
+          ? `📱 New code sent via TextBee SMS to ${targetToResend}!` 
+          : `📧 New code sent via Gmail SMTP to ${targetToResend}!`);
       } else {
         resendBtn.disabled = false;
         resendBtn.textContent = 'Resend Verification Code';
         if (errorEl) {
-          errorEl.textContent = newOtp.error || 'Failed to resend code via Supabase.';
+          errorEl.textContent = newOtp.error || 'Failed to resend code.';
           errorEl.classList.remove('hidden');
         }
       }
@@ -984,10 +1177,14 @@ function setupEmailVerificationModal() {
 
   // Do verify OTP logic
   const doVerifyOtp = async () => {
-    const targetEmail = (pendingEmailRegistration?.email || receiverInput?.value.trim() || '').toLowerCase();
-    if (!targetEmail || !isValidEmail(targetEmail)) {
+    const method = pendingEmailRegistration?.method || 'sms';
+    const target = method === 'sms'
+      ? (pendingEmailRegistration?.phone || receiverInput?.value.trim() || '')
+      : (pendingEmailRegistration?.email || receiverInput?.value.trim() || '');
+
+    if (!target) {
       if (errorEl) {
-        errorEl.textContent = 'Please enter your Gmail address and click "Send Code".';
+        errorEl.textContent = `Please enter your ${method === 'sms' ? 'mobile number' : 'Gmail address'} and click "Send Code".`;
         errorEl.classList.remove('hidden');
       }
       return;
@@ -996,7 +1193,7 @@ function setupEmailVerificationModal() {
     const enteredCode = Array.from(digits).map(d => d.value).join('');
     if (enteredCode.length < 6) {
       if (errorEl) {
-        errorEl.textContent = 'Please enter the complete 6-digit verification code sent to your Gmail.';
+        errorEl.textContent = `Please enter the complete 6-digit verification code sent via ${method === 'sms' ? 'SMS' : 'email'}.`;
         errorEl.classList.remove('hidden');
       }
       return;
@@ -1007,7 +1204,7 @@ function setupEmailVerificationModal() {
       verifyBtn.textContent = 'VERIFYING CODE...';
     }
 
-    const verifyResult = await verifyEmailOtp(targetEmail, enteredCode);
+    const verifyResult = await verifyOtp(target, enteredCode, method);
     if (!verifyResult.success) {
       if (verifyBtn) {
         verifyBtn.disabled = false;
@@ -1024,7 +1221,7 @@ function setupEmailVerificationModal() {
     if (pendingEmailRegistration?.isLoginMode) {
       if (verifyBtn) verifyBtn.textContent = 'SIGNING IN...';
       const roleToUse = pendingEmailRegistration.role || selectedLoginRole;
-      const loginRes = await loginWithEmailVerification(targetEmail, roleToUse);
+      const loginRes = await loginWithEmailVerification(target, roleToUse);
 
       if (verifyBtn) {
         verifyBtn.disabled = false;
@@ -1049,13 +1246,15 @@ function setupEmailVerificationModal() {
     // 2. If REGISTRATION MODE: Persist new account
     if (verifyBtn) verifyBtn.textContent = 'ACTIVATING ACCOUNT...';
 
-    const regResult = await registerUser(
-      pendingEmailRegistration.fullName,
-      pendingEmailRegistration.username,
-      pendingEmailRegistration.password,
-      targetEmail,
-      pendingEmailRegistration.role
-    );
+    const regResult = await registerUser({
+      fullName: pendingEmailRegistration.fullName,
+      username: pendingEmailRegistration.username,
+      password: pendingEmailRegistration.password,
+      email: pendingEmailRegistration.email || '',
+      phone: pendingEmailRegistration.phone || '',
+      verificationMethod: method,
+      role: pendingEmailRegistration.role || 'Passenger'
+    });
 
     if (verifyBtn) {
       verifyBtn.disabled = false;
@@ -1075,10 +1274,10 @@ function setupEmailVerificationModal() {
     const userName = pendingEmailRegistration.username;
     closeEmailVerificationModal();
 
-    showToast(`🎉 Email verified via Supabase Authentication! ${roleName} account created successfully.`);
+    showToast(`🎉 Verified via ${method === 'sms' ? 'TextBee SMS' : 'Gmail SMTP'}! ${roleName} account created.`);
 
     // Clear signup form
-    ['signup-fullname', 'signup-email', 'signup-username', 'signup-password', 'signup-confirm'].forEach(id => {
+    ['signup-fullname', 'signup-phone', 'signup-email', 'signup-username', 'signup-password', 'signup-confirm'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });

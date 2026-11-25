@@ -4256,3 +4256,77 @@ img {
 .otp-bottom-sheet.theme-enforcer .btn-resend-otp:disabled {
   color: #94a3b8 !important;
 }
+
+/* ==========================================================================
+   Verification Method Selector & Dual OTP (SMS TextBee & Email Gmail SMTP)
+   ========================================================================== */
+.verify-method-selector-wrap {
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.verify-method-tabs {
+  margin-top: 4px;
+}
+
+.verify-method-tabs .role-tab {
+  font-size: 0.76rem;
+  padding: 7px 10px;
+}
+
+.verify-method-tabs .role-tab.active {
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
+}
+
+.verify-target-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.otp-method-icon {
+  display: block;
+}
+
+.otp-switch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 7px 12px;
+  margin-bottom: 12px;
+  font-size: 0.72rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.btn-otp-switch-link {
+  background: none;
+  border: none;
+  color: #059669;
+  font-weight: 700;
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.btn-otp-switch-link:hover {
+  color: #047857;
+}
+
+.otp-bottom-sheet.theme-enforcer .btn-otp-switch-link {
+  color: #1e3a8a;
+}
+

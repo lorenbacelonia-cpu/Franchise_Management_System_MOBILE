@@ -199,7 +199,7 @@ function verificationDispatchPlugin(env = {}) {
             const senderEmail = (
               env.GMAIL_USER ||
               process.env.GMAIL_USER ||
-              'lorenbacelonia@gmail.com'
+              'tabacocitytrd@gmail.com'
             ).trim();
 
             const appPassword = (

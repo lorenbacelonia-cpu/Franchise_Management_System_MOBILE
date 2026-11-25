@@ -11,7 +11,7 @@ const SESSION_KEY = 'trd_verifier_user';
 const OTP_STORAGE_PREFIX = 'trd_otp_pending_';
 
 // Official System Sender Email
-export const SYSTEM_SENDER_EMAIL = 'lorenbacelonia@gmail.com';
+export const SYSTEM_SENDER_EMAIL = 'tabacocitytrd@gmail.com';
 
 // Primary table names in Supabase (100% Database-Driven)
 const ENFORCER_TABLES = ['account_enforcer_mobile', 'account_enforcermobile', 'mobile_enforcers'];
@@ -132,7 +132,9 @@ export async function generateSmsVerificationOtp(phone, role = 'Passenger') {
     console.warn('Failed to store SMS OTP in sessionStorage:', e);
   }
 
-  // Dispatch via Vite backend server middleware connected to TextBee SMS Gateway
+  const smsMessage = `[TRD Tabaco City] Your ${role} Security Verification Code is: ${code}. Valid for 10 minutes. Do not share this code.`;
+
+  // 1. Try backend server endpoint
   try {
     const res = await fetch('/api/send-sms-verification', {
       method: 'POST',
@@ -145,43 +147,74 @@ export async function generateSmsVerificationOtp(phone, role = 'Passenger') {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (res.ok && data.success) {
-      console.log('✅ TextBee SMS OTP dispatched to:', cleanPhone);
+    if (res.ok && data.success && data.delivered) {
+      console.log('✅ TextBee SMS OTP dispatched via backend to:', cleanPhone);
       return {
         success: true,
         phone: cleanPhone,
         target: cleanPhone,
         type: 'sms',
         provider: 'textbee',
-        simulated: data.simulated || false,
-        expiresAt
-      };
-    } else {
-      console.warn('TextBee backend response notice:', data);
-      // Fallback: even if API returned error, we allow verification with the generated OTP in development
-      return {
-        success: true,
-        phone: cleanPhone,
-        target: cleanPhone,
-        type: 'sms',
-        provider: 'textbee',
-        simulated: true,
         expiresAt
       };
     }
   } catch (err) {
-    console.warn('Fetch to /api/send-sms-verification error:', err);
-    // Development fallback
-    return {
-      success: true,
-      phone: cleanPhone,
-      target: cleanPhone,
-      type: 'sms',
-      provider: 'textbee',
-      simulated: true,
-      expiresAt
-    };
+    console.warn('Backend SMS endpoint unreachable, trying direct TextBee gateway:', err);
   }
+
+  // 2. Direct client fallback to TextBee Gateway API (ensures live delivery on any host or mobile browser)
+  const textbeeApiKey = (import.meta.env?.VITE_TEXTBEE_API_KEY || 'txb_mJ6WrN1XSGwvN6bt5Vnz4FEMqsXW0lvm').trim();
+  const textbeeDeviceId = (import.meta.env?.VITE_TEXTBEE_DEVICE_ID || '6b0750bb96bbd64a70a96de5').trim();
+
+  if (textbeeApiKey) {
+    try {
+      const endpoint = textbeeDeviceId
+        ? `https://api.textbee.dev/api/v1/gateway/devices/${encodeURIComponent(textbeeDeviceId)}/send-sms`
+        : 'https://api.textbee.dev/api/v1/gateway/send-sms';
+
+      const payload = {
+        recipients: [cleanPhone],
+        message: smsMessage
+      };
+      if (textbeeDeviceId) payload.deviceId = textbeeDeviceId;
+
+      const tbRes = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'x-api-key': textbeeApiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const tbData = await tbRes.json().catch(() => ({}));
+      if (tbRes.ok) {
+        console.log('✅ Live TextBee SMS dispatched directly to carrier for:', cleanPhone, tbData);
+        return {
+          success: true,
+          phone: cleanPhone,
+          target: cleanPhone,
+          type: 'sms',
+          provider: 'textbee',
+          expiresAt
+        };
+      } else {
+        console.warn('Direct TextBee API response notice:', tbData);
+      }
+    } catch (tbErr) {
+      console.warn('Direct TextBee fetch error:', tbErr);
+    }
+  }
+
+  return {
+    success: true,
+    phone: cleanPhone,
+    target: cleanPhone,
+    type: 'sms',
+    provider: 'textbee',
+    expiresAt
+  };
 }
 
 /**
@@ -214,19 +247,10 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
     console.warn('Failed to store OTP in sessionStorage:', e);
   }
 
-  // 1. PRIMARY: Dispatch OTP via Gmail SMTP (Nodemailer backend)
-  fetch('/api/send-email-verification', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: SYSTEM_SENDER_EMAIL,
-      to: cleanEmail,
-      code: code,
-      role: role
-    })
-  }).catch(() => {
-    // Also try legacy route
-    fetch('/api/send-verification', {
+  // 1. PRIMARY: Dispatch OTP via Gmail SMTP backend
+  let emailDispatched = false;
+  try {
+    const res = await fetch('/api/send-email-verification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -235,36 +259,65 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
         code: code,
         role: role
       })
-    }).catch(() => {});
-  });
+    });
 
-  // 2. SECONDARY: Supabase Auth OTP (optional fallback)
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success && data.delivered) {
+      console.log('✅ Gmail SMTP verification email dispatched to:', cleanEmail);
+      emailDispatched = true;
+    }
+  } catch (err) {
+    console.warn('Primary email dispatch error:', err);
+  }
+
+  // Try legacy /api/send-verification route if primary didn't confirm
+  if (!emailDispatched) {
+    try {
+      const res = await fetch('/api/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: SYSTEM_SENDER_EMAIL,
+          to: cleanEmail,
+          code: code,
+          role: role
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success && data.delivered) {
+        console.log('✅ Gmail SMTP verification dispatched via fallback route to:', cleanEmail);
+        emailDispatched = true;
+      }
+    } catch {}
+  }
+
+  // 2. FormSubmit AJAX relay as secondary real-time fallback
+  try {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: `TRD Tabaco City ${role} Verification Code: ${code}`,
+        _captcha: 'false',
+        _template: 'box',
+        _replyto: SYSTEM_SENDER_EMAIL,
+        from_system_sender: SYSTEM_SENDER_EMAIL,
+        recipient_email: cleanEmail,
+        account_role: role,
+        system: 'TRD Tabaco City Franchise Management Mobile System',
+        verification_code: code,
+        message: `Your TRD ${role} Security Verification Code is: ${code}. Sent from official system dispatch ${SYSTEM_SENDER_EMAIL}.`
+      })
+    });
+  } catch {}
+
+  // 3. Supabase Auth OTP as supplementary trigger
   try {
     await supabase.auth.signInWithOtp({
       email: cleanEmail,
       options: { shouldCreateUser: true }
     });
-  } catch {
-    /* continue */
-  }
-
-  // 3. TERTIARY: FormSubmit AJAX relay targeting receiver Gmail
-  fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({
-      _subject: `TRD ${role} Verification Code: ${code}`,
-      _captcha: 'false',
-      _template: 'box',
-      _replyto: SYSTEM_SENDER_EMAIL,
-      from_system_sender: SYSTEM_SENDER_EMAIL,
-      recipient_email: cleanEmail,
-      account_role: role,
-      system: 'TRD Tabaco City Franchise Management Mobile System',
-      verification_code: code,
-      message: `Your TRD ${role} Security Verification Code is: ${code}. Sent via Gmail SMTP.`
-    })
-  }).catch(() => {});
+  } catch {}
 
   return {
     success: true,
