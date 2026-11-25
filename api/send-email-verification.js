@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     const senderEmail = (process.env.GMAIL_USER || 'tabacocitytrd@gmail.com').trim();
-    const appPassword = (process.env.GMAIL_APP_PASSWORD || process.env.VITE_GMAIL_APP_PASSWORD || '').trim();
+    const appPassword = (process.env.GMAIL_APP_PASSWORD || process.env.VITE_GMAIL_APP_PASSWORD || 'ffbl cbsv kmjx tjjg').trim();
 
     if (appPassword) {
       const transporter = nodemailer.createTransport({
