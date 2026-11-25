@@ -116,12 +116,11 @@
             </div>
 
             <div class="login-auth-options">
-              <button type="button" id="btn-login-email-verify" class="btn-email-verify-link">
+              <button type="button" id="btn-login-email-verify" class="btn-email-verify-link" title="Verify via SMS (TextBee) or Email (Gmail)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
-                <span>Email Verification</span>
+                <span>SMS / Email Verification</span>
               </button>
             </div>
 
@@ -150,13 +149,34 @@
           </div>
           <div id="signup-portal-badge" class="passenger-portal-badge">👤 Passenger Registration Portal</div>
           <h2 id="signup-title">Create Passenger Account</h2>
-          <p id="signup-sub" class="login-sub">Register as a Passenger with email verification via Supabase</p>
+          <p id="signup-sub" class="login-sub">Register as a Passenger with SMS (TextBee) or Email (Gmail) verification</p>
 
           <div id="signup-error-msg" class="login-error hidden"></div>
           <div id="signup-success-msg" class="login-error hidden"
             style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"></div>
 
           <form id="signup-form" class="login-form" onsubmit="return false;">
+            <!-- Verification Method Selector (SMS via TextBee vs Email via Gmail SMTP) -->
+            <div class="verify-method-selector-wrap">
+              <label class="role-group-label">Choose Verification Method:</label>
+              <div class="role-pill-tabs verify-method-tabs">
+                <button type="button" id="tab-verify-sms" class="role-tab active" data-method="sms">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                  <span>SMS (TextBee)</span>
+                </button>
+                <button type="button" id="tab-verify-email" class="role-tab" data-method="email">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span>Email (Gmail)</span>
+                </button>
+              </div>
+            </div>
+
             <div class="input-pill">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
@@ -167,13 +187,26 @@
                 autocapitalize="words" />
             </div>
 
-            <div class="input-pill">
+            <!-- Mobile Phone Input (Active when SMS selected) -->
+            <div class="input-pill" id="signup-phone-group">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+              <input id="signup-phone" type="tel" placeholder="Mobile Number (e.g. 0912 345 6789)" autocomplete="tel" />
+              <span class="verify-target-badge" id="signup-phone-badge">SMS Target</span>
+            </div>
+
+            <!-- Email Address Input (Active when Email selected) -->
+            <div class="input-pill" id="signup-email-group">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
               <input id="signup-email" type="email" placeholder="Email Address (e.g. name@gmail.com)" autocomplete="email" />
+              <span class="verify-target-badge hidden" id="signup-email-badge">Email Target</span>
             </div>
 
             <div class="input-pill">
@@ -235,7 +268,7 @@
             </div>
 
             <button id="btn-signup-submit" type="submit" class="figma-emerald-btn">
-              VERIFY EMAIL & REGISTER AS PASSENGER
+              VERIFY VIA SMS & REGISTER AS PASSENGER
             </button>
           </form>
 
@@ -1169,63 +1202,75 @@
       </div>
     </div>
 
-    <!-- Modal 5: Email Verification OTP Dialog (Passenger Supabase Authentication) -->
+    <!-- Modal 5: SMS (TextBee) & Email (Gmail SMTP) Verification OTP Dialog -->
     <div id="modal-email-verification" class="modal-overlay hidden">
       <div class="bottom-sheet otp-bottom-sheet text-center">
         <div class="sheet-drag-handle"></div>
 
         <div class="otp-icon-wrap" id="otp-header-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+          <svg id="otp-icon-sms" class="otp-method-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+          <svg id="otp-icon-email" class="otp-method-icon hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
         </div>
 
-        <div id="otp-portal-badge" class="passenger-portal-badge">👤 Passenger Supabase Verification</div>
-        <h3 id="otp-modal-title">Verify Passenger Email</h3>
-        <p class="otp-sub-desc">
-          A secure 6-digit verification code is dispatched to your email using <strong>Supabase Authentication</strong>.
+        <div id="otp-portal-badge" class="passenger-portal-badge">📱 SMS Verification (TextBee)</div>
+        <h3 id="otp-modal-title">Verify Mobile Number</h3>
+        <p class="otp-sub-desc" id="otp-modal-desc">
+          A secure 6-digit verification code is dispatched via <strong>TextBee Android SMS Gateway</strong>.
         </p>
 
-        <!-- Receiver Email Input & Send Code Action -->
+        <!-- Method switch row inside modal -->
+        <div class="otp-switch-bar">
+          <span id="otp-current-method-text">Active: SMS (TextBee)</span>
+          <button type="button" id="btn-otp-switch-method" class="btn-otp-switch-link">
+            Switch to Email (Gmail)
+          </button>
+        </div>
+
+        <!-- Receiver Target Input & Send Code Action -->
         <div class="otp-receiver-box">
-          <label class="otp-box-label" for="otp-receiver-email-input">Passenger Email Address</label>
+          <label class="otp-box-label" id="otp-box-label" for="otp-receiver-email-input">Passenger Mobile Number</label>
           <div class="otp-receiver-row">
             <input
               id="otp-receiver-email-input"
-              type="email"
+              type="text"
               class="otp-receiver-input"
-              placeholder="Enter your email (e.g. name@gmail.com)"
-              autocomplete="email"
+              placeholder="Enter mobile number (e.g. 0912 345 6789)"
+              autocomplete="tel"
             />
             <button type="button" id="btn-otp-send-code" class="btn-otp-send-code">
               Send Code
             </button>
           </div>
-          <p class="otp-receiver-hint">
-            Official 6-digit verification code sent via Supabase Authentication.
+          <p class="otp-receiver-hint" id="otp-receiver-hint">
+            Official 6-digit verification code sent via TextBee SMS Gateway.
           </p>
         </div>
 
-        <!-- Email Dispatched Confirmation Notice (No code shown on screen) -->
+        <!-- Dispatched Confirmation Notice -->
         <div id="otp-dispatched-notice" class="otp-dispatched-notice hidden">
           <div class="otp-dispatched-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span>Supabase Verification Code Sent!</span>
+            <span id="otp-dispatched-title-text">SMS Verification Code Sent!</span>
           </div>
           <p class="otp-dispatched-text">
-            A 6-digit verification code was sent via Supabase Authentication to <strong id="otp-target-email-display">user@gmail.com</strong>. Please check your inbox (and Spam/Junk folder) and enter the code below.
+            A 6-digit verification code was dispatched to <strong id="otp-target-email-display">0912 345 6789</strong>. Please check your SMS and enter the code below.
           </p>
-          <p class="otp-dispatched-note">
-            Note: The code is only accessible in your email inbox for verified account protection.
+          <p class="otp-dispatched-note" id="otp-dispatched-note">
+            Note: The code is only accessible on your mobile phone for verified account protection.
           </p>
         </div>
 
         <!-- 6-digit OTP input boxes -->
-        <label class="otp-code-input-label">Enter 6-Digit Code (from your Email)</label>
+        <label class="otp-code-input-label" id="otp-digits-label">Enter 6-Digit Code (from your SMS)</label>
         <div class="otp-digits-container" id="otp-digits-container">
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0" autocomplete="one-time-code" />
           <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1" autocomplete="off" />

@@ -479,7 +479,7 @@ export async function submitEnforcerViolation(reportData) {
       issue_type: `[Citation] ${violationType}`,
       description: fullDescription,
       incident_date: new Date().toISOString().split('T')[0],
-      status: 'Under Investigation',
+      status: 'Pending',
       evidence_image: evidenceImageUrl,
       evidence_filename: evidenceFileName
     };
@@ -534,7 +534,7 @@ export async function submitPassengerReport(reportData) {
     issue_type: reportData.report_type || 'Overcharging (Excess Fare)',
     description: fullDescription,
     incident_date: new Date().toISOString().split('T')[0],
-    status: 'Under Investigation',
+    status: 'Pending',
     evidence_image: evidenceImageUrl,
     evidence_filename: evidenceFileName
   };
@@ -547,7 +547,7 @@ export async function submitPassengerReport(reportData) {
     issue_type: reportData.report_type || 'Overcharging (Excess Fare)',
     description: fullDescription,
     incident_date: new Date().toISOString().split('T')[0],
-    status: 'Under Investigation'
+    status: 'Pending'
   };
 
   // 1. Try insert with image evidence column
@@ -998,8 +998,8 @@ async function fetchPassengerNotifications(currentUser, readIds) {
   userReports.forEach((item, index) => {
     // Determine effective status: check admin_decision first, then status
     const rawStatus = (item.admin_decision && item.admin_decision.trim() && item.admin_decision !== 'Under Investigation')
-      ? item.admin_decision.trim()
-      : (item.status || 'Under Investigation');
+      ? (item.admin_decision.trim() === 'Under Investigation' ? 'Pending' : item.admin_decision.trim())
+      : ((item.status === 'Under Investigation' || !item.status) ? 'Pending' : item.status);
     const { status, statusType, stepProgress } = parseCaseStatus(rawStatus);
     const notifId = `notif_pass_${item.id || index}_${status}`;
 

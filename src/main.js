@@ -12,8 +12,14 @@ import {
   formatFormalName, 
   formatFormalUsername,
   isValidEmail,
+  isValidPhone,
+  formatPhoneNumber,
+  generateSmsVerificationOtp,
+  generateEmailVerificationOtp,
   generateVerificationOtp,
+  verifySmsOtp,
   verifyEmailOtp,
+  verifyOtp,
   checkAccountAvailability,
   loginWithEmailVerification
 } from './auth.js';
@@ -392,10 +398,15 @@ function setupLoginView() {
   if (loginEmailVerifyBtn) {
     loginEmailVerifyBtn.addEventListener('click', () => {
       const usernameVal = usernameInput?.value.trim() || '';
-      const emailToUse = isValidEmail(usernameVal) ? usernameVal : '';
+      const isEmail = isValidEmail(usernameVal);
+      const isPhone = isValidPhone(usernameVal);
+      const methodToUse = isPhone ? 'sms' : (isEmail ? 'email' : 'sms');
       openEmailVerificationModal({
-        email: emailToUse,
-        role: 'Passenger',
+        target: usernameVal,
+        email: isEmail ? usernameVal : '',
+        phone: isPhone ? usernameVal : '',
+        method: methodToUse,
+        role: selectedLoginRole || 'Passenger',
         isLoginMode: true
       });
     });
@@ -3135,7 +3146,7 @@ function renderNotificationsList() {
           <span class="notif-category-tag">${item.category || (isEnforcer ? 'Official Citation' : 'Complaint Report')}</span>
           <span class="notif-status-badge ${badgeClass}">
             <span class="badge-dot"></span>
-            <span>${item.status || 'Under Investigation'}</span>
+            <span>${item.status || 'Pending'}</span>
           </span>
         </div>
 
@@ -3192,7 +3203,7 @@ function renderNotificationsList() {
               </div>
               <span class="admin-status-tag badge-warning">${item.status || 'Pending Review'}</span>
             </div>
-            <div class="notif-admin-box-message text-muted">Awaiting TRD Officer administrative action. Case status is currently marked as <strong>${item.status || 'Under Investigation'}</strong>.</div>
+            <div class="notif-admin-box-message text-muted">Awaiting TRD Officer administrative action. Case status is currently marked as <strong>${item.status || 'Pending'}</strong>.</div>
           </div>
         `}
 
