@@ -1213,8 +1213,8 @@
               id="otp-receiver-email-input"
               type="text"
               class="otp-receiver-input"
-              placeholder="Enter mobile number (e.g. 0912 345 6789)"
-              autocomplete="tel"
+              placeholder="Enter mobile number"
+              autocomplete="username"
             />
             <button type="button" id="btn-otp-send-code" class="btn-otp-send-code">
               Send Code
@@ -1223,6 +1223,21 @@
           <p class="otp-receiver-hint" id="otp-receiver-hint">
             Official 6-digit verification code sent via SMS.
           </p>
+
+          <!-- Registered Destinations (for Forgot Password mode) -->
+          <div id="otp-forgot-destinations" class="otp-forgot-destinations hidden" style="margin-top: 10px; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+            <p style="font-size: 0.72rem; color: #475569; margin-bottom: 6px; font-weight: 700;">
+              Send verification code to your registered:
+            </p>
+            <div class="role-pill-tabs" style="display: flex; gap: 6px;">
+              <button type="button" id="btn-forgot-dest-sms" class="role-tab active" style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
+                <span>📱 SMS (<strong id="otp-dest-sms-display">None</strong>)</span>
+              </button>
+              <button type="button" id="btn-forgot-dest-email" class="role-tab" style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
+                <span>✉️ Email (<strong id="otp-dest-email-display">None</strong>)</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Dispatched Confirmation Notice -->

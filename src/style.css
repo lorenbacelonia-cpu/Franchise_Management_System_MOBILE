@@ -4341,3 +4341,17 @@ img {
   margin-bottom: 8px;
 }
 
+.otp-forgot-destinations .role-tab {
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otp-forgot-destinations .role-tab.active {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+

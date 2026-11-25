@@ -23,7 +23,8 @@ import {
   checkAccountAvailability,
   loginWithEmailVerification,
   findUserByIdentifier,
-  resetUserPassword
+  resetUserPassword,
+  maskTarget
 } from './auth.js';
 
 let activeView = 'view-scan';
@@ -817,6 +818,7 @@ function openEmailVerificationModal(data = {}) {
   const digitsLabel = document.getElementById('otp-digits-label');
   const currentMethodText = document.getElementById('otp-current-method-text');
   const switchMethodBtn = document.getElementById('btn-otp-switch-method');
+  const switchBar = document.getElementById('otp-switch-bar');
   const errorMsg = document.getElementById('otp-error-msg');
   const verifyBtn = document.getElementById('btn-verify-otp');
   const modalTitle = document.getElementById('otp-modal-title');
@@ -824,6 +826,7 @@ function openEmailVerificationModal(data = {}) {
   const resetSection = document.getElementById('otp-reset-password-section');
   const digitsContainer = document.getElementById('otp-digits-container');
   const receiverBox = modal.querySelector('.otp-receiver-box');
+  const forgotDestBox = document.getElementById('otp-forgot-destinations');
 
   if (sheet) sheet.classList.toggle('theme-enforcer', isEnforcer);
   if (iconWrap) iconWrap.classList.toggle('theme-enforcer', isEnforcer);
@@ -845,70 +848,84 @@ function openEmailVerificationModal(data = {}) {
     ? (data.phone || data.target || '') 
     : (data.email || data.target || '');
 
-  // Dynamic titles and badges based on SMS vs Email (unbranded, clean)
-  if (method === 'sms') {
+  // Forgot Password Mode vs Normal Verification Mode
+  if (isForgot) {
+    if (switchBar) switchBar.classList.add('hidden');
+    if (receiverLabel) receiverLabel.textContent = 'Account Username';
+    if (receiverHint) receiverHint.textContent = 'We will send the verification code to the phone or email you provided during sign-up.';
+    if (receiverInput) {
+      receiverInput.type = 'text';
+      receiverInput.placeholder = 'Enter your account username';
+      receiverInput.value = data.username || data.target || '';
+      receiverInput.disabled = false;
+    }
     if (badge) {
       badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
-      badge.textContent = isForgot 
-        ? '🔑 Password Recovery (SMS)' 
-        : (isEnforcer ? '👮 Enforcer SMS Verification' : '📱 SMS Verification');
+      badge.textContent = '🔑 Password Recovery';
     }
     if (modalTitle) {
-      modalTitle.textContent = isForgot 
-        ? 'Reset Password via SMS' 
-        : (data.isLoginMode ? 'Security SMS Verification' : 'Verify Mobile Number');
+      modalTitle.textContent = 'Forgot Password';
     }
     if (modalDesc) {
-      modalDesc.innerHTML = isForgot
-        ? 'A secure 6-digit verification code will be sent to your mobile number to reset your password.'
-        : 'A secure 6-digit verification code is dispatched to your mobile number via SMS.';
+      modalDesc.innerHTML = 'Enter your <strong>Username</strong> to receive a verification code on your registered mobile number or email.';
     }
-    if (currentMethodText) currentMethodText.textContent = 'Active: SMS';
-    if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to Email';
-    if (receiverLabel) receiverLabel.textContent = 'Mobile Number';
-    if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via SMS.';
-    if (dispatchedTitleText) dispatchedTitleText.textContent = 'SMS Verification Code Sent!';
-    if (dispatchedNote) dispatchedNote.textContent = 'Note: The code was dispatched directly to your mobile phone via SMS.';
-    if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your SMS)';
+    if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code';
   } else {
-    if (badge) {
-      badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
-      badge.textContent = isForgot 
-        ? '🔑 Password Recovery (Email)' 
-        : (isEnforcer ? '👮 Enforcer Email Verification' : '✉️ Email Verification');
-    }
-    if (modalTitle) {
-      modalTitle.textContent = isForgot 
-        ? 'Reset Password via Email' 
-        : (data.isLoginMode ? 'Security Email Verification' : 'Verify Email Address');
-    }
-    if (modalDesc) {
-      modalDesc.innerHTML = isForgot
-        ? 'A secure 6-digit verification code will be sent to your email to reset your password.'
-        : 'A secure 6-digit verification code is dispatched to your email address.';
-    }
-    if (currentMethodText) currentMethodText.textContent = 'Active: Email';
-    if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to SMS';
-    if (receiverLabel) receiverLabel.textContent = 'Email Address';
-    if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via Email.';
-    if (dispatchedTitleText) dispatchedTitleText.textContent = 'Email Verification Code Sent!';
-    if (dispatchedNote) dispatchedNote.textContent = 'Note: The code is accessible in your email inbox.';
-    if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your Email)';
-  }
+    if (switchBar) switchBar.classList.remove('hidden');
+    if (forgotDestBox) forgotDestBox.classList.add('hidden');
 
-  if (receiverInput) {
-    receiverInput.type = method === 'sms' ? 'tel' : 'email';
-    receiverInput.placeholder = method === 'sms' ? 'Enter 11-digit mobile (09xxxxxxxxx)' : 'Enter email (e.g. name@gmail.com)';
-    receiverInput.value = currentTarget;
-    receiverInput.disabled = (!isLogin && !isForgot) && !!currentTarget;
+    if (method === 'sms') {
+      if (badge) {
+        badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
+        badge.textContent = isEnforcer ? '👮 Enforcer SMS Verification' : '📱 SMS Verification';
+      }
+      if (modalTitle) {
+        modalTitle.textContent = data.isLoginMode ? 'Security SMS Verification' : 'Verify Mobile Number';
+      }
+      if (modalDesc) {
+        modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched to your mobile number via SMS.';
+      }
+      if (currentMethodText) currentMethodText.textContent = 'Active: SMS';
+      if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to Email';
+      if (receiverLabel) receiverLabel.textContent = 'Mobile Number';
+      if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via SMS.';
+      if (dispatchedTitleText) dispatchedTitleText.textContent = 'SMS Verification Code Sent!';
+      if (dispatchedNote) dispatchedNote.textContent = 'Note: The code was dispatched directly to your mobile phone via SMS.';
+      if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your SMS)';
+    } else {
+      if (badge) {
+        badge.className = isEnforcer ? 'enforcer-portal-badge' : 'passenger-portal-badge';
+        badge.textContent = isEnforcer ? '👮 Enforcer Email Verification' : '✉️ Email Verification';
+      }
+      if (modalTitle) {
+        modalTitle.textContent = data.isLoginMode ? 'Security Email Verification' : 'Verify Email Address';
+      }
+      if (modalDesc) {
+        modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched to your email address.';
+      }
+      if (currentMethodText) currentMethodText.textContent = 'Active: Email';
+      if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to SMS';
+      if (receiverLabel) receiverLabel.textContent = 'Email Address';
+      if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via Email.';
+      if (dispatchedTitleText) dispatchedTitleText.textContent = 'Email Verification Code Sent!';
+      if (dispatchedNote) dispatchedNote.textContent = 'Note: The code is accessible in your email inbox.';
+      if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code (from your Email)';
+    }
+
+    if (receiverInput) {
+      receiverInput.type = method === 'sms' ? 'tel' : 'email';
+      receiverInput.placeholder = method === 'sms' ? 'Enter 11-digit mobile (09xxxxxxxxx)' : 'Enter email (e.g. name@gmail.com)';
+      receiverInput.value = currentTarget;
+      receiverInput.disabled = !isLogin && !!currentTarget;
+    }
   }
 
   if (targetDisplay) {
-    targetDisplay.textContent = currentTarget || (method === 'sms' ? 'your phone' : 'your email');
+    targetDisplay.textContent = currentTarget ? maskTarget(currentTarget) : (method === 'sms' ? 'your phone' : 'your email');
   }
 
   if (dispatchedNotice) {
-    dispatchedNotice.classList.toggle('hidden', !currentTarget);
+    dispatchedNotice.classList.toggle('hidden', !currentTarget || isForgot);
   }
 
   if (errorMsg) {
@@ -930,20 +947,119 @@ function openEmailVerificationModal(data = {}) {
     d.classList.remove('filled');
   });
 
-  if (currentTarget) {
+  if (currentTarget && !isForgot) {
     startOtpResendCountdown();
   }
 
   modal.classList.remove('hidden');
 
+  // If forgot password mode and username is provided, lookup account immediately
+  if (isForgot) {
+    const userToLookup = data.username || data.target || '';
+    if (userToLookup) {
+      setTimeout(() => {
+        triggerForgotAccountLookup(userToLookup);
+      }, 50);
+    }
+  }
+
   setTimeout(() => {
-    if (currentTarget) {
+    if (currentTarget && !isForgot) {
       const firstDigit = modal.querySelector('.otp-digit[data-index="0"]');
       if (firstDigit) firstDigit.focus();
     } else if (receiverInput) {
       receiverInput.focus();
     }
   }, 100);
+}
+
+// Global helper for forgot password account lookup and destination toggling
+async function triggerForgotAccountLookup(identifier) {
+  if (!identifier) return;
+  const role = pendingEmailRegistration?.role || selectedLoginRole;
+  const errorEl = document.getElementById('otp-error-msg');
+  const destBox = document.getElementById('otp-forgot-destinations');
+  const smsDestBtn = document.getElementById('btn-forgot-dest-sms');
+  const emailDestBtn = document.getElementById('btn-forgot-dest-email');
+  const smsDisplay = document.getElementById('otp-dest-sms-display');
+  const emailDisplay = document.getElementById('otp-dest-email-display');
+  const modalDesc = document.getElementById('otp-modal-desc');
+
+  const check = await findUserByIdentifier(identifier, role);
+  if (check.success && check.user) {
+    const u = check.user;
+    if (pendingEmailRegistration) {
+      pendingEmailRegistration.foundUser = u;
+      pendingEmailRegistration.username = u.username;
+    }
+    if (destBox) destBox.classList.remove('hidden');
+
+    const phoneVal = (u.contact_number || '').trim();
+    const emailVal = (u.email || '').trim();
+
+    if (smsDisplay) smsDisplay.textContent = phoneVal ? maskTarget(phoneVal) : 'Not registered';
+    if (emailDisplay) emailDisplay.textContent = emailVal ? maskTarget(emailVal) : 'Not registered';
+
+    if (smsDestBtn) {
+      smsDestBtn.disabled = !phoneVal;
+      smsDestBtn.style.opacity = phoneVal ? '1' : '0.4';
+      smsDestBtn.style.cursor = phoneVal ? 'pointer' : 'not-allowed';
+    }
+    if (emailDestBtn) {
+      emailDestBtn.disabled = !emailVal;
+      emailDestBtn.style.opacity = emailVal ? '1' : '0.4';
+      emailDestBtn.style.cursor = emailVal ? 'pointer' : 'not-allowed';
+    }
+
+    // Default to SMS if available, otherwise Email
+    const defaultMethod = phoneVal ? 'sms' : (emailVal ? 'email' : 'sms');
+    setForgotDestMethod(defaultMethod);
+
+    if (modalDesc) {
+      modalDesc.innerHTML = `Account found: <strong>${u.fullname || u.username}</strong>. Choose where to receive your 6-digit code:`;
+    }
+    if (errorEl) errorEl.classList.add('hidden');
+  } else {
+    if (destBox) destBox.classList.add('hidden');
+    if (pendingEmailRegistration) pendingEmailRegistration.foundUser = null;
+    if (modalDesc) {
+      modalDesc.innerHTML = 'Enter your <strong>Username</strong> to receive a verification code on your registered mobile number or email.';
+    }
+  }
+}
+
+function setForgotDestMethod(method) {
+  if (!pendingEmailRegistration) return;
+  const u = pendingEmailRegistration.foundUser;
+  if (!u) return;
+
+  pendingEmailRegistration.method = method;
+  const smsDestBtn = document.getElementById('btn-forgot-dest-sms');
+  const emailDestBtn = document.getElementById('btn-forgot-dest-email');
+  const modalTitle = document.getElementById('otp-modal-title');
+  const badge = document.getElementById('otp-portal-badge');
+  const iconSms = document.getElementById('otp-icon-sms');
+  const iconEmail = document.getElementById('otp-icon-email');
+
+  if (smsDestBtn && emailDestBtn) {
+    smsDestBtn.classList.toggle('active', method === 'sms');
+    emailDestBtn.classList.toggle('active', method === 'email');
+  }
+
+  if (iconSms) iconSms.classList.toggle('hidden', method !== 'sms');
+  if (iconEmail) iconEmail.classList.toggle('hidden', method !== 'email');
+
+  if (method === 'sms') {
+    pendingEmailRegistration.target = u.contact_number || '';
+    pendingEmailRegistration.phone = u.contact_number || '';
+    if (modalTitle) modalTitle.textContent = 'Reset Password via SMS';
+    if (badge) badge.textContent = '🔑 Password Recovery (SMS)';
+  } else {
+    pendingEmailRegistration.target = u.email || '';
+    pendingEmailRegistration.email = u.email || '';
+    if (modalTitle) modalTitle.textContent = 'Reset Password via Email';
+    if (badge) badge.textContent = '🔑 Password Recovery (Email)';
+  }
 }
 
 function closeEmailVerificationModal() {
@@ -1016,20 +1132,43 @@ function setupEmailVerificationModal() {
   const modalTitle = document.getElementById('otp-modal-title');
   const digitsLabel = document.getElementById('otp-digits-label');
   const resetSection = document.getElementById('otp-reset-password-section');
+  const smsDestBtn = document.getElementById('btn-forgot-dest-sms');
+  const emailDestBtn = document.getElementById('btn-forgot-dest-email');
 
-  // Input filter for receiver input in modal
+  // Destination toggle clicks for Forgot Password
+  if (smsDestBtn) {
+    smsDestBtn.addEventListener('click', () => {
+      if (!smsDestBtn.disabled) setForgotDestMethod('sms');
+    });
+  }
+  if (emailDestBtn) {
+    emailDestBtn.addEventListener('click', () => {
+      if (!emailDestBtn.disabled) setForgotDestMethod('email');
+    });
+  }
+
+  // Input filter & account lookup for receiver input
   if (receiverInput) {
+    let lookupDebounce = null;
     receiverInput.addEventListener('input', () => {
-      const method = pendingEmailRegistration?.method || 'sms';
-      if (method === 'sms') {
-        let val = receiverInput.value.replace(/\D/g, '');
-        if (val.length > 11) val = val.slice(0, 11);
-        receiverInput.value = val;
+      const isForgot = !!pendingEmailRegistration?.isForgotMode;
+      if (isForgot) {
+        clearTimeout(lookupDebounce);
+        lookupDebounce = setTimeout(() => {
+          triggerForgotAccountLookup(receiverInput.value.trim());
+        }, 400);
+      } else {
+        const method = pendingEmailRegistration?.method || 'sms';
+        if (method === 'sms') {
+          let val = receiverInput.value.replace(/\D/g, '');
+          if (val.length > 11) val = val.slice(0, 11);
+          receiverInput.value = val;
+        }
       }
     });
   }
 
-  // Switch between SMS and Email inside the modal
+  // Switch between SMS and Email inside the modal (for registration/login modes)
   if (switchMethodBtn) {
     switchMethodBtn.addEventListener('click', async () => {
       if (!pendingEmailRegistration) {
@@ -1069,10 +1208,106 @@ function setupEmailVerificationModal() {
   // Send Code button action (for login, forgot password, or manual dispatch)
   if (sendCodeBtn) {
     sendCodeBtn.addEventListener('click', async () => {
-      let inputVal = receiverInput?.value.trim() || '';
-      const method = pendingEmailRegistration?.method || (isValidEmail(inputVal) ? 'email' : 'sms');
       const isForgot = !!pendingEmailRegistration?.isForgotMode;
       const role = pendingEmailRegistration?.role || selectedLoginRole;
+      let inputVal = receiverInput?.value.trim() || '';
+
+      // --- A. FORGOT PASSWORD MODE: Dispatch to registered contact from sign-up ---
+      if (isForgot) {
+        if (!inputVal) {
+          if (errorEl) {
+            errorEl.textContent = 'Please enter your account username.';
+            errorEl.classList.remove('hidden');
+          }
+          if (receiverInput) receiverInput.focus();
+          return;
+        }
+
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.textContent = 'Looking up...';
+
+        let user = pendingEmailRegistration?.foundUser;
+        if (!user || user.username?.toLowerCase() !== inputVal.toLowerCase()) {
+          const check = await findUserByIdentifier(inputVal, role);
+          if (!check.success || !check.user) {
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = 'Send Code';
+            if (errorEl) {
+              errorEl.textContent = `No registered account found with username "${inputVal}".`;
+              errorEl.classList.remove('hidden');
+            }
+            return;
+          }
+          user = check.user;
+          await triggerForgotAccountLookup(inputVal);
+        }
+
+        const chosenMethod = pendingEmailRegistration?.method || 'sms';
+        let targetToSend = '';
+
+        if (chosenMethod === 'sms') {
+          targetToSend = (user.contact_number || '').trim();
+          if (!targetToSend) {
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = 'Send Code';
+            if (errorEl) {
+              errorEl.textContent = 'This account does not have a registered mobile number. Please select Email.';
+              errorEl.classList.remove('hidden');
+            }
+            return;
+          }
+        } else {
+          targetToSend = (user.email || '').trim();
+          if (!targetToSend) {
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = 'Send Code';
+            if (errorEl) {
+              errorEl.textContent = 'This account does not have a registered email address. Please select SMS.';
+              errorEl.classList.remove('hidden');
+            }
+            return;
+          }
+        }
+
+        if (errorEl) errorEl.classList.add('hidden');
+        sendCodeBtn.textContent = 'Sending...';
+
+        const res = chosenMethod === 'sms'
+          ? await generateSmsVerificationOtp(targetToSend, role)
+          : await generateEmailVerificationOtp(targetToSend, role);
+
+        if (!res.success) {
+          sendCodeBtn.disabled = false;
+          sendCodeBtn.textContent = 'Send Code';
+          if (errorEl) {
+            errorEl.textContent = res.error || 'Failed to dispatch verification code.';
+            errorEl.classList.remove('hidden');
+          }
+          return;
+        }
+
+        pendingEmailRegistration.target = targetToSend;
+        if (chosenMethod === 'sms') pendingEmailRegistration.phone = targetToSend;
+        else pendingEmailRegistration.email = targetToSend;
+
+        if (targetEmailDisplay) targetEmailDisplay.textContent = maskTarget(targetToSend);
+        if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
+
+        digits.forEach(d => {
+          d.value = '';
+          d.classList.remove('filled');
+        });
+        if (digits[0]) digits[0].focus();
+
+        startOtpResendCountdown();
+        showToast(chosenMethod === 'sms' 
+          ? `📱 Verification code sent to registered mobile (${maskTarget(targetToSend)})!` 
+          : `📧 Verification code sent to registered email (${maskTarget(targetToSend)})!`);
+        return;
+      }
+
+      // --- B. NORMAL REGISTRATION OR LOGIN MODE ---
+      const method = pendingEmailRegistration?.method || (isValidEmail(inputVal) ? 'email' : 'sms');
 
       if (method === 'sms') {
         inputVal = inputVal.replace(/\D/g, '');
@@ -1098,22 +1333,6 @@ function setupEmailVerificationModal() {
       if (errorEl) errorEl.classList.add('hidden');
 
       sendCodeBtn.disabled = true;
-      sendCodeBtn.textContent = 'Checking...';
-
-      // If in Forgot Password mode: check if account exists first
-      if (isForgot) {
-        const checkRes = await findUserByIdentifier(inputVal, role);
-        if (!checkRes.success) {
-          sendCodeBtn.disabled = false;
-          sendCodeBtn.textContent = 'Send Code';
-          if (errorEl) {
-            errorEl.textContent = `No account found with this ${method === 'sms' ? 'mobile number' : 'email'}.`;
-            errorEl.classList.remove('hidden');
-          }
-          return;
-        }
-      }
-
       sendCodeBtn.textContent = 'Sending...';
 
       const res = method === 'sms'
@@ -1131,7 +1350,7 @@ function setupEmailVerificationModal() {
       }
 
       if (!pendingEmailRegistration) {
-        pendingEmailRegistration = { isLoginMode: !isForgot, isForgotMode: isForgot, role, method };
+        pendingEmailRegistration = { isLoginMode: true, isForgotMode: false, role, method };
       }
       if (method === 'sms') {
         pendingEmailRegistration.phone = inputVal;
@@ -1144,7 +1363,6 @@ function setupEmailVerificationModal() {
       if (targetEmailDisplay) targetEmailDisplay.textContent = inputVal;
       if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
 
-      // Clear digits & focus
       digits.forEach(d => {
         d.value = '';
         d.classList.remove('filled');
@@ -1252,7 +1470,7 @@ function setupEmailVerificationModal() {
         : await generateEmailVerificationOtp(targetToResend, role);
 
       if (newOtp.success) {
-        if (targetEmailDisplay) targetEmailDisplay.textContent = targetToResend;
+        if (targetEmailDisplay) targetEmailDisplay.textContent = maskTarget(targetToResend);
         if (dispatchedNotice) dispatchedNotice.classList.remove('hidden');
 
         digits.forEach(d => {
@@ -1263,8 +1481,8 @@ function setupEmailVerificationModal() {
 
         startOtpResendCountdown();
         showToast(method === 'sms' 
-          ? `📱 New code sent via SMS to ${targetToResend}!` 
-          : `📧 New code sent to ${targetToResend}!`);
+          ? `📱 New code sent via SMS to ${maskTarget(targetToResend)}!` 
+          : `📧 New code sent to ${maskTarget(targetToResend)}!`);
       } else {
         resendBtn.disabled = false;
         resendBtn.textContent = 'Resend Verification Code';
@@ -1304,7 +1522,7 @@ function setupEmailVerificationModal() {
       verifyBtn.disabled = true;
       verifyBtn.textContent = 'UPDATING PASSWORD...';
 
-      const resetTarget = pendingEmailRegistration.target || pendingEmailRegistration.phone || pendingEmailRegistration.email;
+      const resetTarget = pendingEmailRegistration.username || pendingEmailRegistration.target || pendingEmailRegistration.phone || pendingEmailRegistration.email;
       const role = pendingEmailRegistration.role || selectedLoginRole;
 
       const resetRes = await resetUserPassword(resetTarget, newPwd, role);
@@ -1337,13 +1555,13 @@ function setupEmailVerificationModal() {
 
     // B. Verify entered OTP code
     const method = pendingEmailRegistration?.method || 'sms';
-    const target = method === 'sms'
-      ? (pendingEmailRegistration?.phone || receiverInput?.value.trim() || '')
-      : (pendingEmailRegistration?.email || receiverInput?.value.trim() || '');
+    const target = pendingEmailRegistration?.target || (method === 'sms' ? pendingEmailRegistration?.phone : pendingEmailRegistration?.email) || '';
 
     if (!target) {
       if (errorEl) {
-        errorEl.textContent = `Please enter your ${method === 'sms' ? 'mobile number' : 'email address'} and click "Send Code".`;
+        errorEl.textContent = isForgot 
+          ? 'Please enter your username and click "Send Code" first.' 
+          : `Please enter your ${method === 'sms' ? 'mobile number' : 'email address'} and click "Send Code".`;
         errorEl.classList.remove('hidden');
       }
       return;
