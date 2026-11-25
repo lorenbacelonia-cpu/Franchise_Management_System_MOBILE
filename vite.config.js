@@ -91,6 +91,7 @@ function verificationDispatchPlugin(env = {}) {
                 const payload = {
                   recipients: [formattedPhone],
                   message: smsMessage,
+                  simSlotIndex: parseInt(env.TEXTBEE_SIM_SLOT || process.env.TEXTBEE_SIM_SLOT || '1', 10),
                 };
                 if (textbeeDeviceId) {
                   payload.deviceId = textbeeDeviceId;

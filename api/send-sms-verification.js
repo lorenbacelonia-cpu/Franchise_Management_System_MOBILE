@@ -45,6 +45,7 @@ export default async function handler(req, res) {
 
     const textbeeApiKey = (process.env.TEXTBEE_API_KEY || process.env.VITE_TEXTBEE_API_KEY || 'txb_mJ6WrN1XSGwvN6bt5Vnz4FEMqsXW0lvm').trim();
     const textbeeDeviceId = (process.env.TEXTBEE_DEVICE_ID || process.env.VITE_TEXTBEE_DEVICE_ID || '6b0750bb96bbd64a70a96de5').trim();
+    const textbeeSimSlot = parseInt(process.env.TEXTBEE_SIM_SLOT || process.env.VITE_TEXTBEE_SIM_SLOT || '1', 10);
 
     const smsMessage = `[TRD Tabaco City] Your ${role} Security Verification Code is: ${code}. Valid for 10 minutes. Do not share this code.`;
 
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
       const payload = {
         recipients: [formattedPhone],
         message: smsMessage,
+        simSlotIndex: isNaN(textbeeSimSlot) ? 1 : textbeeSimSlot,
       };
       if (textbeeDeviceId) {
         payload.deviceId = textbeeDeviceId;

@@ -165,6 +165,7 @@ export async function generateSmsVerificationOtp(phone, role = 'Passenger') {
   // 2. Direct client fallback to TextBee Gateway API (ensures live delivery on any host or mobile browser)
   const textbeeApiKey = (import.meta.env?.VITE_TEXTBEE_API_KEY || 'txb_mJ6WrN1XSGwvN6bt5Vnz4FEMqsXW0lvm').trim();
   const textbeeDeviceId = (import.meta.env?.VITE_TEXTBEE_DEVICE_ID || '6b0750bb96bbd64a70a96de5').trim();
+  const textbeeSimSlot = parseInt(import.meta.env?.VITE_TEXTBEE_SIM_SLOT || '1', 10);
 
   if (textbeeApiKey) {
     try {
@@ -174,7 +175,8 @@ export async function generateSmsVerificationOtp(phone, role = 'Passenger') {
 
       const payload = {
         recipients: [cleanPhone],
-        message: smsMessage
+        message: smsMessage,
+        simSlotIndex: isNaN(textbeeSimSlot) ? 1 : textbeeSimSlot
       };
       if (textbeeDeviceId) payload.deviceId = textbeeDeviceId;
 
