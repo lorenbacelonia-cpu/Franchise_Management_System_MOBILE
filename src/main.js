@@ -816,9 +816,6 @@ function openEmailVerificationModal(data = {}) {
   const dispatchedTitleText = document.getElementById('otp-dispatched-title-text');
   const dispatchedNote = document.getElementById('otp-dispatched-note');
   const digitsLabel = document.getElementById('otp-digits-label');
-  const currentMethodText = document.getElementById('otp-current-method-text');
-  const switchMethodBtn = document.getElementById('btn-otp-switch-method');
-  const switchBar = document.getElementById('otp-switch-bar');
   const errorMsg = document.getElementById('otp-error-msg');
   const verifyBtn = document.getElementById('btn-verify-otp');
   const modalTitle = document.getElementById('otp-modal-title');
@@ -850,7 +847,6 @@ function openEmailVerificationModal(data = {}) {
 
   // Forgot Password Mode vs Normal Verification Mode
   if (isForgot) {
-    if (switchBar) switchBar.classList.add('hidden');
     if (receiverLabel) receiverLabel.textContent = 'Account Username';
     if (receiverHint) receiverHint.textContent = 'We will send the verification code to the phone or email you provided during sign-up.';
     if (receiverInput) {
@@ -871,7 +867,6 @@ function openEmailVerificationModal(data = {}) {
     }
     if (digitsLabel) digitsLabel.textContent = 'Enter 6-Digit Code';
   } else {
-    if (switchBar) switchBar.classList.remove('hidden');
     if (forgotDestBox) forgotDestBox.classList.add('hidden');
 
     if (method === 'sms') {
@@ -885,8 +880,6 @@ function openEmailVerificationModal(data = {}) {
       if (modalDesc) {
         modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched to your mobile number via SMS.';
       }
-      if (currentMethodText) currentMethodText.textContent = 'Active: SMS';
-      if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to Email';
       if (receiverLabel) receiverLabel.textContent = 'Mobile Number';
       if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via SMS.';
       if (dispatchedTitleText) dispatchedTitleText.textContent = 'SMS Verification Code Sent!';
@@ -903,8 +896,6 @@ function openEmailVerificationModal(data = {}) {
       if (modalDesc) {
         modalDesc.innerHTML = 'A secure 6-digit verification code is dispatched to your email address.';
       }
-      if (currentMethodText) currentMethodText.textContent = 'Active: Email';
-      if (switchMethodBtn) switchMethodBtn.textContent = 'Switch to SMS';
       if (receiverLabel) receiverLabel.textContent = 'Email Address';
       if (receiverHint) receiverHint.textContent = 'Official 6-digit verification code sent via Email.';
       if (dispatchedTitleText) dispatchedTitleText.textContent = 'Email Verification Code Sent!';
@@ -1124,7 +1115,6 @@ function setupEmailVerificationModal() {
   const resendBtn = document.getElementById('btn-resend-otp');
   const cancelBtn = document.getElementById('btn-cancel-otp');
   const sendCodeBtn = document.getElementById('btn-otp-send-code');
-  const switchMethodBtn = document.getElementById('btn-otp-switch-method');
   const receiverInput = document.getElementById('otp-receiver-email-input');
   const dispatchedNotice = document.getElementById('otp-dispatched-notice');
   const targetEmailDisplay = document.getElementById('otp-target-email-display');
@@ -1163,43 +1153,6 @@ function setupEmailVerificationModal() {
           let val = receiverInput.value.replace(/\D/g, '');
           if (val.length > 11) val = val.slice(0, 11);
           receiverInput.value = val;
-        }
-      }
-    });
-  }
-
-  // Switch between SMS and Email inside the modal (for registration/login modes)
-  if (switchMethodBtn) {
-    switchMethodBtn.addEventListener('click', async () => {
-      if (!pendingEmailRegistration) {
-        pendingEmailRegistration = { isLoginMode: true, role: selectedLoginRole || 'Passenger', method: 'sms' };
-      }
-      const newMethod = pendingEmailRegistration.method === 'sms' ? 'email' : 'sms';
-      pendingEmailRegistration.method = newMethod;
-
-      const newTarget = newMethod === 'sms' 
-        ? (pendingEmailRegistration.phone || '') 
-        : (pendingEmailRegistration.email || '');
-
-      openEmailVerificationModal({
-        ...pendingEmailRegistration,
-        method: newMethod,
-        target: newTarget
-      });
-
-      // If target exists, automatically send code for the new method
-      if (newTarget) {
-        const role = pendingEmailRegistration.role || 'Passenger';
-        showToast(`🔄 Switching to ${newMethod === 'sms' ? 'SMS' : 'Email'}...`);
-        const res = newMethod === 'sms' 
-          ? await generateSmsVerificationOtp(newTarget, role)
-          : await generateEmailVerificationOtp(newTarget, role);
-
-        if (res.success) {
-          startOtpResendCountdown();
-          showToast(newMethod === 'sms' 
-            ? `📱 SMS verification code sent to ${newTarget}!` 
-            : `📧 Email verification code sent to ${newTarget}!`);
         }
       }
     });

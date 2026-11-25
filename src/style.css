@@ -4297,39 +4297,6 @@ img {
   display: block;
 }
 
-.otp-switch-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f1f5f9;
-  border-radius: 10px;
-  padding: 7px 12px;
-  margin-bottom: 12px;
-  font-size: 0.72rem;
-  color: #475569;
-  font-weight: 600;
-}
-
-.btn-otp-switch-link {
-  background: none;
-  border: none;
-  color: #059669;
-  font-weight: 700;
-  font-size: 0.72rem;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  transition: color 0.15s ease;
-}
-
-.btn-otp-switch-link:hover {
-  color: #047857;
-}
-
-.otp-bottom-sheet.theme-enforcer .btn-otp-switch-link {
-  color: #1e3a8a;
-}
-
 .otp-reset-password-section {
   text-align: left;
   margin-top: 10px;
