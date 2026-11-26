@@ -36,14 +36,13 @@ export default async function handler(req, res) {
 
     if (appPassword) {
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         auth: {
           user: senderEmail,
           pass: appPassword.replace(/\s+/g, ''),
         },
-        pool: true,
-        maxConnections: 3,
-        maxMessages: 100,
       });
 
       const isEnforcer = role === 'Traffic Enforcer';

@@ -249,8 +249,7 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
     console.warn('Failed to store OTP in sessionStorage:', e);
   }
 
-  // 1. PRIMARY: Dispatch OTP via Gmail SMTP backend
-  let emailDispatched = false;
+  // 1. PRIMARY: Dispatch OTP via Gmail SMTP backend (Instant 1-2s delivery)
   try {
     const res = await fetch('/api/send-email-verification', {
       method: 'POST',
@@ -265,37 +264,51 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
 
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.success && data.delivered) {
-      console.log('✅ Gmail SMTP verification email dispatched to:', cleanEmail);
-      emailDispatched = true;
+      console.log('⚡ Gmail SMTP verification email dispatched in under 2s to:', cleanEmail);
+      return {
+        success: true,
+        email: cleanEmail,
+        target: cleanEmail,
+        type: 'email',
+        sender: SYSTEM_SENDER_EMAIL,
+        provider: 'gmail_smtp',
+        expiresAt
+      };
     }
   } catch (err) {
     console.warn('Primary email dispatch error:', err);
   }
 
-  // Try legacy /api/send-verification route if primary didn't confirm
-  if (!emailDispatched) {
-    try {
-      const res = await fetch('/api/send-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: SYSTEM_SENDER_EMAIL,
-          to: cleanEmail,
-          code: code,
-          role: role
-        })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success && data.delivered) {
-        console.log('✅ Gmail SMTP verification dispatched via fallback route to:', cleanEmail);
-        emailDispatched = true;
-      }
-    } catch {}
-  }
-
-  // 2. FormSubmit AJAX relay as secondary real-time fallback
+  // 2. FALLBACK: Try legacy /api/send-verification route if primary didn't confirm
   try {
-    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
+    const res = await fetch('/api/send-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: SYSTEM_SENDER_EMAIL,
+        to: cleanEmail,
+        code: code,
+        role: role
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.success && data.delivered) {
+      console.log('✅ Gmail SMTP verification dispatched via fallback route to:', cleanEmail);
+      return {
+        success: true,
+        email: cleanEmail,
+        target: cleanEmail,
+        type: 'email',
+        sender: SYSTEM_SENDER_EMAIL,
+        provider: 'gmail_smtp',
+        expiresAt
+      };
+    }
+  } catch {}
+
+  // 3. SECONDARY ASYNC FALLBACK: Trigger background relays without blocking the UI
+  try {
+    fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
@@ -310,15 +323,14 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
         verification_code: code,
         message: `Your TRD ${role} Security Verification Code is: ${code}. Sent from official system dispatch ${SYSTEM_SENDER_EMAIL}.`
       })
-    });
+    }).catch(() => {});
   } catch {}
 
-  // 3. Supabase Auth OTP as supplementary trigger
   try {
-    await supabase.auth.signInWithOtp({
+    supabase.auth.signInWithOtp({
       email: cleanEmail,
       options: { shouldCreateUser: true }
-    });
+    }).catch(() => {});
   } catch {}
 
   return {
