@@ -27,6 +27,7 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
         vehicleTitle: `${vehicleType} Verified Unit`,
         operator: json.operator || json.operator_name || json.operatorName || json.owner || '—',
         driver: json.driver || json.driver_name || json.driverName || json.name || '—',
+        driverPhoto: json.driverPhoto || json.driver_photo || json.photo || json.image || null,
         plateNo: String(json.plateNo || json.plate_no || json.plate || json.city_plate_no || json.body_no || json.id || '—'),
         route: json.route || json.parada || json.route_name || json.line || json.destination || 'Tabaco City Route',
         expiry: json.expiry || json.expiry_date || json.valid_until || json.expiration || '2026-12-31',
@@ -56,6 +57,7 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
       const expiry = params.get('expiry') || params.get('expiry_date') || params.get('exp');
       const fare = params.get('fare') || params.get('fare_fee') || params.get('fee');
       const tourist = params.get('tourist') || params.get('tourist_guide') || params.get('tg');
+      const photo = params.get('photo') || params.get('driver_photo') || params.get('image') || params.get('img');
       const statusParam = params.get('status');
       const availabilityParam = params.get('avail') || params.get('availability');
 
@@ -81,6 +83,7 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
           vehicleTitle: `${vehicleType} Verified Unit`,
           operator: operator || '—',
           driver: driver || '—',
+          driverPhoto: photo || null,
           plateNo: plate || '—',
           route: route || 'Sua-Igot 24 Tabaco',
           expiry: expiry || '2026-12-31',

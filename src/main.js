@@ -2706,6 +2706,35 @@ function renderVerificationDashboard(record) {
   const drEl = document.getElementById('val-driver');
   if (drEl) drEl.textContent = record.driver || '—';
 
+  // Driver Photo rendering
+  const photoImg = document.getElementById('val-driver-photo');
+  const photoFallback = document.getElementById('val-driver-photo-fallback');
+  const photoWrap = document.getElementById('val-driver-photo-wrap');
+
+  if (record.driverPhoto) {
+    if (photoImg) {
+      photoImg.src = record.driverPhoto;
+      photoImg.classList.remove('hidden');
+    }
+    if (photoFallback) photoFallback.classList.add('hidden');
+    if (photoWrap) {
+      photoWrap.style.cursor = 'pointer';
+      photoWrap.title = 'Click to enlarge driver photo';
+      photoWrap.onclick = () => openDriverPhotoModal(record);
+    }
+  } else {
+    if (photoImg) {
+      photoImg.src = '';
+      photoImg.classList.add('hidden');
+    }
+    if (photoFallback) photoFallback.classList.remove('hidden');
+    if (photoWrap) {
+      photoWrap.style.cursor = 'default';
+      photoWrap.title = 'Driver photo not uploaded';
+      photoWrap.onclick = null;
+    }
+  }
+
   const plEl = document.getElementById('val-plate');
   if (plEl) plEl.textContent = record.plateNo || '—';
 
@@ -2802,6 +2831,29 @@ function setupVerificationActions() {
       switchView('view-scan');
     });
   }
+
+  // Driver Photo Modal Close Listeners
+  const closePhotoBtn = document.getElementById('btn-close-driver-photo');
+  const photoBackdrop = document.getElementById('driver-photo-modal-backdrop');
+  const closePhotoModal = () => {
+    const modal = document.getElementById('driver-photo-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+  if (closePhotoBtn) closePhotoBtn.addEventListener('click', closePhotoModal);
+  if (photoBackdrop) photoBackdrop.addEventListener('click', closePhotoModal);
+}
+
+function openDriverPhotoModal(record) {
+  if (!record?.driverPhoto) return;
+  const modal = document.getElementById('driver-photo-modal');
+  const imgEl = document.getElementById('driver-photo-modal-img');
+  const nameEl = document.getElementById('driver-photo-modal-name');
+  const plateEl = document.getElementById('driver-photo-modal-plate');
+
+  if (imgEl) imgEl.src = record.driverPhoto;
+  if (nameEl) nameEl.textContent = record.driver && record.driver !== '—' ? record.driver : 'Authorized Driver';
+  if (plateEl) plateEl.textContent = `Unit: ${record.plateNo || '—'} • ${record.vehicleType || 'Conveyance'}`;
+  if (modal) modal.classList.remove('hidden');
 }
 
 /* ==========================================================================

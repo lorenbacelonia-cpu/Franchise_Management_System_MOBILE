@@ -220,12 +220,27 @@ export function dbRowToRecord(row, rawText = '') {
 
   const isStatusActive = resolvedStatus === 'Active';
 
+  // Extract driver photo if present (directly or packed inside fare_matrix metadata)
+  let driverPhoto = row.driver_photo || row.driver_photo_url || row.photo || row.driver_image || null;
+  if (!driverPhoto && Array.isArray(row.fare_matrix)) {
+    const photoItem = row.fare_matrix.find(item => item && (item.id === '__driver_photo__' || item.destination === 'DRIVER_PHOTO' || item.photo));
+    if (photoItem && photoItem.photo) {
+      driverPhoto = photoItem.photo;
+    }
+  }
+
+  // Clean fare matrix from any metadata before exposing
+  const cleanFareMatrix = Array.isArray(row.fare_matrix)
+    ? row.fare_matrix.filter(item => item && item.id !== '__driver_photo__' && item.destination !== 'DRIVER_PHOTO')
+    : null;
+
   return {
     type: 'franchise',
     vehicleType,
     vehicleTitle: `${vehicleType} Verified Unit`,
     operator: operatorFullName,
     driver: driverFullName,
+    driverPhoto: driverPhoto || null,
     plateNo: row.city_plate_number || row.plate_number || row.mtop_number || row.plate_no || row.plate || '—',
     route: row.route_parada || row.route || row.parada || row.line || row.route_name || 'Tabaco City Route',
     expiry: expiryDateStr,
@@ -233,7 +248,7 @@ export function dbRowToRecord(row, rawText = '') {
     availability: row.availability || (isStatusActive ? 'Available / On-Duty' : resolvedStatus === 'Expired' ? 'Expired (Permit Needs Renewal)' : resolvedStatus),
     status: resolvedStatus,
     fareFee: row.standard_fare || row.fare_fee || row.fare || null,
-    fareMatrix: Array.isArray(row.fare_matrix) ? row.fare_matrix : null,
+    fareMatrix: cleanFareMatrix,
     violationsCount: row.violations_count || 0,
     documentsVerified: row.documents_verified ?? true,
     licenseNo: row.driver_license_no || '',

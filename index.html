@@ -602,16 +602,30 @@
               <div id="val-operator" class="box-value">—</div>
             </div>
 
-            <div class="mint-box">
+            <div class="mint-box driver-mint-box">
               <div class="box-header">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                <span>Driver Name</span>
+                <span>Driver</span>
               </div>
-              <div id="val-driver" class="box-value">—</div>
+              <div class="driver-profile-row">
+                <div id="val-driver-photo-wrap" class="driver-photo-badge" title="Click to enlarge driver photo">
+                  <img id="val-driver-photo" src="" alt="Driver Photo" class="driver-photo-img hidden" />
+                  <div id="val-driver-photo-fallback" class="driver-photo-fallback">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                </div>
+                <div class="driver-profile-text">
+                  <div id="val-driver" class="box-value driver-name-val">—</div>
+                  <div class="driver-role-label">TRD Authorized Driver</div>
+                </div>
+              </div>
             </div>
 
             <div class="mint-box">
@@ -1347,6 +1361,26 @@
           <button type="button" id="btn-cancel-otp" class="figma-secondary-btn mt-2">
             Back
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver Photo Preview Modal -->
+    <div id="driver-photo-modal" class="driver-photo-modal hidden" role="dialog" aria-modal="true">
+      <div class="driver-photo-modal-backdrop" id="driver-photo-modal-backdrop"></div>
+      <div class="driver-photo-modal-content">
+        <div class="driver-photo-modal-header">
+          <div class="driver-photo-modal-title-wrap">
+            <span class="badge-dot"></span>
+            <h4 id="driver-photo-modal-name">Authorized Driver</h4>
+          </div>
+          <button type="button" id="btn-close-driver-photo" class="btn-close-photo" aria-label="Close photo">✕</button>
+        </div>
+        <div class="driver-photo-modal-img-wrap">
+          <img id="driver-photo-modal-img" src="" alt="Driver Photo" />
+        </div>
+        <div class="driver-photo-modal-footer">
+          <span id="driver-photo-modal-plate">Official TRD Driver Registry • Tabaco City</span>
         </div>
       </div>
     </div>
