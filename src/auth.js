@@ -607,66 +607,82 @@ export async function registerUser(fullNameOrOptions, usernameArg, passwordArg, 
     return { success: false, error: check.error };
   }
 
-  // 2. Prepare payload
-  const fullAccountData = {
-    username: formalUsername,
-    fullname: formalFullName,
-    password: password
-  };
+  // 2. Prepare payload candidates in descending order of column requirements
+  const candidatePayloads = [];
 
+  // Candidate 1: Full columns with verification booleans
+  const full = { username: formalUsername, fullname: formalFullName, password };
   if (cleanEmail) {
-    fullAccountData.email = cleanEmail;
-    fullAccountData.email_verified = verificationMethod === 'email';
+    full.email = cleanEmail;
+    full.email_verified = verificationMethod === 'email';
   }
   if (cleanPhone) {
-    fullAccountData.contact_number = cleanPhone;
-    fullAccountData.phone_verified = verificationMethod === 'sms';
+    full.contact_number = cleanPhone;
+    full.phone_verified = verificationMethod === 'sms';
+  }
+  candidatePayloads.push(full);
+
+  // Candidate 2: Basic email & contact_number without boolean flags
+  if (cleanEmail || cleanPhone) {
+    const withContacts = { username: formalUsername, fullname: formalFullName, password };
+    if (cleanEmail) withContacts.email = cleanEmail;
+    if (cleanPhone) withContacts.contact_number = cleanPhone;
+    candidatePayloads.push(withContacts);
   }
 
-  // 3. Attempt insert into Supabase with progressive fallbacks
+  // Candidate 3: Just contact_number (if email column is missing in schema)
+  if (cleanPhone) {
+    candidatePayloads.push({ username: formalUsername, fullname: formalFullName, password, contact_number: cleanPhone });
+  }
+
+  // Candidate 4: Just email (if contact_number is missing in schema)
+  if (cleanEmail) {
+    candidatePayloads.push({ username: formalUsername, fullname: formalFullName, password, email: cleanEmail });
+  }
+
+  // Candidate 5: Core schema columns with contact info preserved in fullname tag
+  const contactTag = cleanEmail ? ` [${cleanEmail}]` : (cleanPhone ? ` [${cleanPhone}]` : '');
+  if (contactTag) {
+    candidatePayloads.push({
+      username: formalUsername,
+      fullname: `${formalFullName}${contactTag}`,
+      password
+    });
+  }
+
+  // Candidate 6: Absolute baseline core schema (guaranteed to match: username, fullname, password)
+  candidatePayloads.push({
+    username: formalUsername,
+    fullname: formalFullName,
+    password
+  });
+
+  // 3. Attempt insert into Supabase with progressive column fallbacks
   for (const table of targetTables) {
     try {
-      let { data: inserted, error: insertErr } = await supabase
-        .from(table)
-        .insert([fullAccountData])
-        .select();
+      let inserted = null;
+      let lastErr = null;
 
-      // If specific column does not exist yet (code 42703), retry by stripping phone_verified or contact_number
-      if (insertErr && (insertErr.code === '42703' || insertErr.message?.includes('column'))) {
-        console.warn(`Supabase notice: Table [${table}] missing column. Retrying with basic columns.`);
-        const fallbackData = {
-          username: formalUsername,
-          fullname: formalFullName,
-          password: password,
-        };
-        if (cleanEmail) fallbackData.email = cleanEmail;
-        if (cleanPhone) fallbackData.contact_number = cleanPhone;
-
-        const retry = await supabase
+      for (const payload of candidatePayloads) {
+        const { data, error } = await supabase
           .from(table)
-          .insert([fallbackData])
+          .insert([payload])
           .select();
-        inserted = retry.data;
-        insertErr = retry.error;
 
-        // If contact_number is also missing
-        if (insertErr && (insertErr.code === '42703' || insertErr.message?.includes('contact_number'))) {
-          const minimalData = {
-            username: formalUsername,
-            fullname: formalFullName,
-            password: password,
-          };
-          if (cleanEmail) minimalData.email = cleanEmail;
-          const retryMin = await supabase
-            .from(table)
-            .insert([minimalData])
-            .select();
-          inserted = retryMin.data;
-          insertErr = retryMin.error;
+        if (!error && data && data.length > 0) {
+          inserted = data;
+          lastErr = null;
+          break; // Successfully inserted!
+        }
+
+        lastErr = error;
+        // If error is duplicate username (code 23505), stop immediately because retrying other columns won't fix a duplicate username
+        if (error?.code === '23505' || error?.message?.includes('unique') || error?.message?.includes('duplicate')) {
+          break;
         }
       }
 
-      if (!insertErr && inserted && inserted.length > 0) {
+      if (inserted && inserted.length > 0) {
         const user = inserted[0];
         const finalUser = {
           ...user,
@@ -689,8 +705,8 @@ export async function registerUser(fullNameOrOptions, usernameArg, passwordArg, 
           }
         };
       }
-      if (insertErr) {
-        return { success: false, error: `Database error registering account: ${insertErr.message}` };
+      if (lastErr) {
+        return { success: false, error: `Database error registering account: ${lastErr.message}` };
       }
     } catch (err) {
       console.warn(`Insert error on ${table}:`, err);
@@ -968,30 +984,48 @@ export async function findUserByIdentifier(identifier, selectedRole = 'Passenger
   const tables = isEnforcer ? ENFORCER_TABLES : PASSENGER_TABLES;
   const roleName = isEnforcer ? 'Traffic Enforcer' : 'Passenger';
 
+  const extractUser = (rawUser) => {
+    if (!rawUser) return rawUser;
+    const u = { ...rawUser };
+    if (!u.email && u.fullname && u.fullname.includes('@')) {
+      const m = u.fullname.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (m) u.email = m[1];
+    }
+    if (!u.contact_number && u.fullname) {
+      const m = u.fullname.match(/(09\d{9}|\+639\d{9})/);
+      if (m) u.contact_number = m[1];
+    }
+    return u;
+  };
+
   for (const table of tables) {
     try {
       // 1. Check contact number
       if (cleanDigits && cleanDigits.length >= 7) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .or(`contact_number.eq.${cleanIdentifier},contact_number.ilike.%${cleanDigits}%`)
-          .limit(1);
-        if (!error && data && data.length > 0) {
-          return { success: true, user: data[0], table, role: roleName };
-        }
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .or(`contact_number.eq.${cleanIdentifier},contact_number.ilike.%${cleanDigits}%`)
+            .limit(1);
+          if (!error && data && data.length > 0) {
+            return { success: true, user: extractUser(data[0]), table, role: roleName };
+          }
+        } catch {}
       }
 
       // 2. Check email
       if (cleanIdentifier.includes('@')) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .ilike('email', cleanIdentifier)
-          .limit(1);
-        if (!error && data && data.length > 0) {
-          return { success: true, user: data[0], table, role: roleName };
-        }
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .ilike('email', cleanIdentifier)
+            .limit(1);
+          if (!error && data && data.length > 0) {
+            return { success: true, user: extractUser(data[0]), table, role: roleName };
+          }
+        } catch {}
       }
 
       // 3. Check username
@@ -1001,7 +1035,17 @@ export async function findUserByIdentifier(identifier, selectedRole = 'Passenger
         .ilike('username', cleanIdentifier)
         .limit(1);
       if (!error && data && data.length > 0) {
-        return { success: true, user: data[0], table, role: roleName };
+        return { success: true, user: extractUser(data[0]), table, role: roleName };
+      }
+
+      // 4. Check fullname (for cases where email/phone is stored in fullname)
+      const { data: fnData, error: fnError } = await supabase
+        .from(table)
+        .select('*')
+        .ilike('fullname', `%${cleanIdentifier}%`)
+        .limit(1);
+      if (!fnError && fnData && fnData.length > 0) {
+        return { success: true, user: extractUser(fnData[0]), table, role: roleName };
       }
     } catch {}
   }
