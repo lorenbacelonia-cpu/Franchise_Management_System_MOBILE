@@ -6,15 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Franchise Management Verifier - Tabaco City TRD</title>
   <meta name="description" content="Tabaco City TRD Official Franchise Management Verifier Mobile Application" />
-  <link rel="icon" type="image/png" href="/tabaco-city-seal.png" />
-  <link rel="apple-touch-icon" href="/tabaco-city-seal.png" />
+  <link rel="icon" type="image/png" href="./tabaco-city-seal.png" />
+  <link rel="apple-touch-icon" href="./tabaco-city-seal.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="/src/style.css" />
+  <script type="module" crossorigin src="./assets/index-CtRB3Xc3.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CEmt-EGe.css">
 </head>
 
 <body>
@@ -24,7 +25,7 @@
     <header id="app-header" class="app-header">
       <div class="brand">
         <div class="lock-seal">
-          <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="header-seal-img" />
+          <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="header-seal-img" />
           <span class="header-enforcer-badge hidden" id="header-enforcer-badge">👮</span>
         </div>
         <div class="brand-text">
@@ -51,7 +52,7 @@
       <section id="view-login" class="view-panel">
         <div id="login-card" class="figma-card login-card">
           <div id="login-giant-icon" class="giant-lock-icon auth-seal-wrap">
-            <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
+            <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
           </div>
           <div id="login-portal-badge" class="passenger-portal-badge">Passenger Verifier Portal</div>
           <h2 id="login-title">Franchise Management Verifier</h2>
@@ -117,7 +118,8 @@
 
             <div class="login-auth-options">
               <button type="button" id="btn-login-forgot-pwd" class="btn-email-verify-link" title="Forgot Password?">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" width="14" height="14">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
@@ -131,9 +133,11 @@
           </form>
 
           <div class="register-footer" id="login-register-footer">
-            <p id="login-register-text">Don't have an account? <a id="link-go-signup" href="#" onclick="return false;">Register here!</a></p>
+            <p id="login-register-text">Don't have an account? <a id="link-go-signup" href="#"
+                onclick="return false;">Register here!</a></p>
             <p id="login-enforcer-notice" class="login-enforcer-notice hidden">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align: -2px; margin-right: 4px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" width="14" height="14" style="vertical-align: -2px; margin-right: 4px;">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
               Official Traffic Enforcer accounts are provisioned by TRD Administration. Public registration is disabled.
@@ -146,7 +150,7 @@
       <section id="view-signup" class="view-panel">
         <div id="signup-card" class="figma-card login-card">
           <div id="signup-giant-icon" class="giant-lock-icon auth-seal-wrap">
-            <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
+            <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="auth-seal-img" />
           </div>
           <div id="signup-portal-badge" class="passenger-portal-badge">👤 Passenger Registration Portal</div>
           <h2 id="signup-title">Create Passenger Account</h2>
@@ -169,13 +173,16 @@
 
             <!-- Unified Mobile Number or Email Input (auto-detects 09... 11 digits vs Email) -->
             <div class="input-pill" id="signup-contact-group">
-              <span id="signup-contact-icon" style="display:inline-flex; align-items:center; margin-right:8px; color:inherit;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <span id="signup-contact-icon"
+                style="display:inline-flex; align-items:center; margin-right:8px; color:inherit;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" width="18" height="18">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
               </span>
-              <input id="signup-contact" type="text" placeholder="Mobile Number (09...) or Email" autocomplete="username" />
+              <input id="signup-contact" type="text" placeholder="Mobile Number (09...) or Email"
+                autocomplete="username" />
               <span class="verify-target-badge hidden" id="signup-contact-badge">SMS</span>
             </div>
             <!-- Hidden inputs to retain backward compatibility -->
@@ -256,7 +263,7 @@
         <div class="figma-card instructions-card">
           <div class="top-icon-header">
             <div class="instructions-seal-wrap">
-              <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
+              <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2>How It Works</h2>
             <p>Official 5-Step Verification Guide</p>
@@ -392,7 +399,7 @@
 
         <!-- City of Tabaco Official Seal Badge (Tap to go to Profile/Login) -->
         <div id="btn-scan-lock" class="scan-lock-icon" style="cursor: pointer;" title="Go to Dashboard / Login">
-          <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="scan-seal-img" />
+          <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" class="scan-seal-img" />
         </div>
 
         <!-- White scanner card -->
@@ -562,7 +569,7 @@
           <!-- Seal + Title Header -->
           <div class="verified-header">
             <div class="verified-seal-wrap">
-              <img id="verified-seal" src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
+              <img id="verified-seal" src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2 id="verified-vehicle-title">Franchise Verified Unit</h2>
             <p class="verified-sub">Tabaco City TRD - Official Record</p>
@@ -760,7 +767,7 @@
           <!-- Seal + Titles -->
           <div class="verified-header">
             <div class="verified-seal-wrap">
-              <img src="/tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
+              <img src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
             </div>
             <h2 class="fare-main-title">Official Fare Matrix</h2>
             <p id="fare-subtitle" class="verified-sub">Barangay / Local Area Rates (Tabaco City)</p>
@@ -955,7 +962,8 @@
                 <option value="Abusive Language/Cursing">Abusive Language / Cursing</option>
                 <option value="Drunk Driving">Drunk Driving</option>
                 <option value="Harassment">Harassment</option>
-                <option value="Dropping off passenger at the wrong destination">Dropping off passenger at the wrong destination</option>
+                <option value="Dropping off passenger at the wrong destination">Dropping off passenger at the wrong
+                  destination</option>
                 <option value="Reckless Driving">Reckless Driving</option>
                 <option value="Overloading">Overloading</option>
                 <option value="No Franchise / Colorum Unit">No Franchise / Colorum Unit</option>
@@ -980,11 +988,13 @@
 
               <!-- Quick Search / Filter Input -->
               <div class="checklist-search-wrap">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" width="15" height="15">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input id="checklist-search-input" type="text" placeholder="Search violations (e.g. fare, speed, rude, colorum)..." autocomplete="off" />
+                <input id="checklist-search-input" type="text"
+                  placeholder="Search violations (e.g. fare, speed, rude, colorum)..." autocomplete="off" />
                 <button type="button" id="btn-checklist-search-clear" class="search-clear-btn hidden">&times;</button>
               </div>
 
@@ -1181,11 +1191,13 @@
         <div class="sheet-drag-handle"></div>
 
         <div class="otp-icon-wrap" id="otp-header-icon-wrap">
-          <svg id="otp-icon-sms" class="otp-method-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+          <svg id="otp-icon-sms" class="otp-method-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
             <line x1="12" y1="18" x2="12.01" y2="18"></line>
           </svg>
-          <svg id="otp-icon-email" class="otp-method-icon hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+          <svg id="otp-icon-email" class="otp-method-icon hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
@@ -1201,13 +1213,8 @@
         <div class="otp-receiver-box">
           <label class="otp-box-label" id="otp-box-label" for="otp-receiver-email-input">Passenger Mobile Number</label>
           <div class="otp-receiver-row">
-            <input
-              id="otp-receiver-email-input"
-              type="text"
-              class="otp-receiver-input"
-              placeholder="Enter mobile number"
-              autocomplete="username"
-            />
+            <input id="otp-receiver-email-input" type="text" class="otp-receiver-input"
+              placeholder="Enter mobile number" autocomplete="username" />
             <button type="button" id="btn-otp-send-code" class="btn-otp-send-code">
               Send Code
             </button>
@@ -1217,15 +1224,18 @@
           </p>
 
           <!-- Registered Destinations (for Forgot Password mode) -->
-          <div id="otp-forgot-destinations" class="otp-forgot-destinations hidden" style="margin-top: 10px; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+          <div id="otp-forgot-destinations" class="otp-forgot-destinations hidden"
+            style="margin-top: 10px; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
             <p style="font-size: 0.72rem; color: #475569; margin-bottom: 6px; font-weight: 700;">
               Send verification code to your registered:
             </p>
             <div class="role-pill-tabs" style="display: flex; gap: 6px;">
-              <button type="button" id="btn-forgot-dest-sms" class="role-tab active" style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
+              <button type="button" id="btn-forgot-dest-sms" class="role-tab active"
+                style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
                 <span>📱 SMS (<strong id="otp-dest-sms-display">None</strong>)</span>
               </button>
-              <button type="button" id="btn-forgot-dest-email" class="role-tab" style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
+              <button type="button" id="btn-forgot-dest-email" class="role-tab"
+                style="flex: 1; font-size: 0.68rem; padding: 6px 8px; justify-content: center;">
                 <span>✉️ Email (<strong id="otp-dest-email-display">None</strong>)</span>
               </button>
             </div>
@@ -1235,14 +1245,16 @@
         <!-- Dispatched Confirmation Notice -->
         <div id="otp-dispatched-notice" class="otp-dispatched-notice hidden">
           <div class="otp-dispatched-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" width="15" height="15">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
             <span id="otp-dispatched-title-text">SMS Verification Code Sent!</span>
           </div>
           <p class="otp-dispatched-text">
-            A 6-digit verification code was dispatched to <strong id="otp-target-email-display">0912 345 6789</strong>. Please check your SMS and enter the code below.
+            A 6-digit verification code was dispatched to <strong id="otp-target-email-display">0912 345 6789</strong>.
+            Please check your SMS and enter the code below.
           </p>
           <p class="otp-dispatched-note" id="otp-dispatched-note">
             Note: The code is only accessible on your mobile phone for verified account protection.
@@ -1252,37 +1264,70 @@
         <!-- 6-digit OTP input boxes -->
         <label class="otp-code-input-label" id="otp-digits-label">Enter 6-Digit Code (from your SMS)</label>
         <div class="otp-digits-container" id="otp-digits-container">
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0" autocomplete="one-time-code" />
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1" autocomplete="off" />
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="2" autocomplete="off" />
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3" autocomplete="off" />
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4" autocomplete="off" />
-          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="5" autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0"
+            autocomplete="one-time-code" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1"
+            autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="2"
+            autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3"
+            autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4"
+            autocomplete="off" />
+          <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="5"
+            autocomplete="off" />
         </div>
 
         <!-- Reset Password Fields (visible in Forgot Password mode after OTP verification) -->
         <div id="otp-reset-password-section" class="otp-reset-password-section hidden">
-          <label class="otp-code-input-label" style="text-align:left; display:block; margin: 8px 0 4px;">Set New Password</label>
+          <label class="otp-code-input-label" style="text-align:left; display:block; margin: 8px 0 4px;">Set New
+            Password</label>
           <div class="input-pill input-password-wrap" style="margin-top: 4px;">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            <input id="otp-new-password" type="password" placeholder="Enter New Password (min. 4 chars)" autocomplete="new-password" />
-            <button type="button" class="btn-toggle-pwd" data-target="otp-new-password" title="Toggle password visibility">
-              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            <input id="otp-new-password" type="password" placeholder="Enter New Password (min. 4 chars)"
+              autocomplete="new-password" />
+            <button type="button" class="btn-toggle-pwd" data-target="otp-new-password"
+              title="Toggle password visibility">
+              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                </path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
             </button>
           </div>
           <div class="input-pill input-password-wrap" style="margin-top: 6px;">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            <input id="otp-confirm-password" type="password" placeholder="Confirm New Password" autocomplete="new-password" />
-            <button type="button" class="btn-toggle-pwd" data-target="otp-confirm-password" title="Toggle password visibility">
-              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            <input id="otp-confirm-password" type="password" placeholder="Confirm New Password"
+              autocomplete="new-password" />
+            <button type="button" class="btn-toggle-pwd" data-target="otp-confirm-password"
+              title="Toggle password visibility">
+              <svg class="eye-icon eye-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon eye-hide hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                </path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
             </button>
           </div>
         </div>
@@ -1314,7 +1359,6 @@
 
   </div>
 
-  <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>
