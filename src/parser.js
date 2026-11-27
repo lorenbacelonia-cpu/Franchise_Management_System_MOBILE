@@ -72,13 +72,16 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
       const operatorContact = params.get('operator_contact') || params.get('operatorContact') || params.get('contact') || '';
       const statusParam = params.get('status');
       const availabilityParam = params.get('avail') || params.get('availability');
+      const sanctionParam = params.get('sanction');
 
       if (plate || driver || operator || route) {
         const isTri = isTricycle(type || text || currentMode);
         const vehicleType = isTri ? 'Tricycle' : 'Pedicab';
 
         let resolvedStatus = statusParam || 'Active';
-        if (expiry) {
+        if (/suspend/i.test(statusParam || '') || /suspend/i.test(availabilityParam || '') || /suspend/i.test(sanctionParam || '') || /suspend/i.test(text || '')) {
+          resolvedStatus = 'Suspended';
+        } else if (expiry) {
           const expDate = new Date(expiry);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -87,7 +90,7 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
           }
         }
 
-        const resolvedAvail = availabilityParam || (resolvedStatus === 'Expired' ? 'Expired' : 'Available');
+        const resolvedAvail = availabilityParam || (resolvedStatus === 'Suspended' ? 'Suspended' : (resolvedStatus === 'Expired' ? 'Expired' : 'Available'));
 
         return {
           type: 'franchise',
@@ -125,7 +128,9 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     const vehicleType = isTri ? 'Tricycle' : 'Pedicab';
 
     let resolvedStatus = extracted.status || 'Active';
-    if (extracted.expiry) {
+    if (/suspend/i.test(extracted.status || '') || /suspend/i.test(extracted.availability || '') || /suspend/i.test(text || '')) {
+      resolvedStatus = 'Suspended';
+    } else if (extracted.expiry) {
       const expDate = new Date(extracted.expiry);
       const today = new Date();
       today.setHours(0, 0, 0, 0);

@@ -205,13 +205,14 @@ export function dbRowToRecord(row, rawText = '') {
     row.operator || row.owner || row.fullname || '—';
 
   const rawStatus = (row.status || 'Active').trim();
+  const rawAvail = (row.availability || '').trim();
   const expiryDateStr = row.expiration_date || row.expiry || row.expiry_date || row.valid_until
     ? String(row.expiration_date || row.expiry || row.expiry_date || row.valid_until).substring(0, 10)
     : '2026-12-31';
 
   // Automatically mark expired if permit expiration date has passed, or detect suspension
   let resolvedStatus = rawStatus;
-  if (/suspend/i.test(rawStatus)) {
+  if (/suspend/i.test(rawStatus) || /suspend/i.test(rawAvail) || (rawText && /suspend/i.test(rawText))) {
     resolvedStatus = 'Suspended';
   } else if (expiryDateStr && expiryDateStr !== '—') {
     const expDate = new Date(expiryDateStr);
