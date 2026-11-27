@@ -1539,6 +1539,11 @@
       overflow: hidden;
     }
 
+    .trd-info-card.col-span-2,
+    .trd-details-grid .trd-info-card:nth-child(3):last-child {
+      grid-column: span 2;
+    }
+
     .trd-info-header {
       display: flex;
       align-items: center;
