@@ -1832,7 +1832,9 @@ async function handleIncomingUrlVerification(rawUrl) {
   switchView('view-verification');
 
   if (isFoundInDb || (record.driver && record.driver !== '—')) {
-    if (/expired/i.test(record.status)) {
+    if (/suspend/i.test(record.status) || /suspend/i.test(record.availability)) {
+      showToast('⛔ Verified Unit (' + record.plateNo + ') — DRIVER SUSPENDED');
+    } else if (/expired/i.test(record.status)) {
       showToast('⚠️ Verified Unit (' + record.plateNo + ') - EXPIRED PERMIT');
     } else {
       showToast('✅ Verified Active ' + (record.vehicleType || 'Pedicab') + ' Unit (' + record.plateNo + ')');
@@ -1873,7 +1875,9 @@ async function handleScannedCode(rawText) {
   renderVerificationDashboard(record);
 
   if (isFoundInDb) {
-    if (/expired/i.test(record.status)) {
+    if (/suspend/i.test(record.status) || /suspend/i.test(record.availability)) {
+      showToast(`⛔ Verified Unit (${record.plateNo}) — DRIVER SUSPENDED`);
+    } else if (/expired/i.test(record.status)) {
       showToast(`⚠️ Verified Unit (${record.plateNo}) - EXPIRED PERMIT`);
     } else {
       showToast(`✅ Verified Active ${record.vehicleType || 'Franchise'} Unit (${record.plateNo})`);
@@ -2685,9 +2689,10 @@ function renderVerificationDashboard(record) {
   const pillTextEl = document.getElementById('verified-status-text');
 
   const rawStatus = (record.status || (isLiveInDb ? 'Active' : 'Unregistered')).trim();
-  const isSuspended = /suspend/i.test(rawStatus);
-  const isExpired = /expire/i.test(rawStatus);
-  const isActiveRegistered = (isLiveInDb || (record.operator && record.operator !== "—" && record.driver && record.driver !== "—")) && !/unregistered|inactive|revoked|suspended|expired/i.test(rawStatus);
+  const rawAvail = (record.availability || '').trim();
+  const isSuspended = /suspend/i.test(rawStatus) || /suspend/i.test(rawAvail) || (record.raw && /suspend/i.test(record.raw));
+  const isExpired = /expire/i.test(rawStatus) || /expire/i.test(rawAvail);
+  const isActiveRegistered = (isLiveInDb || (record.operator && record.operator !== "—" && record.driver && record.driver !== "—")) && !isSuspended && !isExpired && !/unregistered|inactive|revoked/i.test(rawStatus);
 
   if (titleEl) {
     if (isSuspended) {
@@ -2941,27 +2946,7 @@ function setupVerificationActions() {
   document.querySelectorAll('.btn-test-plate').forEach(btn => {
     btn.addEventListener('click', () => {
       const plate = btn.getAttribute('data-plate');
-      if (plate === '1422') {
-        const demo1422 = {
-          type: 'franchise',
-          vehicleType: 'Tricycle',
-          vehicleTitle: 'Tricycle Verified Unit',
-          operator: 'Prisco L. Prisco',
-          driver: 'Prisco L. Silver',
-          driverPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-          plateNo: '1422',
-          route: 'Baranghawon 1, Tabaco',
-          expiry: '2028-08-25',
-          touristGuide: 'Yes',
-          status: 'Active',
-          driverId: 'TRD-0482',
-          driverLicenseRef: 'TRD-DRV-0482',
-          fromDatabase: true
-        };
-        currentVerifiedRecord = demo1422;
-        renderVerificationDashboard(demo1422);
-        switchView('view-verification');
-      } else if (plate) {
+      if (plate) {
         handleScannedCode(plate);
       }
     });
