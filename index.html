@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Franchise Management Verifier - Tabaco City TRD</title>
   <meta name="description" content="Tabaco City TRD Official Franchise Management Verifier Mobile Application" />
   <link rel="icon" type="image/png" href="./tabaco-city-seal.png" />
@@ -14,8 +14,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <script type="module" crossorigin src="./assets/index-pAS707n7.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DIATtTbC.css">
+  <script type="module" crossorigin src="./assets/index-SGC3gK3n.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C1boKgoL.css">
 </head>
 
 <body>
@@ -154,7 +154,7 @@
           </div>
           <div id="signup-portal-badge" class="passenger-portal-badge">👤 Passenger Registration Portal</div>
           <h2 id="signup-title">Create Passenger Account</h2>
-          <p id="signup-sub" class="login-sub">Register as a Passenger with instant SMS or Email verification</p>
+          <p id="signup-sub" class="login-sub">Register as a Passenger with instant SMS verification via TextBee</p>
 
           <div id="signup-error-msg" class="login-error hidden"></div>
           <div id="signup-success-msg" class="login-error hidden"
@@ -181,7 +181,7 @@
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
               </span>
-              <input id="signup-contact" type="text" placeholder="Mobile Number (09...) or Email"
+              <input id="signup-contact" type="text" placeholder="Mobile Number (09...) for SMS Verification"
                 autocomplete="username" />
               <span class="verify-target-badge hidden" id="signup-contact-badge">SMS</span>
             </div>
@@ -247,8 +247,8 @@
               </button>
             </div>
 
-            <button id="btn-signup-submit" type="submit" class="figma-emerald-btn">
-              VERIFY VIA SMS & REGISTER AS PASSENGER
+            <button id="btn-signup-submit" type="submit" class="figma-emerald-btn btn-verify-sms-pill">
+              VERIFY VIA SMS &amp; REGISTER AS PASSENGER
             </button>
           </form>
 
@@ -535,6 +535,7 @@
           <div id="enforcer-empty-quick-test" class="enforcer-empty-quick-test hidden">
             <span class="quick-test-label">👮 Officer Quick Test / Demo Records:</span>
             <div class="quick-test-btns">
+              <button type="button" class="btn-test-plate" data-plate="1422">🛺 Unit 1422 (Prisco L. Silver)</button>
               <button type="button" class="btn-test-plate" data-plate="P-101">🚲 Pedicab P-101</button>
               <button type="button" class="btn-test-plate" data-plate="T-1136">🛺 Tricycle T-1136</button>
             </div>
@@ -566,114 +567,149 @@
             <span style="font-size:1.3rem;">👮</span>
           </div>
 
-          <!-- Seal + Title Header -->
-          <div class="verified-header">
-            <div class="verified-seal-wrap">
-              <img id="verified-seal" src="./tabaco-city-seal.png" alt="City of Tabaco Official Seal" />
+          <!-- Hidden accessible title for script compatibility -->
+          <h2 id="verified-vehicle-title" class="sr-only">Franchise Verified Unit</h2>
+
+          <!-- Top Hero Card: Registered Driver (Exact 1:1 Match with Provided Image) -->
+          <div class="driver-hero-card" id="driver-hero-card">
+            <div class="driver-hero-header">
+              <div class="driver-status-badge registered" id="verified-status-pill">
+                <span class="badge-check-icon" id="verified-status-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+                <span id="verified-status-text">REGISTERED DRIVER</span>
+              </div>
+              <button type="button" id="btn-enlarge-driver-id" class="btn-enlarge-driver-id" title="Enlarge ID Photo">
+                <span>Enlarge ID</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+              </button>
             </div>
-            <h2 id="verified-vehicle-title">Franchise Verified Unit</h2>
-            <p class="verified-sub">Tabaco City TRD - Official Record</p>
-            <div class="active-status-pill" id="verified-status-pill">
-              <span class="dot" id="verified-status-dot"></span>
-              <span id="verified-status-text">Active</span>
+
+            <div class="driver-hero-body">
+              <div class="driver-hero-avatar-wrap" id="val-driver-photo-wrap" title="Click to enlarge driver photo">
+                <img id="val-driver-photo" src="" alt="Driver Photo" class="driver-hero-avatar-img hidden" />
+                <div id="val-driver-photo-fallback" class="driver-hero-avatar-fallback">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="38" height="38">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div class="driver-hero-check-badge" id="driver-avatar-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" width="12" height="12">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="driver-hero-info">
+                <div class="driver-hero-caption">Person in Photo:</div>
+                <div id="val-driver" class="driver-hero-name">—</div>
+                <div class="driver-hero-meta">
+                  <span class="driver-hero-role-tag" id="val-driver-role">Authorized Driver</span>
+                  <span class="driver-hero-id-tag">ID: <span id="val-driver-id">TRD-0482</span></span>
+                </div>
+                <div class="driver-hero-verified-proof">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                  </svg>
+                  <span>Photo verified by Tabaco City TRD</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Section 1: Franchise Details (QR icon) -->
-          <div class="section-heading">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
-              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <!-- Section 1: Franchise Details (4-Square Grid Icon) -->
+          <div class="trd-section-heading">
+            <svg class="trd-heading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
             </svg>
             <span>Franchise Details</span>
           </div>
 
-          <div class="details-grid-2x2">
-            <div class="mint-box">
-              <div class="box-header">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <span>Operator</span>
-              </div>
-              <div id="val-operator" class="box-value">—</div>
-            </div>
-
-            <div class="mint-box driver-mint-box">
-              <div class="box-header">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <span>Driver</span>
-              </div>
-              <div class="driver-profile-row">
-                <div id="val-driver-photo-wrap" class="driver-photo-badge" title="Click to enlarge driver photo">
-                  <img id="val-driver-photo" src="" alt="Driver Photo" class="driver-photo-img hidden" />
-                  <div id="val-driver-photo-fallback" class="driver-photo-fallback">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </div>
-                </div>
-                <div class="driver-profile-text">
-                  <div id="val-driver" class="box-value driver-name-val">—</div>
-                  <div class="driver-role-label">TRD Authorized Driver</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mint-box">
-              <div class="box-header">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2">
+          <div class="trd-details-grid">
+            <!-- Box 1: City Plate No. (Top-Left) -->
+            <div class="trd-info-card">
+              <div class="trd-info-header">
+                <svg class="trd-info-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="M9 12l2 2 4-4"></path>
                 </svg>
-                <span>City Plate no.</span>
+                <span>City Plate No.</span>
               </div>
-              <div id="val-plate" class="box-value">—</div>
+              <div id="val-plate" class="trd-info-plate-val">—</div>
             </div>
 
-            <div class="mint-box">
-              <div class="box-header">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2">
+            <!-- Box 2: Parada / Route (Top-Right) -->
+            <div class="trd-info-card">
+              <div class="trd-info-header">
+                <svg class="trd-info-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
                 </svg>
-                <span>Parada/Route</span>
+                <span>Parada / Route</span>
               </div>
-              <div id="val-route" class="box-value">—</div>
+              <div id="val-route" class="trd-info-text-val">—</div>
+            </div>
+
+            <!-- Box 3: Franchise Operator (Bottom-Left) -->
+            <div class="trd-info-card">
+              <div class="trd-info-header">
+                <svg class="trd-info-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Franchise Operator</span>
+              </div>
+              <div id="val-operator" class="trd-info-text-val">—</div>
+            </div>
+
+            <!-- Box 4: Driver License Ref (Bottom-Right) -->
+            <div class="trd-info-card">
+              <div class="trd-info-header">
+                <svg class="trd-info-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <line x1="6" y1="8" x2="10" y2="8"></line>
+                  <line x1="6" y1="12" x2="14" y2="12"></line>
+                  <line x1="6" y1="16" x2="10" y2="16"></line>
+                </svg>
+                <span>Driver License Ref</span>
+              </div>
+              <div id="val-license-ref" class="trd-info-text-val">TRD-DRV-0482</div>
             </div>
           </div>
 
-          <!-- Section 2: Vehicle-specific Franchise Details -->
-          <div class="section-heading mt-3" id="vehicle-section-heading">
+          <!-- Section 2: Franchise Validity (Delivery Truck / Vehicle Icon) -->
+          <div class="trd-section-heading mt-3" id="vehicle-section-heading">
             <span id="vehicle-type-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" width="18" height="18">
-                <circle cx="5.5" cy="17.5" r="3.5" />
-                <circle cx="18.5" cy="17.5" r="3.5" />
-                <path d="M15 6h-5l-3 8h11l-3-8z" />
-                <path d="M15 6l3 5" />
+              <svg class="trd-heading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <rect x="1" y="3" width="15" height="13" rx="2"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
               </svg>
             </span>
-            <span id="vehicle-section-label">Franchise Details</span>
+            <span id="vehicle-section-label">Franchise Validity</span>
           </div>
 
-          <div class="mint-list-card">
-            <div class="mint-row">
-              <span class="row-label">Expiry Date</span>
-              <span id="val-expiry" class="row-val font-bold">—</span>
+          <div class="trd-validity-card">
+            <div class="trd-validity-row border-b">
+              <span class="trd-validity-label">Expiry Date</span>
+              <span id="val-expiry" class="trd-validity-date">—</span>
             </div>
-            <div class="mint-row">
-              <span class="row-label">Tourist guide</span>
-              <span id="val-tourist" class="row-val green-text">—</span>
+            <div class="trd-validity-row">
+              <span class="trd-tourist-label-pill" id="val-tourist-label">Tourist Guide</span>
+              <span id="val-tourist" class="trd-tourist-yes-badge"><span class="tourist-dot">●</span> Yes</span>
             </div>
           </div>
 
