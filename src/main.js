@@ -2685,10 +2685,14 @@ function renderVerificationDashboard(record) {
   const pillTextEl = document.getElementById('verified-status-text');
 
   const rawStatus = (record.status || (isLiveInDb ? 'Active' : 'Unregistered')).trim();
+  const isSuspended = /suspend/i.test(rawStatus);
+  const isExpired = /expire/i.test(rawStatus);
   const isActiveRegistered = (isLiveInDb || (record.operator && record.operator !== "—" && record.driver && record.driver !== "—")) && !/unregistered|inactive|revoked|suspended|expired/i.test(rawStatus);
 
   if (titleEl) {
-    if (isActiveRegistered) {
+    if (isSuspended) {
+      titleEl.textContent = `${vehicleType} Suspended Unit`;
+    } else if (isActiveRegistered) {
       titleEl.textContent = `${vehicleType} Verified Unit`;
     } else if (isLiveInDb) {
       titleEl.textContent = `${vehicleType} Unit (${rawStatus})`;
@@ -2697,10 +2701,13 @@ function renderVerificationDashboard(record) {
     }
   }
 
+  const statusIconEl = document.getElementById('verified-status-icon');
   if (pillTextEl) {
-    if (isActiveRegistered) {
+    if (isSuspended) {
+      pillTextEl.textContent = 'SUSPENDED DRIVER';
+    } else if (isActiveRegistered) {
       pillTextEl.textContent = 'REGISTERED DRIVER';
-    } else if (/expired/i.test(rawStatus)) {
+    } else if (isExpired) {
       pillTextEl.textContent = 'EXPIRED PERMIT';
     } else {
       pillTextEl.textContent = 'UNREGISTERED DRIVER';
@@ -2708,13 +2715,64 @@ function renderVerificationDashboard(record) {
   }
 
   if (pillEl) {
-    pillEl.classList.remove('registered', 'unregistered', 'expired');
-    if (isActiveRegistered) {
+    pillEl.classList.remove('registered', 'unregistered', 'expired', 'suspended');
+    if (isSuspended) {
+      pillEl.classList.add('suspended');
+    } else if (isActiveRegistered) {
       pillEl.classList.add('registered');
-    } else if (/expired/i.test(rawStatus)) {
+    } else if (isExpired) {
       pillEl.classList.add('expired');
     } else {
       pillEl.classList.add('unregistered');
+    }
+  }
+
+  if (statusIconEl) {
+    if (isSuspended) {
+      statusIconEl.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+      `;
+    } else if (isExpired) {
+      statusIconEl.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      `;
+    } else if (isActiveRegistered) {
+      statusIconEl.innerHTML = `
+        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      `;
+    } else {
+      statusIconEl.innerHTML = `
+        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      `;
+    }
+  }
+
+  const heroCardEl = document.getElementById('driver-hero-card');
+  if (heroCardEl) {
+    heroCardEl.classList.toggle('suspended', isSuspended);
+  }
+
+  const suspensionAlertEl = document.getElementById('verified-suspension-alert');
+  if (suspensionAlertEl) {
+    if (isSuspended) {
+      suspensionAlertEl.classList.remove('hidden');
+      const descEl = document.getElementById('verified-suspension-desc');
+      if (descEl && record.sanctionReason) {
+        descEl.textContent = `Administrative Suspension: ${record.sanctionReason}. Operating privileges revoked.`;
+      }
+    } else {
+      suspensionAlertEl.classList.add('hidden');
     }
   }
 

@@ -103,7 +103,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           addTerm(parsed.id);
         }
       }
-    } catch {}
+    } catch { }
 
     // 2. Delimited tokens (e.g. TRD:TRICYCLE:1136:Operator:Driver:Route:Date)
     const tokens = rawText.split(/[:|,\n\r;\t]+/).map(s => s.trim()).filter(s => s.length >= 2);
@@ -128,7 +128,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
         if (!error && data && data.length > 0) {
           return { ...data[0], _sourceTable: tableName };
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -145,7 +145,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
         if (!error && data && data.length > 0) {
           return { ...data[0], _sourceTable: tableName };
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -162,7 +162,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
         if (!error && data && data.length > 0) {
           return { ...data[0], _sourceTable: tableName };
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -179,7 +179,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
         if (!error && data && data.length > 0) {
           return { ...data[0], _sourceTable: tableName };
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -209,9 +209,11 @@ export function dbRowToRecord(row, rawText = '') {
     ? String(row.expiration_date || row.expiry || row.expiry_date || row.valid_until).substring(0, 10)
     : '2026-12-31';
 
-  // Automatically mark expired if permit expiration date has passed
+  // Automatically mark expired if permit expiration date has passed, or detect suspension
   let resolvedStatus = rawStatus;
-  if (expiryDateStr && expiryDateStr !== '—') {
+  if (/suspend/i.test(rawStatus)) {
+    resolvedStatus = 'Suspended';
+  } else if (expiryDateStr && expiryDateStr !== '—') {
     const expDate = new Date(expiryDateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -238,7 +240,7 @@ export function dbRowToRecord(row, rawText = '') {
       if (match && match[1]) {
         driverPhoto = decodeURIComponent(match[1]);
       }
-    } catch {}
+    } catch { }
   }
 
   // Clean fare matrix from any metadata before exposing
@@ -257,8 +259,9 @@ export function dbRowToRecord(row, rawText = '') {
     route: row.route_parada || row.route || row.parada || row.line || row.route_name || 'Tabaco City Route',
     expiry: expiryDateStr,
     touristGuide: (row.tourist_guide === true || row.tourist_guide === 'Yes' || row.tourist === 'Yes') ? 'Yes' : 'No',
-    availability: row.availability || (isStatusActive ? 'Available / On-Duty' : resolvedStatus === 'Expired' ? 'Expired (Permit Needs Renewal)' : resolvedStatus),
+    availability: row.availability || (isStatusActive ? 'Available / On-Duty' : resolvedStatus === 'Expired' ? 'Expired (Permit Needs Renewal)' : resolvedStatus === 'Suspended' ? 'Suspended (Not Authorized to Convey Passengers)' : resolvedStatus),
     status: resolvedStatus,
+    sanctionReason: row.deactivation_reason || row.sanction_reason || row.remarks || null,
     fareFee: row.standard_fare || row.fare_fee || row.fare || null,
     fareMatrix: cleanFareMatrix,
     violationsCount: row.violations_count || 0,
@@ -1160,7 +1163,7 @@ async function fetchEnforcerNotifications(currentUser, readIds) {
       if (r.id) userSubmittedRecordIds.push(r.id);
       if (r.recordId) userSubmittedRecordIds.push(r.recordId);
     });
-  } catch {}
+  } catch { }
 
   // 1. Fetch from 'violations_tricycle_admin', 'violations_pedicab_admin', 'enforcer_violations', 'violations'
   const targetViolationTables = ['violations_tricycle_admin', 'violations_pedicab_admin', 'enforcer_violations', 'violations'];
@@ -1370,7 +1373,7 @@ export async function deleteReportRecord(recordId, tableHint = '') {
       console.log('✅ Deleted from violations_tricycle_admin:', recordId);
       deletedFromDb = true;
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 3. Try deleting from 'violations_pedicab_admin'
   try {
@@ -1383,7 +1386,7 @@ export async function deleteReportRecord(recordId, tableHint = '') {
       console.log('✅ Deleted from violations_pedicab_admin:', recordId);
       deletedFromDb = true;
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 4. Try deleting from 'enforcer_violations'
   try {
@@ -1395,7 +1398,7 @@ export async function deleteReportRecord(recordId, tableHint = '') {
     if (!error) {
       deletedFromDb = true;
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 5. Try deleting from 'mobile_notifications'
   try {
@@ -1403,7 +1406,7 @@ export async function deleteReportRecord(recordId, tableHint = '') {
       .from('mobile_notifications')
       .delete()
       .eq('record_id', recordId);
-  } catch (err) {}
+  } catch (err) { }
 
   // 6. Purge from local storage cache
   purgeLocalReportById(recordId);
@@ -1447,7 +1450,7 @@ export async function deleteFranchiseRecord(plateNo, vehicleType = '') {
 let activeRealtimeChannel = null;
 
 export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) {
-  if (!currentUser || !supabase) return () => {};
+  if (!currentUser || !supabase) return () => { };
 
   if (activeRealtimeChannel) {
     try {
