@@ -368,6 +368,11 @@ export async function uploadEvidenceToStorage(attachment, subfolder = 'evidence'
  * Table: 'enforcer_violations' & 'violation_attachments'
  */
 export async function submitEnforcerViolation(reportData) {
+  if (!reportData.attachment?.dataUrl) {
+    console.warn('Enforcer violation rejected: photo evidence is required.');
+    return { success: false, error: 'Photo evidence is required for traffic violation citations.' };
+  }
+
   const plate = reportData.plate_no || '—';
   const category = (reportData.vehicle_type || 'Pedicab').toLowerCase().includes('tri') ? 'Tricycle' : 'Pedicab';
   const enforcerName = reportData.reporter_name || 'Traffic Enforcer';

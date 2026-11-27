@@ -2985,6 +2985,26 @@ img {
   letter-spacing: 0.5px;
 }
 
+.attachment-required-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.report-attachment-section.has-error {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+  animation: shake 0.3s ease-in-out;
+}
+
 .attachment-btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -2592,10 +2592,10 @@ async function handleEnforcerIssueCitation(openModalForEvidence = false) {
     return;
   }
 
-  if (openModalForEvidence) {
-    openReportModalForCurrentUser('violation');
-    return;
-  }
+  // Photo evidence is required for traffic enforcers: always open citation modal to capture or attach evidence
+  openReportModalForCurrentUser('violation');
+  showToast('📷 Photo evidence is required. Please capture or attach a photo of the violation.');
+  return;
 
   const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
   const selectedItems = Array.from(selectedViolationIds).map(id => TRD_VIOLATIONS.find(v => v.id === id)).filter(Boolean);
@@ -3342,11 +3342,21 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
 
   // Customize file attachment labels according to user role
   const attachLabel = document.getElementById('report-attachment-label-text');
+  const attachTag = document.getElementById('report-attachment-tag');
   const cameraBtnText = document.getElementById('btn-camera-text');
   const uploadBtnText = document.getElementById('btn-upload-text');
 
   if (attachLabel) {
-    attachLabel.textContent = isEnforcer ? 'Attach Photo of Evidence (PNG / JPEG)' : 'Attach Proof / Fare Receipt';
+    attachLabel.textContent = isEnforcer ? 'Attach Photo Evidence (Required)' : 'Attach Proof / Fare Receipt';
+  }
+  if (attachTag) {
+    if (isEnforcer) {
+      attachTag.textContent = 'Required';
+      attachTag.className = 'attachment-required-badge';
+    } else {
+      attachTag.textContent = 'Optional';
+      attachTag.className = 'attachment-optional-tag';
+    }
   }
   if (cameraBtnText) {
     cameraBtnText.textContent = isEnforcer ? '📷 Snap Evidence Photo' : 'Take Photo';
@@ -3497,6 +3507,18 @@ function setupModals() {
           checklistSection.classList.add('has-error');
           checklistSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => checklistSection.classList.remove('has-error'), 1800);
+        }
+        return;
+      }
+
+      // MANDATORY PHOTO EVIDENCE REQUIREMENT FOR ENFORCERS
+      if (!currentReportAttachment || !currentReportAttachment.dataUrl) {
+        showToast('⚠️ Photo evidence is required for traffic violation citations.');
+        const sectionContainer = document.getElementById('report-attachment-section');
+        if (sectionContainer) {
+          sectionContainer.classList.add('has-error');
+          sectionContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => sectionContainer.classList.remove('has-error'), 2500);
         }
         return;
       }
