@@ -2879,14 +2879,6 @@ function setupVerificationActions() {
     });
   }
 
-  // Enlarge ID Button (Matches Figma / Design Preview)
-  const enlargeDriverIdBtn = document.getElementById('btn-enlarge-driver-id');
-  if (enlargeDriverIdBtn) {
-    enlargeDriverIdBtn.addEventListener('click', () => {
-      openDriverPhotoModal(currentVerifiedRecord);
-    });
-  }
-
   // Demo Record Testing Listeners
   document.querySelectorAll('.btn-test-plate').forEach(btn => {
     btn.addEventListener('click', () => {
