@@ -5,6 +5,7 @@ let html5QrcodeInstance = null;
 let currentCameraId = null;
 let isScanning = false;
 let isStarting = false;
+let startPromise = null;
 let isTorchOn = false;
 let isSoundEnabled = true;
 let currentCallback = null;
@@ -98,6 +99,9 @@ export async function initScanner(containerId = 'reader', onScanSuccessCallback)
   }
 
   if (isScanning) return { success: true };
+  if (startPromise) {
+    return await startPromise;
+  }
 
   // Wait a moment for DOM layout to settle
   await new Promise(resolve => setTimeout(resolve, 80));
@@ -143,38 +147,46 @@ export async function initScanner(containerId = 'reader', onScanSuccessCallback)
     console.warn('Camera initialization error:', err);
     if (promptWrap) promptWrap.classList.remove('hidden');
     if (overlay) overlay.style.display = 'none';
+
+    let isPermissionGranted = false;
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const p = await navigator.permissions.query({ name: 'camera' });
+        if (p.state === 'granted') isPermissionGranted = true;
+      } catch (_) { }
+    }
+
     if (statusEl) {
       statusEl.classList.remove('hidden');
-      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission') || err?.message?.includes('denied')) {
-        statusEl.textContent = 'Camera permission was denied. Please allow camera in browser site settings and tap retry.';
-      } else if (err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError') {
-        statusEl.textContent = 'No compatible camera found. You can scan a QR code from your photo gallery below.';
+      if (isPermissionGranted) {
+        statusEl.textContent = 'Camera is ready. Tap below to start scanner.';
+      } else if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission') || err?.message?.includes('denied')) {
+        statusEl.textContent = 'Camera permission required. Please allow camera access in browser site settings.';
+      } else if (err?.name === 'NotFoundError') {
+        statusEl.textContent = 'No camera device detected. You can scan a QR code from your gallery below.';
       } else {
-        statusEl.textContent = 'Tap below to allow camera access for QR scanning.';
+        statusEl.textContent = 'Tap below to open camera or select QR from photo gallery.';
       }
     }
 
     if (allowBtn) {
       allowBtn.classList.remove('hidden');
-      allowBtn.textContent = 'TAP TO OPEN CAMERA';
+      allowBtn.textContent = isPermissionGranted ? 'START CAMERA' : 'TAP TO OPEN CAMERA';
       allowBtn.onclick = async () => {
         try {
-          if (statusEl) statusEl.textContent = 'Requesting camera access...';
-          allowBtn.classList.add('hidden');
-
-          // Trigger explicit browser permission prompt via user click
-          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            try {
-              const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
-              testStream.getTracks().forEach(t => t.stop());
-            } catch (e) {
-              console.warn('Direct permission prompt notice:', e);
-            }
+          if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = 'Connecting to camera...';
           }
-          await initScanner(containerId, currentCallback);
+          allowBtn.classList.add('hidden');
+          const res = await initScanner(containerId, currentCallback);
+          if (!res || !res.success) {
+            allowBtn.classList.remove('hidden');
+          }
         } catch (e) {
           console.error('Manual start failed:', e);
           if (statusEl) {
+            statusEl.classList.remove('hidden');
             statusEl.textContent = 'Could not start camera: ' + (e.message || 'Permission required.');
           }
           allowBtn.classList.remove('hidden');
@@ -301,10 +313,8 @@ function handleSuccessfulScan(decodedText, decodedResult) {
  */
 export async function startScanner(onScanSuccessCallback) {
   if (isScanning) return { success: true };
-  if (isStarting) {
-    // Wait briefly if already starting
-    await new Promise(r => setTimeout(r, 300));
-    if (isScanning) return { success: true };
+  if (startPromise) {
+    return await startPromise;
   }
 
   if (onScanSuccessCallback) {
@@ -313,107 +323,119 @@ export async function startScanner(onScanSuccessCallback) {
 
   isStarting = true;
 
-  // Use full video resolution without aggressive crop for high-density QR codes
-  const config = {
-    fps: 25,
-    aspectRatio: 1.0,
-    showTorchButtonIfSupported: false,
-    videoConstraints: {
-      facingMode: { ideal: 'environment' },
-      width: { min: 640, ideal: 1280, max: 1920 },
-      height: { min: 480, ideal: 720, max: 1080 }
-    }
-  };
+  startPromise = (async () => {
+    try {
+      // Clean config without rigid aspect ratios or conflicting videoConstraints
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.max(180, Math.floor(minEdge * 0.72));
+          return { width: size, height: size };
+        },
+        showTorchButtonIfSupported: false
+      };
 
-  // 1. Query available cameras if possible
-  try {
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-      if (videoDevices.length > 0) {
-        availableCameras = videoDevices.map(d => ({
-          id: d.deviceId,
-          label: d.label || `Camera ${d.deviceId.slice(0, 5)}`
-        }));
-        const switchCamBtn = document.getElementById('btn-switch-cam');
-        if (switchCamBtn && availableCameras.length > 1) {
-          switchCamBtn.classList.remove('hidden');
+      // 1. Query available cameras if possible
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(d => d.kind === 'videoinput');
+          if (videoDevices.length > 0) {
+            availableCameras = videoDevices.map(d => ({
+              id: d.deviceId,
+              label: d.label || `Camera ${d.deviceId.slice(0, 5)}`
+            }));
+            const switchCamBtn = document.getElementById('btn-switch-cam');
+            if (switchCamBtn && availableCameras.length > 1) {
+              switchCamBtn.classList.remove('hidden');
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Device enumeration notice:', e);
+      }
+
+      // 2. Build candidate configurations (Rear camera preferred, then front/user, then deviceId)
+      const attempts = [];
+      if (currentCameraId) {
+        attempts.push(currentCameraId);
+      }
+
+      // Look for back/environment camera in enumerated devices
+      if (availableCameras.length > 0) {
+        const rearCam = availableCameras.find(c => {
+          const lbl = (c.label || '').toLowerCase();
+          return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment');
+        });
+        if (rearCam && rearCam.id && !attempts.includes(rearCam.id)) {
+          attempts.push(rearCam.id);
         }
       }
-    }
-  } catch (e) {
-    console.log('Device enumeration notice:', e);
-  }
 
-  // 2. Build candidate configurations (Rear camera preferred, then front/user, then deviceId)
-  const attempts = [];
-  if (currentCameraId) {
-    attempts.push(currentCameraId);
-  }
+      // Standard facing mode configurations (ONLY valid strings/objects conforming to Html5Qrcode API)
+      attempts.push({ facingMode: 'environment' });
+      attempts.push({ facingMode: 'user' });
 
-  // Look for back/environment camera in enumerated devices
-  if (availableCameras.length > 0) {
-    const rearCam = availableCameras.find(c => {
-      const lbl = (c.label || '').toLowerCase();
-      return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment');
-    });
-    if (rearCam && rearCam.id !== currentCameraId) {
-      attempts.push(rearCam.id);
-    }
-  }
+      // Add any remaining camera device IDs as fallbacks
+      for (const cam of availableCameras) {
+        if (cam.id && !attempts.includes(cam.id)) {
+          attempts.push(cam.id);
+        }
+      }
 
-  // Standard facing mode configurations (ONLY valid strings, never invalid objects)
-  attempts.push({ facingMode: 'environment' });
-  attempts.push({ facingMode: 'user' });
+      let lastError = null;
 
-  // Add any remaining camera device IDs as fallbacks
-  for (const cam of availableCameras) {
-    if (cam.id && !attempts.includes(cam.id)) {
-      attempts.push(cam.id);
-    }
-  }
+      for (const cameraConfig of attempts) {
+        try {
+          // Clean up previous instance before each attempt to prevent transaction corruption
+          await cleanupScannerInstance();
 
-  let lastError = null;
+          html5QrcodeInstance = new Html5Qrcode('reader', {
+            formatsToSupport: supportedFormats,
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            },
+            verbose: false
+          });
 
-  for (const cameraConfig of attempts) {
-    try {
-      // Clean up previous instance before each attempt to prevent transaction corruption
-      await cleanupScannerInstance();
+          await html5QrcodeInstance.start(
+            cameraConfig,
+            config,
+            (decodedText, decodedResult) => {
+              handleSuccessfulScan(decodedText, decodedResult);
+            },
+            () => { } // scan frame error (quiet)
+          );
 
-      html5QrcodeInstance = new Html5Qrcode('reader', {
-        formatsToSupport: supportedFormats,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        },
-        verbose: false
-      });
+          isScanning = true;
+          isStarting = false;
+          checkTorchCapability();
+          startWasmCameraSampler();
+          return { success: true };
+        } catch (err) {
+          lastError = err;
+          console.warn('Camera attempt failed for', cameraConfig, err);
+        }
+      }
 
-      await html5QrcodeInstance.start(
-        cameraConfig,
-        config,
-        (decodedText, decodedResult) => {
-          handleSuccessfulScan(decodedText, decodedResult);
-        },
-        () => { } // scan frame error (quiet)
-      );
-
-      isScanning = true;
+      isScanning = false;
+      throw lastError || new Error('Unable to start camera.');
+    } finally {
       isStarting = false;
-      checkTorchCapability();
-      startWasmCameraSampler();
-      return { success: true };
-    } catch (err) {
-      lastError = err;
-      console.warn('Camera attempt failed for', cameraConfig, err);
+      startPromise = null;
     }
-  }
+  })();
 
-  isStarting = false;
-  isScanning = false;
-  throw lastError || new Error('Unable to start camera.');
+  return await startPromise;
 }
 
 export async function stopScanner() {
+  if (startPromise) {
+    try {
+      await startPromise;
+    } catch (_) { }
+  }
   isScanning = false;
   isStarting = false;
   isProcessingScan = false;
@@ -423,6 +445,12 @@ export async function stopScanner() {
   if (overlay) overlay.style.display = 'none';
   const promptWrap = document.getElementById('camera-prompt-wrap');
   if (promptWrap) promptWrap.classList.add('hidden');
+  const torchBtn = document.getElementById('btn-torch');
+  if (torchBtn) {
+    torchBtn.classList.remove('active');
+    torchBtn.classList.add('hidden');
+  }
+  isTorchOn = false;
 }
 
 

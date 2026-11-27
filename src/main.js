@@ -104,7 +104,7 @@ export function applySignupRoleTheme() {
 
   if (signupCard) signupCard.classList.remove('theme-enforcer');
   if (signupSubmitBtn) {
-    signupSubmitBtn.textContent = 'VERIFY EMAIL & REGISTER AS PASSENGER';
+    signupSubmitBtn.textContent = 'VERIFY VIA SMS & REGISTER AS PASSENGER';
   }
   if (signupGiantIcon) {
     signupGiantIcon.innerHTML = `
@@ -116,7 +116,7 @@ export function applySignupRoleTheme() {
     signupPortalBadge.textContent = '👤 Passenger Account Registration';
   }
   if (signupSub) {
-    signupSub.textContent = 'Register as a Passenger with email verification via Supabase';
+    signupSub.textContent = 'Register as a Passenger with instant SMS verification via TextBee';
   }
   const signupErr = document.getElementById('signup-error-msg');
   const signupSucc = document.getElementById('signup-success-msg');
@@ -286,7 +286,9 @@ function switchView(viewId) {
     if (appHeader) appHeader.style.display = '';
     if (bottomNav) bottomNav.style.display = '';
     document.body.classList.remove('scan-active');
-    stopScanner();
+    stopScanner().catch(err => {
+      console.warn('Camera stop warning:', err);
+    });
   }
 
   if (viewId === 'view-login') {
@@ -603,6 +605,9 @@ function setupSignupView() {
       if (hiddenPhone) hiddenPhone.value = '';
       if (hiddenEmail) hiddenEmail.value = '';
       selectedSignupVerifyMethod = 'sms';
+      if (submitBtn) {
+        submitBtn.textContent = 'VERIFY VIA SMS & REGISTER AS PASSENGER';
+      }
       if (contactIcon) {
         contactIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
       }
@@ -626,6 +631,9 @@ function setupSignupView() {
         contactBadge.textContent = 'SMS';
         contactBadge.classList.remove('hidden');
       }
+      if (submitBtn) {
+        submitBtn.textContent = 'VERIFY VIA SMS & REGISTER AS PASSENGER';
+      }
       if (contactIcon) {
         contactIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
       }
@@ -638,6 +646,9 @@ function setupSignupView() {
       if (contactBadge) {
         contactBadge.textContent = 'Email';
         contactBadge.classList.remove('hidden');
+      }
+      if (submitBtn) {
+        submitBtn.textContent = 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
       }
       if (contactIcon) {
         contactIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
@@ -735,7 +746,9 @@ function setupSignupView() {
 
     if (!avail.available) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'VERIFY & REGISTER AS PASSENGER';
+      submitBtn.textContent = selectedSignupVerifyMethod === 'sms'
+        ? 'VERIFY VIA SMS & REGISTER AS PASSENGER'
+        : 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
       errorEl.textContent = avail.error;
       errorEl.classList.remove('hidden');
       return;
@@ -752,7 +765,9 @@ function setupSignupView() {
       : await generateEmailVerificationOtp(email, 'Passenger');
 
     submitBtn.disabled = false;
-    submitBtn.textContent = 'VERIFY & REGISTER AS PASSENGER';
+    submitBtn.textContent = selectedSignupVerifyMethod === 'sms'
+      ? 'VERIFY VIA SMS & REGISTER AS PASSENGER'
+      : 'VERIFY VIA EMAIL & REGISTER AS PASSENGER';
 
     if (!otpRes.success) {
       errorEl.textContent = otpRes.error || 'Failed to dispatch verification code.';
@@ -2684,20 +2699,28 @@ function renderVerificationDashboard(record) {
 
   if (pillTextEl) {
     if (isActiveRegistered) {
-      pillTextEl.textContent = 'Active';
-    } else if (isLiveInDb) {
-      pillTextEl.textContent = rawStatus;
+      pillTextEl.textContent = 'REGISTERED DRIVER';
+    } else if (/expired/i.test(rawStatus)) {
+      pillTextEl.textContent = 'EXPIRED PERMIT';
     } else {
-      pillTextEl.textContent = 'Unregistered (Not in TRD Database)';
+      pillTextEl.textContent = 'UNREGISTERED DRIVER';
     }
   }
 
   if (pillEl) {
+    pillEl.classList.remove('registered', 'unregistered', 'expired');
     if (isActiveRegistered) {
-      pillEl.classList.remove('unregistered');
+      pillEl.classList.add('registered');
+    } else if (/expired/i.test(rawStatus)) {
+      pillEl.classList.add('expired');
     } else {
       pillEl.classList.add('unregistered');
     }
+  }
+
+  const avatarCheck = document.getElementById('driver-avatar-check');
+  if (avatarCheck) {
+    avatarCheck.style.display = isActiveRegistered ? 'flex' : 'none';
   }
 
   const opEl = document.getElementById('val-operator');
@@ -2705,6 +2728,21 @@ function renderVerificationDashboard(record) {
 
   const drEl = document.getElementById('val-driver');
   if (drEl) drEl.textContent = record.driver || '—';
+
+  const idEl = document.getElementById('val-driver-id');
+  if (idEl) {
+    idEl.textContent = record.driverId || (record.plateNo && record.plateNo !== '—' ? `TRD-${String(record.plateNo).replace(/^[A-Za-z]+-?/, '') || record.plateNo}` : 'TRD-0482');
+  }
+
+  const licenseRefEl = document.getElementById('val-license-ref');
+  if (licenseRefEl) {
+    licenseRefEl.textContent = record.driverLicenseRef || record.licenseNo || (record.plateNo && record.plateNo !== '—' ? `TRD-DRV-${String(record.plateNo).replace(/^[A-Za-z]+-?/, '') || record.plateNo}` : 'TRD-DRV-0482');
+  }
+
+  const roleEl = document.getElementById('val-driver-role');
+  if (roleEl) {
+    roleEl.textContent = record.driverRole || 'Authorized Driver';
+  }
 
   // Driver Photo rendering
   const photoImg = document.getElementById('val-driver-photo');
@@ -2729,9 +2767,9 @@ function renderVerificationDashboard(record) {
     }
     if (photoFallback) photoFallback.classList.remove('hidden');
     if (photoWrap) {
-      photoWrap.style.cursor = 'default';
-      photoWrap.title = 'Driver photo not uploaded';
-      photoWrap.onclick = null;
+      photoWrap.style.cursor = 'pointer';
+      photoWrap.title = 'Click to preview driver details';
+      photoWrap.onclick = () => openDriverPhotoModal(record);
     }
   }
 
@@ -2745,7 +2783,16 @@ function renderVerificationDashboard(record) {
   if (expEl) expEl.textContent = record.expiry || '2026-12-31';
 
   const tourEl = document.getElementById('val-tourist');
-  if (tourEl) tourEl.innerHTML = `<span style="color:#059669; font-weight:bold;">•</span> ${record.touristGuide || 'Yes'}`;
+  if (tourEl) {
+    const isYes = String(record.touristGuide || 'Yes').trim().toLowerCase() === 'yes';
+    if (isYes) {
+      tourEl.className = 'trd-tourist-yes-badge';
+      tourEl.innerHTML = `<span class="tourist-dot">●</span> Yes`;
+    } else {
+      tourEl.className = 'trd-tourist-no-badge';
+      tourEl.innerHTML = `<span class="tourist-dot-muted">○</span> No`;
+    }
+  }
 
   const user = getCurrentUser();
   const isEnforcer = user?.role === 'Traffic Enforcer';
@@ -2832,6 +2879,44 @@ function setupVerificationActions() {
     });
   }
 
+  // Enlarge ID Button (Matches Figma / Design Preview)
+  const enlargeDriverIdBtn = document.getElementById('btn-enlarge-driver-id');
+  if (enlargeDriverIdBtn) {
+    enlargeDriverIdBtn.addEventListener('click', () => {
+      openDriverPhotoModal(currentVerifiedRecord);
+    });
+  }
+
+  // Demo Record Testing Listeners
+  document.querySelectorAll('.btn-test-plate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plate = btn.getAttribute('data-plate');
+      if (plate === '1422') {
+        const demo1422 = {
+          type: 'franchise',
+          vehicleType: 'Tricycle',
+          vehicleTitle: 'Tricycle Verified Unit',
+          operator: 'Prisco L. Prisco',
+          driver: 'Prisco L. Silver',
+          driverPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+          plateNo: '1422',
+          route: 'Baranghawon 1, Tabaco',
+          expiry: '2028-08-25',
+          touristGuide: 'Yes',
+          status: 'Active',
+          driverId: 'TRD-0482',
+          driverLicenseRef: 'TRD-DRV-0482',
+          fromDatabase: true
+        };
+        currentVerifiedRecord = demo1422;
+        renderVerificationDashboard(demo1422);
+        switchView('view-verification');
+      } else if (plate) {
+        handleScannedCode(plate);
+      }
+    });
+  });
+
   // Driver Photo Modal Close Listeners
   const closePhotoBtn = document.getElementById('btn-close-driver-photo');
   const photoBackdrop = document.getElementById('driver-photo-modal-backdrop');
@@ -2844,13 +2929,15 @@ function setupVerificationActions() {
 }
 
 function openDriverPhotoModal(record) {
-  if (!record?.driverPhoto) return;
+  if (!record) return;
   const modal = document.getElementById('driver-photo-modal');
   const imgEl = document.getElementById('driver-photo-modal-img');
   const nameEl = document.getElementById('driver-photo-modal-name');
   const plateEl = document.getElementById('driver-photo-modal-plate');
 
-  if (imgEl) imgEl.src = record.driverPhoto;
+  if (imgEl) {
+    imgEl.src = record.driverPhoto || '/pedicab.png';
+  }
   if (nameEl) nameEl.textContent = record.driver && record.driver !== '—' ? record.driver : 'Authorized Driver';
   if (plateEl) plateEl.textContent = `Unit: ${record.plateNo || '—'} • ${record.vehicleType || 'Conveyance'}`;
   if (modal) modal.classList.remove('hidden');

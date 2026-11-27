@@ -164,7 +164,7 @@ export async function generateSmsVerificationOtp(phone, role = 'Passenger') {
 
   // 2. Direct client fallback to TextBee Gateway API (ensures live delivery on any host or mobile browser)
   const textbeeApiKey = (import.meta.env?.VITE_TEXTBEE_API_KEY || 'txb_mJ6WrN1XSGwvN6bt5Vnz4FEMqsXW0lvm').trim();
-  const textbeeDeviceId = (import.meta.env?.VITE_TEXTBEE_DEVICE_ID || '6b0750bb96bbd64a70a96de5').trim();
+  const textbeeDeviceId = (import.meta.env?.VITE_TEXTBEE_DEVICE_ID || '6b095bed655edd43af8bf896').trim();
   const textbeeSimSlot = parseInt(import.meta.env?.VITE_TEXTBEE_SIM_SLOT || '1', 10);
 
   if (textbeeApiKey) {
@@ -304,7 +304,7 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
         expiresAt
       };
     }
-  } catch {}
+  } catch { }
 
   // 3. SECONDARY ASYNC FALLBACK: Trigger background relays without blocking the UI
   try {
@@ -323,15 +323,15 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
         verification_code: code,
         message: `Your TRD ${role} Security Verification Code is: ${code}. Sent from official system dispatch ${SYSTEM_SENDER_EMAIL}.`
       })
-    }).catch(() => {});
-  } catch {}
+    }).catch(() => { });
+  } catch { }
 
   try {
     supabase.auth.signInWithOtp({
       email: cleanEmail,
       options: { shouldCreateUser: true }
-    }).catch(() => {});
-  } catch {}
+    }).catch(() => { });
+  } catch { }
 
   return {
     success: true,
@@ -400,7 +400,7 @@ export async function verifySmsOtp(phone, enteredCode) {
   if (pending && pending.code === cleanCode) {
     try {
       sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanPhone}`);
-    } catch {}
+    } catch { }
     return { success: true, phone: cleanPhone, target: cleanPhone, verifiedVia: 'textbee_sms' };
   }
 
@@ -431,7 +431,7 @@ export async function verifyEmailOtp(email, enteredCode) {
   if (pending && pending.code === cleanCode) {
     try {
       sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
-    } catch {}
+    } catch { }
     return { success: true, email: cleanEmail, target: cleanEmail, verifiedVia: 'gmail_smtp' };
   }
 
@@ -446,9 +446,9 @@ export async function verifyEmailOtp(email, enteredCode) {
     if (!error && data?.user) {
       try {
         sessionStorage.removeItem(`${OTP_STORAGE_PREFIX}${cleanEmail}`);
-      } catch {}
-      return { 
-        success: true, 
+      } catch { }
+      return {
+        success: true,
         email: cleanEmail,
         target: cleanEmail,
         user: data.user,
@@ -518,7 +518,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           if (!emailErr && emailExists && emailExists.length > 0) {
             return { available: false, error: `Email "${email}" is already registered in the database (${roleLabel}s).` };
           }
-        } catch {}
+        } catch { }
       }
 
       if (cleanPhone) {
@@ -532,7 +532,7 @@ export async function checkAccountAvailability(username, email, role = 'Passenge
           if (!phoneErr && phoneExists && phoneExists.length > 0) {
             return { available: false, error: `Phone number "${phone}" is already registered in the database (${roleLabel}s).` };
           }
-        } catch {}
+        } catch { }
       }
     } catch {
       /* continue */
@@ -756,12 +756,12 @@ function persistSession(sessionUser) {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
     }
-  } catch {}
+  } catch { }
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
     }
-  } catch {}
+  } catch { }
 }
 
 function buildSessionUser(userObj, roleName, fallbackContact = '') {
@@ -833,7 +833,7 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
           if (!badgeErr && byBadgeDigits && byBadgeDigits.length > 0) {
             return byBadgeDigits[0];
           }
-        } catch {}
+        } catch { }
       }
 
       // 3. Email column check
@@ -847,7 +847,7 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
         if (!emailErr && userByEmail && userByEmail.length > 0) {
           return userByEmail[0];
         }
-      } catch {}
+      } catch { }
 
       // 4. Contact number check
       if (cleanDigits && cleanDigits.length >= 7) {
@@ -861,7 +861,7 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
           if (!phoneErr && userByPhone && userByPhone.length > 0) {
             return userByPhone[0];
           }
-        } catch {}
+        } catch { }
       }
 
       // 5. Fullname check
@@ -875,7 +875,7 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
         if (!fnErr && userByFullname && userByFullname.length > 0) {
           return userByFullname[0];
         }
-      } catch {}
+      } catch { }
 
       return null;
     } catch {
@@ -913,9 +913,9 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
     }
   }
 
-  return { 
-    success: false, 
-    error: `No registered ${targetRoleName} account found in the database matching "${identifier}". Please check your credentials or contact TRD Administration.` 
+  return {
+    success: false,
+    error: `No registered ${targetRoleName} account found in the database matching "${identifier}". Please check your credentials or contact TRD Administration.`
   };
 }
 
@@ -947,7 +947,7 @@ export async function loginWithEmailVerification(contactInput, selectedRole = 'P
           persistSession(sessionUser);
           return { success: true, user: sessionUser };
         }
-      } catch {}
+      } catch { }
 
       // Check contact_number
       if (cleanDigits && cleanDigits.length >= 7) {
@@ -962,7 +962,7 @@ export async function loginWithEmailVerification(contactInput, selectedRole = 'P
             persistSession(sessionUser);
             return { success: true, user: sessionUser };
           }
-        } catch {}
+        } catch { }
       }
 
       // Check username
@@ -976,7 +976,7 @@ export async function loginWithEmailVerification(contactInput, selectedRole = 'P
         persistSession(sessionUser);
         return { success: true, user: sessionUser };
       }
-    } catch {}
+    } catch { }
   }
 
   return {
@@ -1023,7 +1023,7 @@ export async function findUserByIdentifier(identifier, selectedRole = 'Passenger
           if (!error && data && data.length > 0) {
             return { success: true, user: extractUser(data[0]), table, role: roleName };
           }
-        } catch {}
+        } catch { }
       }
 
       // 2. Check email
@@ -1037,7 +1037,7 @@ export async function findUserByIdentifier(identifier, selectedRole = 'Passenger
           if (!error && data && data.length > 0) {
             return { success: true, user: extractUser(data[0]), table, role: roleName };
           }
-        } catch {}
+        } catch { }
       }
 
       // 3. Check username
@@ -1059,7 +1059,7 @@ export async function findUserByIdentifier(identifier, selectedRole = 'Passenger
       if (!fnError && fnData && fnData.length > 0) {
         return { success: true, user: extractUser(fnData[0]), table, role: roleName };
       }
-    } catch {}
+    } catch { }
   }
 
   return { success: false, error: `No registered ${roleName} account found with that mobile number or email.` };
@@ -1124,7 +1124,7 @@ export async function resetUserPassword(identifier, newPassword, selectedRole = 
  */
 export function logoutUser() {
   sessionStorage.removeItem(SESSION_KEY);
-  try { localStorage.removeItem(SESSION_KEY); } catch {}
+  try { localStorage.removeItem(SESSION_KEY); } catch { }
 }
 
 /**

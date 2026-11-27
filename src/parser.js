@@ -28,6 +28,13 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
         operator: json.operator || json.operator_name || json.operatorName || json.owner || '—',
         driver: json.driver || json.driver_name || json.driverName || json.name || '—',
         driverPhoto: json.driverPhoto || json.driver_photo || json.photo || json.image || null,
+        driverLicenseRef: json.driverLicenseRef || json.driver_license_ref || json.driverLicenseNo || json.driver_license_no || json.license || json.licenseNo || json.dl || '',
+        licenseNo: json.driverLicenseNo || json.driver_license_no || json.license || json.licenseNo || json.driverLicenseRef || json.dl || '',
+        driverId: json.driverId || json.driver_id || json.id || '',
+        driverRole: json.driverRole || json.driver_role || json.role || 'Authorized Driver',
+        applicationNo: json.applicationNo || json.application_no || '',
+        driverContact: json.driverContact || json.driver_contact || '',
+        operatorContact: json.operatorContact || json.operator_contact || json.contact || '',
         plateNo: String(json.plateNo || json.plate_no || json.plate || json.city_plate_no || json.body_no || json.id || '—'),
         route: json.route || json.parada || json.route_name || json.line || json.destination || 'Tabaco City Route',
         expiry: json.expiry || json.expiry_date || json.valid_until || json.expiration || '2026-12-31',
@@ -58,6 +65,11 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
       const fare = params.get('fare') || params.get('fare_fee') || params.get('fee');
       const tourist = params.get('tourist') || params.get('tourist_guide') || params.get('tg');
       const photo = params.get('photo') || params.get('driver_photo') || params.get('image') || params.get('img');
+      const license = params.get('license') || params.get('license_ref') || params.get('driver_license') || params.get('driverLicense') || params.get('driver_license_no') || params.get('licenseNo') || params.get('dl') || '';
+      const driverId = params.get('driver_id') || params.get('driverId') || params.get('id') || '';
+      const appNo = params.get('app_no') || params.get('application_no') || params.get('applicationNo') || '';
+      const driverContact = params.get('driver_contact') || params.get('driverContact') || '';
+      const operatorContact = params.get('operator_contact') || params.get('operatorContact') || params.get('contact') || '';
       const statusParam = params.get('status');
       const availabilityParam = params.get('avail') || params.get('availability');
 
@@ -84,6 +96,12 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
           operator: operator || '—',
           driver: driver || '—',
           driverPhoto: photo || null,
+          driverLicenseRef: license,
+          licenseNo: license,
+          driverId,
+          applicationNo: appNo,
+          driverContact,
+          operatorContact,
           plateNo: plate || '—',
           route: route || 'Sua-Igot 24 Tabaco',
           expiry: expiry || '2026-12-31',
@@ -122,6 +140,10 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
       vehicleTitle: `${vehicleType} Verified Unit`,
       operator: extracted.operator || '—',
       driver: extracted.driver || '—',
+      driverPhoto: extracted.driverPhoto || null,
+      driverLicenseRef: extracted.driverLicenseRef || '',
+      licenseNo: extracted.driverLicenseRef || '',
+      driverId: extracted.driverId || '',
       plateNo: extracted.plateNo || '—',
       route: extracted.route || 'Tabaco City Route',
       expiry: extracted.expiry || '2026-12-31',
@@ -251,6 +273,9 @@ function extractKeyValuePairs(text) {
     { key: 'availability', regex: /(?:availability|avail)\s*[:=\-]\s*([^\r\n|,;]+)/i },
     { key: 'fareFee', regex: /(?:standard\s*fare|base\s*fare|fare|fare_fee|rate|fee|price)\s*[:=\-]\s*([^\r\n|,;]+)/i },
     { key: 'touristGuide', regex: /(?:tourist\s*guide|tourist_guide|tourist|tg)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'driverLicenseRef', regex: /(?:driver\s*license(?:\s*(?:no\.?|ref|number))?|license\s*(?:ref|no\.?|number)?|driver_license_no|driverLicenseNo|dl)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'driverId', regex: /(?:driver\s*id|driver_id|driverId)\s*[:=\-]\s*([^\r\n|,;]+)/i },
+    { key: 'driverPhoto', regex: /(?:driver\s*photo|driver_photo|photo|image)\s*[:=\-]\s*([^\r\n|,;]+)/i },
   ];
 
   for (const p of patterns) {

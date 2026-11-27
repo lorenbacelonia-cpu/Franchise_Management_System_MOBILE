@@ -1,3 +1,5 @@
+
+
 /**
  * Tabaco City TRD - Supabase Database Queries
  */
@@ -251,7 +253,10 @@ export function dbRowToRecord(row, rawText = '') {
     fareMatrix: cleanFareMatrix,
     violationsCount: row.violations_count || 0,
     documentsVerified: row.documents_verified ?? true,
-    licenseNo: row.driver_license_no || '',
+    licenseNo: row.driver_license_no || row.license_no || '',
+    driverLicenseRef: row.driver_license_no || row.license_no || '',
+    driverId: row.driver_id || row.id || '',
+    driverRole: 'Authorized Driver',
     applicationNo: row.application_no || '',
     raw: rawText || row.city_plate_number || row.plate_number || '',
     fromDatabase: true,
