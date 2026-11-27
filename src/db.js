@@ -504,12 +504,12 @@ export async function submitEnforcerViolation(reportData) {
     const fallbackPayload = {
       complainant_name: `[Enforcer] ${enforcerName} (${enforcerBadge})`,
       city_plate_number: plate,
-      mtop_number: plate,
+      mtop_number: plate || reportData.city_plate_number || '—',
       vehicle_category: category,
       issue_type: `[Citation] ${violationType}`,
       description: fullDescription,
       incident_date: new Date().toISOString().split('T')[0],
-      status: 'Pending',
+      status: 'Under Investigation',
       evidence_image: evidenceImageUrl,
       evidence_filename: evidenceFileName
     };
@@ -535,7 +535,7 @@ export async function submitEnforcerViolation(reportData) {
  * Table: 'passenger_complaints' & 'complaint_attachments'
  */
 export async function submitPassengerReport(reportData) {
-  const plate = reportData.plate_no || '—';
+  const plate = reportData.plate_no || reportData.city_plate_number || '—';
   const category = (reportData.vehicle_type || 'Pedicab').toLowerCase().includes('tri') ? 'Tricycle' : 'Pedicab';
   const rawReporter = reportData.reporter_username || reportData.reporter_name || 'Passenger User';
   const maskedReporter = maskReporterName(rawReporter);
@@ -559,12 +559,12 @@ export async function submitPassengerReport(reportData) {
   const passengerPayloadWithImage = {
     complainant_name: maskedReporter,
     city_plate_number: plate,
-    mtop_number: plate,
+    mtop_number: plate || reportData.city_plate_number || '—',
     vehicle_category: category,
     issue_type: reportData.report_type || 'Overcharging (Excess Fare)',
     description: fullDescription,
     incident_date: new Date().toISOString().split('T')[0],
-    status: 'Pending',
+    status: 'Under Investigation',
     evidence_image: evidenceImageUrl,
     evidence_filename: evidenceFileName
   };
@@ -572,12 +572,12 @@ export async function submitPassengerReport(reportData) {
   const passengerPayloadStandard = {
     complainant_name: maskedReporter,
     city_plate_number: plate,
-    mtop_number: plate,
+    mtop_number: plate || reportData.city_plate_number || '—',
     vehicle_category: category,
     issue_type: reportData.report_type || 'Overcharging (Excess Fare)',
     description: fullDescription,
     incident_date: new Date().toISOString().split('T')[0],
-    status: 'Pending'
+    status: 'Under Investigation'
   };
 
   // 1. Try insert with image evidence column
