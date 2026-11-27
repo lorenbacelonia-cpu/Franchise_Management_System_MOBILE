@@ -231,6 +231,16 @@ export function dbRowToRecord(row, rawText = '') {
     }
   }
 
+  // Fallback to QR payload photo if present and database row has none
+  if (!driverPhoto && rawText) {
+    try {
+      const match = rawText.match(/[?&](?:photo|driver_photo|image)=([^&]+)/i);
+      if (match && match[1]) {
+        driverPhoto = decodeURIComponent(match[1]);
+      }
+    } catch {}
+  }
+
   // Clean fare matrix from any metadata before exposing
   const cleanFareMatrix = Array.isArray(row.fare_matrix)
     ? row.fare_matrix.filter(item => item && item.id !== '__driver_photo__' && item.destination !== 'DRIVER_PHOTO')
