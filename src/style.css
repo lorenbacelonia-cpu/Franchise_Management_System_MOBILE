@@ -4287,14 +4287,13 @@ img {
 
 .checklist-header-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   margin-bottom: 8px;
-  gap: 8px;
+  gap: 6px;
 }
 
 .checklist-title-col {
-  flex: 1;
+  width: 100%;
 }
 
 .checklist-main-label {
@@ -4303,12 +4302,13 @@ img {
 }
 
 .checklist-main-label .label-title {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #1e293b;
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.25;
 }
 
 .theme-enforcer-modal .checklist-main-label .label-title {
@@ -4316,16 +4316,19 @@ img {
 }
 
 .checklist-main-label .label-hint {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: #64748b;
   font-weight: 500;
-  margin-top: 1px;
+  margin-top: 2px;
+  line-height: 1.35;
 }
 
 .checklist-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
 }
 
 .checklist-count-pill {
