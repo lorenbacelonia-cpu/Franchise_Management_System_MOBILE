@@ -1837,7 +1837,9 @@ function setupScannerView() {
   if (backBtn) {
     backBtn.addEventListener('click', () => {
       stopScanner();
-      if (isLoggedIn()) {
+      if (currentVerifiedRecord) {
+        switchView('view-verification');
+      } else if (isLoggedIn()) {
         switchView('view-verification');
       } else {
         switchView('view-login');
