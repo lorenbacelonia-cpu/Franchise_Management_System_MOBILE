@@ -144,6 +144,29 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
     }
   }
 
+  // Helper to enrich row with driver_photos table if needed
+  const enrichPhotoIfMissing = async (row) => {
+    if (!row) return row;
+    const hasPhoto = row.driver_photo || (Array.isArray(row.fare_matrix) && row.fare_matrix.some(x => x && (x.id === '__driver_photo__' || x.photo)));
+    if (!hasPhoto) {
+      for (const plate of primaryPlates) {
+        try {
+          const { data, error } = await supabase
+            .from('driver_photos')
+            .select('driver_photo')
+            .or(`city_plate_number.eq.${plate},mtop_number.eq.${plate}`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (!error && data && data.length > 0 && data[0].driver_photo) {
+            row.driver_photo = data[0].driver_photo;
+            break;
+          }
+        } catch { }
+      }
+    }
+    return row;
+  };
+
   // Tier 1A: Search by exact plate matches first
   for (const tableName of targetTables) {
     for (const plate of primaryPlates) {
@@ -155,7 +178,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName });
         }
       } catch { }
     }
@@ -172,7 +195,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName });
         }
       } catch { }
     }
@@ -189,7 +212,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName });
         }
       } catch { }
     }
@@ -206,7 +229,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName });
         }
       } catch { }
     }
@@ -223,7 +246,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName });
         }
       } catch { }
     }
@@ -244,7 +267,7 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
           .limit(1);
 
         if (!error && data && data.length > 0) {
-          return { ...data[0], _sourceTable: tableName, expiration_date: data[0].new_expiry || data[0].expiration_date };
+          return await enrichPhotoIfMissing({ ...data[0], _sourceTable: tableName, expiration_date: data[0].new_expiry || data[0].expiration_date });
         }
       } catch { }
     }
