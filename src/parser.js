@@ -16,11 +16,11 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     // Extract JSON object if embedded in text
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) jsonStr = jsonMatch[0];
-    
+
     const json = JSON.parse(jsonStr);
     if (typeof json === 'object' && json !== null) {
       const vehicleType = detectVehicleType(json.vehicleType || json.vehicle_type || json.type || text, currentMode);
-      
+
       return {
         type: 'franchise',
         vehicleType,
@@ -49,7 +49,7 @@ export function parseQRCode(rawText, currentMode = 'pedicab') {
     // Not valid JSON, continue to next parsers
   }
 
-    // 2. Try URL Query Parameter Parsing (e.g. https://domain.com/verify?plate=123&driver=Juan...)
+  // 2. Try URL Query Parameter Parsing (e.g. https://domain.com/verify?plate=123&driver=Juan...)
   if (text.includes('?') || text.startsWith('http://') || text.startsWith('https://')) {
     try {
       const urlStr = text.startsWith('http') ? text : `http://dummy.local/?${text.split('?')[1] || text}`;
@@ -246,7 +246,7 @@ export function detectVehicleType(str = '', fallbackMode = 'Pedicab') {
   const s = String(str).toLowerCase();
   if (s.includes('tricycle') || s.includes('trike') || s.includes('toda')) return 'Tricycle';
   if (s.includes('pedicab') || s.includes('padyak') || s.includes('poda')) return 'Pedicab';
-  
+
   // Plate prefix detection
   if (/\b[tT][\s\-_]?\d+|\b\d+[\s\-_]?[tT][rR]\b|\b[tT][rR][\s\-_]?\d+/i.test(s)) return 'Tricycle';
   if (/\b[pP][\s\-_]?\d+|\b[pP][eE][dD][\s\-_]?\d+/i.test(s)) return 'Pedicab';
