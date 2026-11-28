@@ -29,6 +29,7 @@ import {
 
 let activeView = 'view-scan';
 let currentVerifiedRecord = null;
+let pendingReportAfterLogin = null;
 let selectedLoginRole = 'Passenger';
 let selectedSignupRole = 'Passenger';
 
@@ -496,7 +497,17 @@ function setupLoginView() {
 
     showLoggedInState(result.user);
     showToast(`✅ Welcome, ${result.user.full_name || result.user.username} (${result.user.role})!`);
-    switchView('view-scan');
+
+    if (currentVerifiedRecord) {
+      switchView('view-verification');
+      if (pendingReportAfterLogin) {
+        const { category, defaultType } = pendingReportAfterLogin;
+        pendingReportAfterLogin = null;
+        setTimeout(() => openReportModalForCurrentUser(category, defaultType), 300);
+      }
+    } else {
+      switchView('view-scan');
+    }
   };
 
   const usernameInput = document.getElementById('input-username');
@@ -3089,7 +3100,6 @@ const tricycleFareData = [
   { col1: 'Sua-Igot to BTC', regular: '20.00 php', student: '15.00 php', senior: '15.00 php' },
   { col1: 'Sua-Igot to Tabaco', regular: '25.00 php', student: '22.00 php', senior: '20.00 php' },
   { col1: 'Oras', regular: '32.00 php', student: '30.00 php', senior: '28.00 php' },
-  { col1: '', regular: '', student: '', senior: '' },
 ];
 
 export function updateFareMatrixButtonsUI() {
@@ -3409,6 +3419,7 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
 
   // 1. MANDATORY LOGIN CHECK
   if (!isLoggedIn()) {
+    pendingReportAfterLogin = { category: reportCategory, defaultType };
     if (isViolationCategory) {
       showToast('⚠️ Only Traffic Enforcers can issue Violation Citations. Please log in.');
       applyLoginRoleTheme('Traffic Enforcer');
