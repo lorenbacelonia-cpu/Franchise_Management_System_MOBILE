@@ -306,26 +306,7 @@ export async function generateEmailVerificationOtp(email, role = 'Passenger') {
     }
   } catch { }
 
-  // 3. SECONDARY ASYNC FALLBACK: Trigger background relays without blocking the UI
-  try {
-    fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cleanEmail)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        _subject: `TRD Tabaco City ${role} Verification Code: ${code}`,
-        _captcha: 'false',
-        _template: 'box',
-        _replyto: SYSTEM_SENDER_EMAIL,
-        from_system_sender: SYSTEM_SENDER_EMAIL,
-        recipient_email: cleanEmail,
-        account_role: role,
-        system: 'TRD Tabaco City Franchise Management Mobile System',
-        verification_code: code,
-        message: `Your TRD ${role} Security Verification Code is: ${code}. Sent from official system dispatch ${SYSTEM_SENDER_EMAIL}.`
-      })
-    }).catch(() => { });
-  } catch { }
-
+  // 3. Fallback Supabase Auth
   try {
     supabase.auth.signInWithOtp({
       email: cleanEmail,
@@ -741,10 +722,6 @@ function verifyPassword(userObj, enteredPassword, isEnforcer) {
   if (stored === entered || (alt && alt === entered)) return true;
   if (stored.toLowerCase() === entered.toLowerCase()) return true;
 
-  if (isEnforcer) {
-    if (entered === 'enforcer123' || stored === 'enforcer123') return true;
-  }
-
   return false;
 }
 
@@ -821,35 +798,33 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
         return userByUname[0];
       }
 
-      // 2. Normalized badge digits check
-      if (cleanDigits && cleanDigits.length >= 2) {
+      // 2. Email column check & bracketed email in fullname (Prioritize email over partial digits!)
+      if (cleanIdentifier.includes('@')) {
         try {
-          const { data: byBadgeDigits, error: badgeErr } = await supabase
+          const { data: userByEmail, error: emailErr } = await supabase
             .from(table)
             .select('*')
-            .ilike('username', `%${cleanDigits}%`)
+            .ilike('email', cleanIdentifier)
             .limit(1);
 
-          if (!badgeErr && byBadgeDigits && byBadgeDigits.length > 0) {
-            return byBadgeDigits[0];
+          if (!emailErr && userByEmail && userByEmail.length > 0) {
+            return userByEmail[0];
+          }
+
+          // Also check if email is stored inside fullname e.g. "Loren [lorenbacelonia@gmail.com]"
+          const { data: userByFnEmail, error: fnEmailErr } = await supabase
+            .from(table)
+            .select('*')
+            .ilike('fullname', `%[${cleanIdentifier}]%`)
+            .limit(1);
+
+          if (!fnEmailErr && userByFnEmail && userByFnEmail.length > 0) {
+            return userByFnEmail[0];
           }
         } catch { }
       }
 
-      // 3. Email column check
-      try {
-        const { data: userByEmail, error: emailErr } = await supabase
-          .from(table)
-          .select('*')
-          .ilike('email', cleanIdentifier)
-          .limit(1);
-
-        if (!emailErr && userByEmail && userByEmail.length > 0) {
-          return userByEmail[0];
-        }
-      } catch { }
-
-      // 4. Contact number check
+      // 3. Contact number check (if digits provided)
       if (cleanDigits && cleanDigits.length >= 7) {
         try {
           const { data: userByPhone, error: phoneErr } = await supabase
@@ -860,6 +835,21 @@ export async function loginUser(identifier, password, selectedRole = 'Passenger'
 
           if (!phoneErr && userByPhone && userByPhone.length > 0) {
             return userByPhone[0];
+          }
+        } catch { }
+      }
+
+      // 4. Normalized badge digits check (STRICTLY for Traffic Enforcers only and NOT for emails)
+      if (isEnforcer && !cleanIdentifier.includes('@') && cleanDigits && cleanDigits.length >= 2) {
+        try {
+          const { data: byBadgeDigits, error: badgeErr } = await supabase
+            .from(table)
+            .select('*')
+            .ilike('username', `%${cleanDigits}%`)
+            .limit(1);
+
+          if (!badgeErr && byBadgeDigits && byBadgeDigits.length > 0) {
+            return byBadgeDigits[0];
           }
         } catch { }
       }

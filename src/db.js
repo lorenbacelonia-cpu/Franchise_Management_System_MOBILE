@@ -809,10 +809,6 @@ function isMatchingPassengerReporter(compStr, currentUser, userPlates = [], subm
   const comp = (compStr || '').trim().toLowerCase();
   if (comp.includes('[enforcer]')) return false; // Ignore enforcer citations
 
-  // Match if plate was submitted by this user/device
-  if (itemPlate && userPlates.length > 0 && userPlates.includes(itemPlate)) {
-    return true;
-  }
   // Match if ID was submitted on this device
   if (itemId && submittedRecordIds.length > 0 && (submittedRecordIds.includes(itemId) || submittedRecordIds.includes(String(itemId)))) {
     return true;
@@ -986,9 +982,8 @@ async function fetchPassengerNotifications(currentUser, readIds) {
   // Filter strictly to previous and current reports filed by THIS user
   const userReports = complaintsData.filter(item => {
     const isIdMatch = userSubmittedRecordIds.length > 0 && (userSubmittedRecordIds.includes(item.id) || userSubmittedRecordIds.includes(String(item.id)));
-    const isPlateMatch = item.city_plate_number && userSubmittedPlates.includes(item.city_plate_number);
     const isReporterMatch = isMatchingPassengerReporter(item.complainant_name, currentUser, userSubmittedPlates, userSubmittedRecordIds, item.city_plate_number, item.id);
-    return isIdMatch || isPlateMatch || isReporterMatch;
+    return isIdMatch || isReporterMatch;
   });
 
   // Fetch related admin messages from 'complaint_messages' for these complaints

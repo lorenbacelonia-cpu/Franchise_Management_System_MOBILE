@@ -3,13 +3,13 @@ import { parseQRCode } from './parser.js';
 import { initScanner, stopScanner, setSoundEnabled, isSoundActive, switchNextCamera, toggleTorch, scanImageFile } from './scanner.js';
 import { saveScanToHistory } from './history.js';
 import { fetchFranchiseByPlate, dbRowToRecord, submitViolationReport, fetchRoleNotifications, markNotificationAsRead, markAllNotificationsRead, subscribeToRealtimeStatusUpdates, deleteReportRecord, deleteFranchiseRecord } from './db.js';
-import { 
-  loginUser, 
-  logoutUser, 
-  getCurrentUser, 
-  isLoggedIn, 
-  registerUser, 
-  formatFormalName, 
+import {
+  loginUser,
+  logoutUser,
+  getCurrentUser,
+  isLoggedIn,
+  registerUser,
+  formatFormalName,
   formatFormalUsername,
   isValidEmail,
   isValidPhone,
@@ -88,7 +88,7 @@ function startLiveVerificationPolling() {
   if (liveVerificationPollingTimer) clearInterval(liveVerificationPollingTimer);
   liveVerificationPollingTimer = setInterval(async () => {
     const viewVerif = document.getElementById('view-verification');
-    if (!viewVerif || viewVerif.classList.contains('hidden') || !currentVerifiedRecord?.plateNo || currentVerifiedRecord.plateNo === '—') {
+    if (!viewVerif || !viewVerif.classList.contains('active') || !currentVerifiedRecord?.plateNo || currentVerifiedRecord.plateNo === '—') {
       return;
     }
     try {
@@ -963,8 +963,8 @@ function openEmailVerificationModal(data = {}) {
   if (newPwdInput) newPwdInput.value = '';
   if (confPwdInput) confPwdInput.value = '';
 
-  const currentTarget = method === 'sms' 
-    ? (data.phone || data.target || '') 
+  const currentTarget = method === 'sms'
+    ? (data.phone || data.target || '')
     : (data.email || data.target || '');
 
   // Forgot Password Mode vs Normal Verification Mode
@@ -1048,8 +1048,8 @@ function openEmailVerificationModal(data = {}) {
 
   if (verifyBtn) {
     verifyBtn.disabled = false;
-    verifyBtn.textContent = isForgot 
-      ? 'VERIFY CODE' 
+    verifyBtn.textContent = isForgot
+      ? 'VERIFY CODE'
       : (data.isLoginMode ? 'VERIFY & SIGN IN' : 'VERIFY & ACTIVATE ACCOUNT');
   }
 
@@ -1375,8 +1375,8 @@ function setupEmailVerificationModal() {
         if (digits[0]) digits[0].focus();
 
         startOtpResendCountdown();
-        showToast(chosenMethod === 'sms' 
-          ? `📱 Verification code sent to registered mobile (${maskTarget(targetToSend)})!` 
+        showToast(chosenMethod === 'sms'
+          ? `📱 Verification code sent to registered mobile (${maskTarget(targetToSend)})!`
           : `📧 Verification code sent to registered email (${maskTarget(targetToSend)})!`);
         return;
       }
@@ -1445,8 +1445,8 @@ function setupEmailVerificationModal() {
       if (digits[0]) digits[0].focus();
 
       startOtpResendCountdown();
-      showToast(method === 'sms' 
-        ? `📱 Verification code sent via SMS to ${inputVal}!` 
+      showToast(method === 'sms'
+        ? `📱 Verification code sent via SMS to ${inputVal}!`
         : `📧 Verification code sent to ${inputVal}!`);
     });
   }
@@ -1555,8 +1555,8 @@ function setupEmailVerificationModal() {
         if (digits[0]) digits[0].focus();
 
         startOtpResendCountdown();
-        showToast(method === 'sms' 
-          ? `📱 New code sent via SMS to ${maskTarget(targetToResend)}!` 
+        showToast(method === 'sms'
+          ? `📱 New code sent via SMS to ${maskTarget(targetToResend)}!`
           : `📧 New code sent to ${maskTarget(targetToResend)}!`);
       } else {
         resendBtn.disabled = false;
@@ -1634,8 +1634,8 @@ function setupEmailVerificationModal() {
 
     if (!target) {
       if (errorEl) {
-        errorEl.textContent = isForgot 
-          ? 'Please enter your username and click "Send Code" first.' 
+        errorEl.textContent = isForgot
+          ? 'Please enter your username and click "Send Code" first.'
           : `Please enter your ${method === 'sms' ? 'mobile number' : 'email address'} and click "Send Code".`;
         errorEl.classList.remove('hidden');
       }
@@ -1660,8 +1660,8 @@ function setupEmailVerificationModal() {
     if (!verifyResult.success) {
       if (verifyBtn) {
         verifyBtn.disabled = false;
-        verifyBtn.textContent = isForgot 
-          ? 'VERIFY CODE' 
+        verifyBtn.textContent = isForgot
+          ? 'VERIFY CODE'
           : (pendingEmailRegistration?.isLoginMode ? 'VERIFY & SIGN IN' : 'VERIFY & ACTIVATE ACCOUNT');
       }
       if (errorEl) {
@@ -2703,72 +2703,9 @@ async function handleEnforcerIssueCitation(openModalForEvidence = false) {
     return;
   }
 
-  // Photo evidence is required for traffic enforcers: always open citation modal to capture or attach evidence
+  // Photo evidence is required for traffic enforcers: open citation modal to capture or attach evidence
   openReportModalForCurrentUser('violation');
   showToast('📷 Photo evidence is required. Please capture or attach a photo of the violation.');
-  return;
-
-  const isPedicab = (currentVerifiedRecord?.vehicleType || '').toLowerCase().includes('ped');
-  const selectedItems = Array.from(selectedViolationIds).map(id => TRD_VIOLATIONS.find(v => v.id === id)).filter(Boolean);
-  const violationTitles = selectedItems.map(v => v.title).join(', ');
-  const totalFine = selectedItems.reduce((sum, v) => sum + (isPedicab ? v.pedicabFine : v.tricycleFine), 0);
-  const location = document.getElementById('onpage-enforcer-location')?.value || 'Tabaco City Commercial Center';
-  const remarks = document.getElementById('onpage-enforcer-remarks')?.value || '';
-  const citationNo = 'CIT-' + Date.now().toString().slice(-6);
-
-  const payload = {
-    report_type: violationTitles,
-    plate_no: currentVerifiedRecord?.plateNo || '—',
-    driver_name: currentVerifiedRecord?.driver || 'Apprehended Driver',
-    operator_name: currentVerifiedRecord?.operator || 'Registered Operator',
-    vehicle_type: currentVerifiedRecord?.vehicleType || (isPedicab ? 'Pedicab' : 'Tricycle'),
-    reporter_name: user?.full_name || user?.username || 'TRD Traffic Enforcer',
-    reporter_username: user?.username || '',
-    reporter_role: 'Traffic Enforcer',
-    fine_amount: totalFine,
-    location: location,
-    citation_no: citationNo,
-    enforcer_badge: user?.username ? `TRD-ENF-${user.username}` : 'TRD-ENF-001',
-    description: [
-      `Selective Infractions: ${violationTitles}`,
-      `Total Fine: ₱${totalFine}`,
-      `Location: ${location}`,
-      remarks ? `Officer Remarks: ${remarks}` : ''
-    ].filter(Boolean).join(' | '),
-    attachment: null
-  };
-
-  showToast('⏳ Registering citation ticket...');
-
-  try {
-    await submitViolationReport(payload);
-  } catch (err) {
-    console.warn('Submit citation background note:', err);
-  }
-
-  // Setup and display success dialog
-  const successModal = document.getElementById('success-modal');
-  const successTitle = document.getElementById('success-modal-title');
-  const successSub = document.getElementById('success-modal-sub');
-  const successAttachInfo = document.getElementById('success-attachment-info');
-
-  if (successTitle) successTitle.textContent = 'Citation Registered';
-  if (successSub) {
-    successSub.textContent = `Official TRD citation registered for ${payload.vehicle_type} Plate #${payload.plate_no}. Infractions: ${violationTitles}.`;
-  }
-  if (successAttachInfo) successAttachInfo.classList.add('hidden');
-  if (successModal) successModal.classList.remove('hidden');
-
-  // Reset selected violations & inputs
-  selectedViolationIds.clear();
-  updateSelectiveViolationUI();
-  const locInput = document.getElementById('onpage-enforcer-location');
-  const remInput = document.getElementById('onpage-enforcer-remarks');
-  if (locInput) locInput.value = '';
-  if (remInput) remInput.value = '';
-
-  // Immediately refresh officer citation logs and status notifications
-  loadAndRenderNotifications(true);
 }
 
 /* ==========================================================================
@@ -3153,12 +3090,23 @@ function renderFareMatrixPage(vehicleTypeMode, searchQuery = '') {
 
     // 1. Check if the verified record has a custom fare matrix from Supabase DB
     if (currentVerifiedRecord?.fareMatrix && Array.isArray(currentVerifiedRecord.fareMatrix) && currentVerifiedRecord.fareMatrix.length > 0) {
-      rows = currentVerifiedRecord.fareMatrix.map(item => ({
-        col1: item.destination || item.route || 'Route',
-        regular: item.regularFare ? `₱${item.regularFare}.00` : (item.regular || '₱20.00'),
-        student: item.discountedFare ? `₱${item.discountedFare}.00` : (item.student || '₱16.00'),
-        senior: item.discountedFare ? `₱${item.discountedFare}.00` : (item.senior || '₱16.00')
-      }));
+      rows = currentVerifiedRecord.fareMatrix
+        .filter(item => item && item.id !== '__driver_photo__' && item.destination !== 'DRIVER_PHOTO')
+        .map(item => {
+          const rawReg = (item.regularFare ?? item.regular_fare ?? item.regular ?? (isPedicab ? '15.00' : '20.00')).toString().replace(/[₱Php\s,]/gi, '');
+          const numReg = parseFloat(rawReg) || (isPedicab ? 15 : 20);
+          const defaultDiscount = (numReg * 0.8).toFixed(2);
+          const rawStu = (item.studentFare ?? item.student_fare ?? item.discountedFare ?? item.student ?? defaultDiscount).toString().replace(/[₱Php\s,]/gi, '');
+          const rawSnr = (item.seniorPwdFare ?? item.senior_fare ?? item.discountedFare ?? item.senior ?? defaultDiscount).toString().replace(/[₱Php\s,]/gi, '');
+          const numStu = parseFloat(rawStu) || parseFloat(defaultDiscount);
+          const numSnr = parseFloat(rawSnr) || parseFloat(defaultDiscount);
+          return {
+            col1: item.destination || item.route || 'Route',
+            regular: `₱${numReg.toFixed(2)}`,
+            student: `₱${numStu.toFixed(2)}`,
+            senior: `₱${numSnr.toFixed(2)}`
+          };
+        });
     } else {
       // 2. Default standard ordinance table
       rows = isPedicab ? pedicabFareData : tricycleFareData;
@@ -3212,7 +3160,9 @@ function setupFareMatrixView() {
   const violationBtn = document.getElementById('btn-fare-violation');
   if (violationBtn) {
     violationBtn.addEventListener('click', () => {
-      openReportModalForCurrentUser('violation', 'Official Violation');
+      const user = getCurrentUser();
+      const isEnforcer = user?.role === 'Traffic Enforcer';
+      openReportModalForCurrentUser(isEnforcer ? 'violation' : 'overcharging', isEnforcer ? 'Official Violation' : 'Overcharging (Excess Fare)');
     });
   }
 
@@ -3596,7 +3546,7 @@ function setupModals() {
 
   const closeFareBtn = document.getElementById('btn-close-fare');
   if (closeFareBtn) closeFareBtn.addEventListener('click', () => {
-    document.getElementById('fare-modal').classList.add('hidden');
+    document.getElementById('fare-modal')?.classList.add('hidden');
   });
 
   const closeReportBtn = document.getElementById('btn-close-report');
