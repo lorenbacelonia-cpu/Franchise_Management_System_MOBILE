@@ -97,8 +97,15 @@ function startLiveVerificationPolling() {
         const freshRecord = dbRowToRecord(freshRow, currentVerifiedRecord.raw);
         const prevStatus = currentVerifiedRecord.status;
         const prevAvail = currentVerifiedRecord.availability;
-        if (freshRecord.status !== prevStatus || freshRecord.availability !== prevAvail) {
-          console.log('🔄 [Live Polling] Status changed from Admin:', freshRecord.status, freshRecord.availability);
+        const prevPhoto = currentVerifiedRecord.driverPhoto;
+        const prevDriver = currentVerifiedRecord.driver;
+        const hasDataChanged = freshRecord.status !== prevStatus ||
+          freshRecord.availability !== prevAvail ||
+          freshRecord.driverPhoto !== prevPhoto ||
+          freshRecord.driver !== prevDriver;
+
+        if (hasDataChanged) {
+          console.log('🔄 [Live Polling] Driver/Status updated from Admin:', freshRecord.status, freshRecord.driver);
           const wasSuspended = /suspend/i.test(prevStatus) || /suspend/i.test(prevAvail);
           const nowSuspended = /suspend/i.test(freshRecord.status) || /suspend/i.test(freshRecord.availability);
 
@@ -125,7 +132,12 @@ document.addEventListener('visibilitychange', async () => {
       const freshRow = await fetchFranchiseByPlate(currentVerifiedRecord.plateNo);
       if (freshRow) {
         const freshRecord = dbRowToRecord(freshRow, currentVerifiedRecord.raw);
-        if (freshRecord.status !== currentVerifiedRecord.status || freshRecord.availability !== currentVerifiedRecord.availability) {
+        if (
+          freshRecord.status !== currentVerifiedRecord.status ||
+          freshRecord.availability !== currentVerifiedRecord.availability ||
+          freshRecord.driverPhoto !== currentVerifiedRecord.driverPhoto ||
+          freshRecord.driver !== currentVerifiedRecord.driver
+        ) {
           currentVerifiedRecord = {
             ...currentVerifiedRecord,
             ...freshRecord
@@ -2862,6 +2874,14 @@ function renderVerificationDashboard(record) {
 
   if (record.driverPhoto) {
     if (photoImg) {
+      photoImg.onerror = () => {
+        photoImg.classList.add('hidden');
+        if (photoFallback) photoFallback.classList.remove('hidden');
+      };
+      photoImg.onload = () => {
+        photoImg.classList.remove('hidden');
+        if (photoFallback) photoFallback.classList.add('hidden');
+      };
       photoImg.src = record.driverPhoto;
       photoImg.classList.remove('hidden');
     }
@@ -3019,7 +3039,12 @@ function openDriverPhotoModal(record) {
   const plateEl = document.getElementById('driver-photo-modal-plate');
 
   if (imgEl) {
-    imgEl.src = record.driverPhoto || '/pedicab.png';
+    const isTri = /tricycle|trike/i.test(record.vehicleType || '');
+    const defaultPlaceholder = isTri ? '/tricycle.png' : '/pedicab.png';
+    imgEl.onerror = () => {
+      imgEl.src = defaultPlaceholder;
+    };
+    imgEl.src = record.driverPhoto || defaultPlaceholder;
   }
   if (nameEl) nameEl.textContent = record.driver && record.driver !== '—' ? record.driver : 'Authorized Driver';
   if (plateEl) plateEl.textContent = `Unit: ${record.plateNo || '—'} • ${record.vehicleType || 'Conveyance'}`;

@@ -21,6 +21,31 @@ function cleanSearchTerm(term) {
 }
 
 /**
+ * Normalizes an image source into a valid renderable URI.
+ * Handles raw Base64 data (e.g. starting with /9j/ or iVBOR) by prefixing data:image/...,
+ * strips illegal whitespace, and rejects invalid placeholder strings.
+ */
+export function normalizeImageSrc(src) {
+  if (!src || typeof src !== 'string') return null;
+  const s = src.trim();
+  if (!s || s === 'null' || s === 'undefined' || s === '—' || s === 'none' || s === 'TESTING' || s === 'null' || s.length < 15) return null;
+  if (s.startsWith('data:image/') || s.startsWith('http://') || s.startsWith('https://') || s.startsWith('blob:')) {
+    return s;
+  }
+  // Check for raw base64 data signatures
+  if (s.startsWith('/9j/')) return `data:image/jpeg;base64,${s}`;
+  if (s.startsWith('iVBORw0KGgo')) return `data:image/png;base64,${s}`;
+  if (s.startsWith('R0lGOD')) return `data:image/gif;base64,${s}`;
+  if (s.startsWith('UklGR')) return `data:image/webp;base64,${s}`;
+  if (s.startsWith('PHN2Zy') || s.startsWith('PD94bWw')) return `data:image/svg+xml;base64,${s}`;
+  // Generic Base64 fallback if string looks like valid image binary (>60 chars)
+  if (s.length > 60 && /^[A-Za-z0-9+/=\s]+$/.test(s.slice(0, 100))) {
+    return `data:image/jpeg;base64,${s.replace(/\s+/g, '')}`;
+  }
+  return s;
+}
+
+/**
  * Look up a franchise / driver record in Supabase from Admin tables:
  * - 'franchise_records_pedicab_admin'
  * - 'franchise_records_tricycle_admin'
@@ -33,7 +58,11 @@ function cleanSearchTerm(term) {
 export async function fetchFranchiseByPlate(plateNo, rawText = '') {
   if (!plateNo && !rawText) return null;
 
-  const targetTables = ['franchise_records_tricycle_admin', 'franchise_records_pedicab_admin'];
+  // Determine vehicle category preference based on plate prefix or URL text
+  const isPedicabHint = /pedicab|ped|\bp-\d/i.test(String(plateNo) + ' ' + String(rawText));
+  const targetTables = isPedicabHint
+    ? ['franchise_records_pedicab_admin', 'franchise_records_tricycle_admin']
+    : ['franchise_records_tricycle_admin', 'franchise_records_pedicab_admin'];
 
   // Categorize candidate search terms into priority tiers
   const primaryPlates = new Set();
@@ -115,7 +144,24 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
     }
   }
 
-  // Tier 1: Search by Plate variations (exact & patterns)
+  // Tier 1A: Search by exact plate matches first
+  for (const tableName of targetTables) {
+    for (const plate of primaryPlates) {
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .or(`city_plate_number.eq.${plate},mtop_number.eq.${plate}`)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          return { ...data[0], _sourceTable: tableName };
+        }
+      } catch { }
+    }
+  }
+
+  // Tier 1B: Search by Plate variations (patterns & ilike)
   for (const tableName of targetTables) {
     for (const plate of primaryPlates) {
       try {
@@ -183,6 +229,27 @@ export async function fetchFranchiseByPlate(plateNo, rawText = '') {
     }
   }
 
+  // Tier 5: Search in Renewals tables as fallback if master record was not yet synchronized
+  const renewalTables = isPedicabHint
+    ? ['franchise_renewals_pedicab_admin', 'franchise_renewals_tricycle_admin']
+    : ['franchise_renewals_tricycle_admin', 'franchise_renewals_pedicab_admin'];
+  for (const tableName of renewalTables) {
+    for (const plate of primaryPlates) {
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .or(`city_plate_number.eq.${plate},mtop_number.eq.${plate},city_plate_number.ilike.%${plate}%,mtop_number.ilike.%${plate}%`)
+          .order('renewal_date', { ascending: false })
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          return { ...data[0], _sourceTable: tableName, expiration_date: data[0].new_expiry || data[0].expiration_date };
+        }
+      } catch { }
+    }
+  }
+
   return null;
 }
 
@@ -230,27 +297,47 @@ export function dbRowToRecord(row, rawText = '') {
   const isStatusActive = resolvedStatus === 'Active';
 
   // Extract driver photo if present (directly or packed inside fare_matrix metadata)
-  let driverPhoto = row.driver_photo || row.driver_photo_url || row.photo || row.driver_image || null;
-  if (!driverPhoto && Array.isArray(row.fare_matrix)) {
-    const photoItem = row.fare_matrix.find(item => item && (item.id === '__driver_photo__' || item.destination === 'DRIVER_PHOTO' || item.photo));
-    if (photoItem && photoItem.photo) {
-      driverPhoto = photoItem.photo;
+  let rawDriverPhoto = row.driver_photo || row.driver_photo_url || row.photo || row.driver_image || null;
+
+  // Safely parse fare_matrix if it is a JSON string or array
+  let parsedFareMatrix = row.fare_matrix;
+  if (typeof parsedFareMatrix === 'string') {
+    try {
+      parsedFareMatrix = JSON.parse(parsedFareMatrix);
+    } catch {
+      parsedFareMatrix = null;
+    }
+  }
+
+  if (!rawDriverPhoto && Array.isArray(parsedFareMatrix)) {
+    const photoItem = parsedFareMatrix.find(item => item && (
+      item.id === '__driver_photo__' ||
+      item.destination === 'DRIVER_PHOTO' ||
+      item.photo ||
+      item.driver_photo ||
+      item.driverPhoto ||
+      item.image
+    ));
+    if (photoItem) {
+      rawDriverPhoto = photoItem.photo || photoItem.driver_photo || photoItem.driverPhoto || photoItem.image || null;
     }
   }
 
   // Fallback to QR payload photo if present and database row has none
-  if (!driverPhoto && rawText) {
+  if (!rawDriverPhoto && rawText) {
     try {
       const match = rawText.match(/[?&](?:photo|driver_photo|image)=([^&]+)/i);
       if (match && match[1]) {
-        driverPhoto = decodeURIComponent(match[1]);
+        rawDriverPhoto = decodeURIComponent(match[1]);
       }
     } catch { }
   }
 
+  const driverPhoto = normalizeImageSrc(rawDriverPhoto);
+
   // Clean fare matrix from any metadata before exposing
-  const cleanFareMatrix = Array.isArray(row.fare_matrix)
-    ? row.fare_matrix.filter(item => item && item.id !== '__driver_photo__' && item.destination !== 'DRIVER_PHOTO')
+  const cleanFareMatrix = Array.isArray(parsedFareMatrix)
+    ? parsedFareMatrix.filter(item => item && item.id !== '__driver_photo__' && item.destination !== 'DRIVER_PHOTO')
     : null;
 
   return {
