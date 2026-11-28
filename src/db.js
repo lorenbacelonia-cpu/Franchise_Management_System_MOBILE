@@ -212,7 +212,11 @@ export function dbRowToRecord(row, rawText = '') {
 
   // Automatically mark expired if permit expiration date has passed, or detect suspension
   let resolvedStatus = rawStatus;
-  if (/suspend/i.test(rawStatus) || /suspend/i.test(rawAvail) || (rawText && /suspend/i.test(rawText))) {
+  const isSuspendedInDb = /suspend/i.test(rawStatus) || /suspend/i.test(rawAvail);
+  // Only fallback to rawText if the row itself didn't come from a live DB record
+  const isSuspendedInRaw = (!row.id && !row._sourceTable) && (rawText && /status=suspended|sanction=suspended|avail=suspended/i.test(rawText));
+
+  if (isSuspendedInDb || isSuspendedInRaw) {
     resolvedStatus = 'Suspended';
   } else if (expiryDateStr && expiryDateStr !== '—') {
     const expDate = new Date(expiryDateStr);
@@ -1451,7 +1455,7 @@ export async function deleteFranchiseRecord(plateNo, vehicleType = '') {
 let activeRealtimeChannel = null;
 
 export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) {
-  if (!currentUser || !supabase) return () => { };
+  if (!supabase) return () => { };
 
   if (activeRealtimeChannel) {
     try {
@@ -1462,7 +1466,7 @@ export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) 
     activeRealtimeChannel = null;
   }
 
-  const channelId = `realtime_sync_${currentUser.username || 'user'}_${Date.now()}`;
+  const channelId = `realtime_sync_${currentUser?.username || 'global'}_${Date.now()}`;
   const channel = supabase.channel(channelId);
 
   const handleUpdate = (tableName, payload) => {
@@ -1471,7 +1475,7 @@ export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) 
       purgeLocalReportById(payload.old.id);
     }
     if (typeof onUpdateCallback === 'function') {
-      onUpdateCallback(payload);
+      onUpdateCallback({ ...payload, table: tableName });
     }
   };
 
@@ -1483,6 +1487,8 @@ export function subscribeToRealtimeStatusUpdates(currentUser, onUpdateCallback) 
     .on('postgres_changes', { event: '*', schema: 'public', table: 'complaint_messages' }, (p) => handleUpdate('complaint_messages', p))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_pedicab_admin' }, (p) => handleUpdate('franchise_records_pedicab_admin', p))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'franchise_records_tricycle_admin' }, (p) => handleUpdate('franchise_records_tricycle_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'system_qr_codes_pedicab_admin' }, (p) => handleUpdate('system_qr_codes_pedicab_admin', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'system_qr_codes_tricycle_admin' }, (p) => handleUpdate('system_qr_codes_tricycle_admin', p))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_reviews' }, (p) => handleUpdate('pending_reviews', p))
     .subscribe();
 

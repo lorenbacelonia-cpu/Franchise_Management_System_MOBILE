@@ -36,6 +36,105 @@ let currentRoleNotifications = [];
 let currentNotifFilter = 'all';
 let notifPollInterval = null;
 let realtimeUnsubscribe = null;
+let liveVerificationPollingTimer = null;
+
+function normalizePlate(p) {
+  return String(p || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function handleLiveRealtimeSync(payload) {
+  console.log('🔔 [Live Realtime Event]:', payload);
+  if (isLoggedIn()) {
+    loadAndRenderNotifications(true);
+  }
+
+  const newRow = payload?.new;
+  if (!newRow || !currentVerifiedRecord) return;
+
+  const currentPlate = normalizePlate(currentVerifiedRecord.plateNo);
+  const updatedPlate = normalizePlate(newRow.city_plate_number || newRow.mtop_number || newRow.plate_number);
+
+  if (currentPlate && updatedPlate && (currentPlate === updatedPlate || currentPlate.includes(updatedPlate) || updatedPlate.includes(currentPlate))) {
+    console.log('⚡ [Live Realtime Update] Updating current verified record:', newRow);
+    const freshRecord = dbRowToRecord(newRow, currentVerifiedRecord.raw);
+    const wasSuspended = /suspend/i.test(currentVerifiedRecord.status) || /suspend/i.test(currentVerifiedRecord.availability);
+    const nowSuspended = /suspend/i.test(freshRecord.status) || /suspend/i.test(freshRecord.availability);
+
+    currentVerifiedRecord = {
+      ...currentVerifiedRecord,
+      ...freshRecord
+    };
+
+    renderVerificationDashboard(currentVerifiedRecord);
+
+    if (wasSuspended && !nowSuspended) {
+      showToast(`🎉 Driver suspension LIFTED for Unit ${currentVerifiedRecord.plateNo}! Status is now ACTIVE.`);
+    } else if (!wasSuspended && nowSuspended) {
+      showToast(`⛔ Unit ${currentVerifiedRecord.plateNo} — Driver has been placed under SUSPENSION!`);
+    }
+  }
+}
+
+function setupGlobalRealtimeSubscription(user = null) {
+  if (realtimeUnsubscribe) {
+    try { realtimeUnsubscribe(); } catch { }
+    realtimeUnsubscribe = null;
+  }
+  realtimeUnsubscribe = subscribeToRealtimeStatusUpdates(user || (isLoggedIn() ? getCurrentUser() : null), handleLiveRealtimeSync);
+}
+
+function startLiveVerificationPolling() {
+  if (liveVerificationPollingTimer) clearInterval(liveVerificationPollingTimer);
+  liveVerificationPollingTimer = setInterval(async () => {
+    const viewVerif = document.getElementById('view-verification');
+    if (!viewVerif || viewVerif.classList.contains('hidden') || !currentVerifiedRecord?.plateNo || currentVerifiedRecord.plateNo === '—') {
+      return;
+    }
+    try {
+      const freshRow = await fetchFranchiseByPlate(currentVerifiedRecord.plateNo);
+      if (freshRow) {
+        const freshRecord = dbRowToRecord(freshRow, currentVerifiedRecord.raw);
+        const prevStatus = currentVerifiedRecord.status;
+        const prevAvail = currentVerifiedRecord.availability;
+        if (freshRecord.status !== prevStatus || freshRecord.availability !== prevAvail) {
+          console.log('🔄 [Live Polling] Status changed from Admin:', freshRecord.status, freshRecord.availability);
+          const wasSuspended = /suspend/i.test(prevStatus) || /suspend/i.test(prevAvail);
+          const nowSuspended = /suspend/i.test(freshRecord.status) || /suspend/i.test(freshRecord.availability);
+
+          currentVerifiedRecord = {
+            ...currentVerifiedRecord,
+            ...freshRecord
+          };
+          renderVerificationDashboard(currentVerifiedRecord);
+
+          if (wasSuspended && !nowSuspended) {
+            showToast(`🎉 Driver suspension LIFTED for Unit ${currentVerifiedRecord.plateNo}! Status is now ACTIVE.`);
+          } else if (!wasSuspended && nowSuspended) {
+            showToast(`⛔ Unit ${currentVerifiedRecord.plateNo} — Driver has been placed under SUSPENSION!`);
+          }
+        }
+      }
+    } catch { }
+  }, 2500);
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && currentVerifiedRecord?.plateNo && currentVerifiedRecord.plateNo !== '—') {
+    try {
+      const freshRow = await fetchFranchiseByPlate(currentVerifiedRecord.plateNo);
+      if (freshRow) {
+        const freshRecord = dbRowToRecord(freshRow, currentVerifiedRecord.raw);
+        if (freshRecord.status !== currentVerifiedRecord.status || freshRecord.availability !== currentVerifiedRecord.availability) {
+          currentVerifiedRecord = {
+            ...currentVerifiedRecord,
+            ...freshRecord
+          };
+          renderVerificationDashboard(currentVerifiedRecord);
+        }
+      }
+    } catch { }
+  }
+});
 
 const ENFORCER_SHIELD_SVG = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -138,6 +237,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupModals();
   setupNotificationsCenter();
   setupLogout();
+
+  // Always initialize global realtime synchronization for immediate status updates
+  setupGlobalRealtimeSubscription();
+  startLiveVerificationPolling();
 
   // Restore logged-in state if active session exists
   if (isLoggedIn()) {
@@ -557,14 +660,7 @@ function showLoggedInState(user) {
   }
 
   // Subscribe to live status updates made by Admin in Supabase Realtime
-  if (realtimeUnsubscribe) {
-    try { realtimeUnsubscribe(); } catch { /* ignore */ }
-    realtimeUnsubscribe = null;
-  }
-  realtimeUnsubscribe = subscribeToRealtimeStatusUpdates(user, (payload) => {
-    console.log('🔔 Live Admin status update received:', payload);
-    loadAndRenderNotifications(true);
-  });
+  setupGlobalRealtimeSubscription(user);
 
   // Refresh notifications and badge counter for the logged-in role
   loadAndRenderNotifications();
@@ -2690,7 +2786,9 @@ function renderVerificationDashboard(record) {
 
   const rawStatus = (record.status || (isLiveInDb ? 'Active' : 'Unregistered')).trim();
   const rawAvail = (record.availability || '').trim();
-  const isSuspended = /suspend/i.test(rawStatus) || /suspend/i.test(rawAvail) || (record.raw && /suspend/i.test(record.raw));
+  const isSuspended = isLiveInDb
+    ? (/suspend/i.test(rawStatus) || /suspend/i.test(rawAvail))
+    : (/suspend/i.test(rawStatus) || /suspend/i.test(rawAvail) || (record.raw && /suspend/i.test(record.raw)));
   const isExpired = /expire/i.test(rawStatus) || /expire/i.test(rawAvail);
   const isActiveRegistered = (isLiveInDb || (record.operator && record.operator !== "—" && record.driver && record.driver !== "—")) && !isSuspended && !isExpired && !/unregistered|inactive|revoked/i.test(rawStatus);
 
