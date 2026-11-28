@@ -3457,8 +3457,13 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
     if (hintSpan) hintSpan.textContent = isEnforcer ? 'Check one or multiple official TRD infractions to cite this unit' : 'Check all violations / issues that occurred (multiple choice)';
   }
 
+  const roleLabel = document.getElementById('report-role-label');
+  if (roleLabel) {
+    roleLabel.textContent = isEnforcer ? 'Officer:' : 'Reporter:';
+  }
+
   if (userRoleText) {
-    userRoleText.textContent = `${user?.role || 'Passenger'}: ${user?.full_name || user?.username}`;
+    userRoleText.textContent = user?.full_name || user?.username || (isEnforcer ? 'Enforcer' : 'Passenger');
   }
 
   if (reportRoleBadge) {
