@@ -2923,13 +2923,18 @@ img {
 }
 
 .unit-banner-sub {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-dark);
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  letter-spacing: 0.2px;
+  line-height: 1.25;
+}
+
+.theme-enforcer-modal .unit-banner-sub {
+  color: #1e3a8a;
 }
 
 .unit-banner-verified {
