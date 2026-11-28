@@ -3482,7 +3482,7 @@ function openReportModalForCurrentUser(reportCategory = 'passenger', defaultType
   const bannerStatus = document.getElementById('report-banner-status');
 
   if (bannerTypeBadge) bannerTypeBadge.textContent = currentVerifiedRecord?.vehicleType || 'Pedicab';
-  if (bannerPlate) bannerPlate.innerHTML = `City Plate: <strong id="report-target-plate">${currentVerifiedRecord?.plateNo || '—'}</strong>`;
+  if (bannerPlate) bannerPlate.textContent = `Plate: ${currentVerifiedRecord?.plateNo || '—'}`;
   if (bannerDriver) bannerDriver.textContent = `Driver: ${currentVerifiedRecord?.driver || 'Official Driver'}`;
   if (bannerStatus) bannerStatus.textContent = currentVerifiedRecord?.status === 'Active' ? '✓ Verified Unit' : '✓ Scanned Unit';
 
