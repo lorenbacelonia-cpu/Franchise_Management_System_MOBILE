@@ -2875,14 +2875,13 @@ img {
 /* Scanned Unit Pre-filled Banner (Zero manual input needed) */
 .report-scanned-unit-banner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
   padding: 10px 14px;
   margin-bottom: 12px;
-  gap: 10px;
 }
 
 .theme-enforcer-modal .report-scanned-unit-banner {
@@ -2890,12 +2889,11 @@ img {
   border-color: #bfdbfe;
 }
 
-.unit-banner-left {
+.unit-banner-top-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .unit-banner-badge {
@@ -2903,7 +2901,7 @@ img {
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 6px;
   text-transform: uppercase;
   flex-shrink: 0;
@@ -2915,58 +2913,40 @@ img {
   background: #1e3a8a;
 }
 
-.unit-banner-info {
+.unit-banner-verified {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #059669;
+  background: #d1fae5;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.theme-enforcer-modal .unit-banner-verified {
+  color: #1e3a8a;
+  background: #dbeafe;
+}
+
+.unit-banner-driver-row {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
+  align-items: center;
+  width: 100%;
 }
 
 .unit-banner-sub {
-  font-size: 0.94rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: 0.2px;
-  line-height: 1.25;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1.35;
 }
 
 .theme-enforcer-modal .unit-banner-sub {
   color: #1e3a8a;
-}
-
-.unit-banner-verified {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #059669;
-  background: #d1fae5;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.theme-enforcer-modal .unit-banner-verified {
-  color: #1e3a8a;
-  background: #dbeafe;
-}
-
-.unit-banner-verified {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #059669;
-  background: #d1fae5;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.theme-enforcer-modal .unit-banner-verified {
-  color: #1e3a8a;
-  background: #dbeafe;
 }
 
 .form-field-label {
